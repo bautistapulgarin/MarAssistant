@@ -109,6 +109,22 @@ st.markdown(f"""
 .stButton>button:hover {{
     background-color: var(--mar-muted);
 }}
+.stButton>button.btn-voz {{
+    background-color: #5DC0DC;
+    color: white;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-weight: 600;
+    border: none;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}}
+.stButton>button.btn-voz:hover {{
+    background-color: #3aa6c1;
+}}
 [data-testid="stSidebar"] {{
     background-color: white;
     padding: 20px;
@@ -349,7 +365,7 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# INTERFAZ: input + botón al lado (Streamlit nativo)
+# INTERFAZ: input + botón al lado + botón voz
 # -----------------------------
 st.markdown(
     f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
@@ -357,12 +373,17 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-col_input, col_button = st.columns([5, 1])
+col_input, col_enviar, col_voz = st.columns([5, 1, 1])
 with col_input:
     pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
-with col_button:
+with col_enviar:
     enviar = st.button("Enviar", use_container_width=True)
+with col_voz:
+    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
 
+# -----------------------------
+# Lógica de botones
+# -----------------------------
 if enviar and pregunta:
     texto, resultado = generar_respuesta(pregunta)
     st.markdown(
@@ -382,10 +403,13 @@ if enviar and pregunta:
             {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
             {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
                                          ('color', 'white'),
-                                         ('font-weight', 'bold')]}
+                                         ('font-weight', 'bold')]},
         ])
         st.dataframe(styled_df, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+if voz:
+    st.info("Función de entrada por voz aún no implementada. Aquí puedes integrar Speech-to-Text.")
 
 # -----------------------------
 # FOOTER
