@@ -136,7 +136,7 @@ def generar_respuesta(pregunta):
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
 
     # AVANCE
-    if "avance" in pregunta_norm and "diseno" not in pregunta_norm and "diseño" not in pregunta_norm:
+    if "avance" in pregunta_norm and "avance en diseño" not in pregunta_norm :
         df = df_avance.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -198,3 +198,4 @@ if st.button("Enviar") and pregunta:
             resultado.style.set_properties(**{'background-color': 'white', 'color': '#333333'}),
             use_container_width=True
         )
+
