@@ -118,19 +118,24 @@ st.markdown(f"""
 logo_path = os.path.join("assets", "logoMar.png")
 
 col_logo, col_title = st.columns([0.14, 0.86], gap="small")
+import io  # asegúrate de tener esto importado
+
 with col_logo:
     if os.path.exists(logo_path):
         try:
             logo_img = Image.open(logo_path)
-            buffered = base64.b64encode(logo_img.tobytes()).decode()
+            buffered = io.BytesIO()
+            logo_img.save(buffered, format="PNG")  # guardar como PNG en buffer
+            img_b64 = base64.b64encode(buffered.getvalue()).decode()  # codificar a base64
             st.markdown(
-                f'<div class="logo-header"><img src="data:image/png;base64,{buffered}" /></div>',
+                f'<div class="logo-header"><img src="data:image/png;base64,{img_b64}" /></div>',
                 unsafe_allow_html=True
             )
         except Exception:
             st.image(logo_path, width=26)  # fallback simple
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
+
 
 with col_title:
     st.markdown(
@@ -382,3 +387,4 @@ if enviar and pregunta:
 # FOOTER
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
+
