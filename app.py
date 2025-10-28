@@ -8,6 +8,7 @@ import time
 import base64
 import os
 import io
+import plotly.express as px  # Para la gráfica de barras
 
 # -----------------------------
 # CONFIGURACIÓN GENERAL
@@ -278,7 +279,7 @@ CARGOS_VALIDOS = [
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
-# FUNCION DE RESPUESTA
+# FUNCION DE RESPUESTA CON GRÁFICO
 # -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
@@ -340,7 +341,22 @@ def generar_respuesta(pregunta):
             df = df[df["Proyecto_norm"] == proyecto_norm]
         if df.empty:
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
-        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
+        
+        # Crear gráfico de barras por tipoRestriccion
+        if "tipoRestriccion" in df.columns:
+            fig = px.histogram(
+                df,
+                x="tipoRestriccion",
+                color="tipoRestriccion",
+                title=f"Reconteo de restricciones por tipo en {proyecto or 'todos'}",
+                text_auto=True,
+                color_discrete_sequence=px.colors.qualitative.Set2
+            )
+            fig.update_layout(showlegend=False, xaxis_title="Tipo de Restricción", yaxis_title="Cantidad")
+        else:
+            fig = None
+        
+        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, fig
 
     if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
         df = df_sostenibilidad.copy()
@@ -370,9 +386,17 @@ with col_enviar:
 with col_voz:
     voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
 
-# Lógica de botones
+# -----------------------------
+# LÓGICA DE BOTÓN
+# -----------------------------
 if enviar and pregunta:
-    texto, resultado = generar_respuesta(pregunta)
+    respuesta = generar_respuesta(pregunta)
+    if len(respuesta) == 3:
+        texto, resultado, grafico = respuesta
+    else:
+        texto, resultado = respuesta
+        grafico = None
+
     st.markdown(
         f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
         unsafe_allow_html=True
@@ -393,6 +417,10 @@ if enviar and pregunta:
                                          ('font-weight', 'bold')]},
         ])
         st.dataframe(styled_df, use_container_width=True)
+
+    if grafico:
+        st.plotly_chart(grafico, use_container_width=True)
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 if voz:
@@ -402,7 +430,6 @@ if voz:
 # FOOTER
 # -----------------------------
 st.markdown(
-    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
+    f"<br><hr><p style='font-size:12px;color:#6b6b6b;text-align:center;'>© Constructora Marval — Todos los derechos reservados</p>",
     unsafe_allow_html=True
 )
-
