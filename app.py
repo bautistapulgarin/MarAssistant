@@ -109,26 +109,35 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -----------------------------
+# -----------------------------
 # HEADER: logo + titles
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
-col_logo, col_title = st.columns([0.15, 0.85], gap="small")
 
-with col_logo:
-    if os.path.exists(logo_path):
-        try:
-            logo_img = Image.open(logo_path)
-            buffered = io.BytesIO()
-            logo_img.save(buffered, format="PNG")
-            img_b64 = base64.b64encode(buffered.getvalue()).decode()
-            st.markdown(
-                f'<div class="logo-header"><img src="data:image/png;base64,{img_b64}" /></div>',
-                unsafe_allow_html=True
-            )
-        except Exception:
-            st.image(logo_path, width=80)
-    else:
-        st.warning("Logo no encontrado en assets/logoMar.png")
+# HTML para header con logo + título al lado
+if os.path.exists(logo_path):
+    try:
+        logo_img = Image.open(logo_path)
+        buffered = io.BytesIO()
+        logo_img.save(buffered, format="PNG")
+        img_b64 = base64.b64encode(buffered.getvalue()).decode()
+        st.markdown(
+            f"""
+            <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+                <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
+                <div>
+                    <p class="title">Sistema Integrado de Control de Proyectos</p>
+                    <p class="subtitle">Plataforma de consolidación y consulta — Constructora Marval</p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    except Exception:
+        st.image(logo_path, width=80)
+else:
+    st.warning("Logo no encontrado en assets/logoMar.png")
+
 
 with col_title:
     st.markdown(
@@ -393,3 +402,4 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
+
