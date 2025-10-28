@@ -335,14 +335,7 @@ def generar_respuesta(pregunta):
             return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
 
-    if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
-        df = df_restricciones.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        if df.empty:
-            return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
-        
-        # Crear gráfico de barras por tipoRestriccion
+            # Crear gráfico de barras por tipoRestriccion
         if "tipoRestriccion" in df.columns:
             fig = px.histogram(
                 df,
@@ -357,6 +350,15 @@ def generar_respuesta(pregunta):
             fig = None
         
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, fig
+
+    if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
+        df = df_restricciones.copy()
+        if proyecto_norm:
+            df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
+        
+
 
     if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
         df = df_sostenibilidad.copy()
@@ -433,4 +435,5 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b6b6b;text-align:center;'>© Constructora Marval — Todos los derechos reservados</p>",
     unsafe_allow_html=True
 )
+
 
