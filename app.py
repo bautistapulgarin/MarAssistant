@@ -6,6 +6,7 @@ import re
 import unicodedata
 import time
 import base64
+import os
 
 # -----------------------------
 # Configuración general
@@ -13,26 +14,133 @@ import base64
 st.set_page_config(page_title="Mar Assistant", layout="wide", page_icon="🌊", initial_sidebar_state="expanded")
 
 # -----------------------------
-# Título estilizado
+# Variables de paleta (UX / BI)
 # -----------------------------
-st.markdown("""
-    <h1 style="color:#1E90FF; font-size:50px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
-        Hola, soy Mar 🌊
-    </h1>
-    <h3 style="color:#1B1F3B; font-size:22px;">
-        Asistente para el seguimiento y control de los proyectos de la Constructora Marval
-    </h3>
+PALETTE = {
+    "primary": "#154872",   # profundo
+    "accent": "#5DC0DC",    # cyan claro
+    "muted": "#437FAC",     # azul intermedio
+    "bg": "#D9DCE1"         # gris azulado suave
+}
+
+# -----------------------------
+# CSS global para UI (UX-friendly)
+# -----------------------------
+st.markdown(f"""
+<style>
+:root {{
+    --mar-primary: {PALETTE['primary']};
+    --mar-accent: {PALETTE['accent']};
+    --mar-muted: {PALETTE['muted']};
+    --mar-bg: {PALETTE['bg']};
+    --card-radius: 12px;
+}}
+
+body {{
+    background-color: var(--mar-bg);
+}}
+
+header .title {{
+    margin: 0;
+}}
+
+.stApp {{
+    padding-top: 16px;
+}}
+
+/* Inputs */
+.stTextInput > div > div > input {{
+    background-color: white;
+    border: 1px solid rgba(21,72,114,0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 15px;
+}}
+
+/* Botones */
+.stButton button {{
+    background-color: var(--mar-primary);
+    color: white;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    border: none;
+}}
+.stButton button:hover {{
+    background-color: var(--mar-muted);
+}}
+
+/* Tarjeta de resultado */
+.mar-card {{
+    background-color: white;
+    padding: 18px;
+    border-radius: var(--card-radius);
+    box-shadow: 0 6px 18px rgba(21,72,114,0.07);
+    margin-bottom: 18px;
+}}
+
+/* Títulos y textos */
+.mar-title {{
+    color: var(--mar-primary);
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}}
+.mar-subtitle {{
+    color: #2E3A49;
+    font-size: 14px;
+    margin-top: 0;
+    margin-bottom: 8px;
+}}
+
+/* Logo sizing */
+.mar-logo {{
+    max-width: 140px;
+    height: auto;
+}}
+
+/* Sidebar refinamiento */
+[data-testid="stSidebar"] {{
+    background-color: white;
+    border-radius: 12px;
+    padding: 16px;
+}}
+</style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Subida de archivos
+# Header con logo (UX: logo + título)
+# -----------------------------
+logo_path = os.path.join("assets", "logoMar.png")  # ruta relativa: assets/logoMar.png
+
+# Crear layout del header: logo a la izquierda, texto a la derecha
+col1, col2 = st.columns([1, 6], gap="small")
+with col1:
+    if os.path.exists(logo_path):
+        st.image(logo_path, use_column_width=False, width=110, caption=None)
+    else:
+        # Si no existe el logo, mostrar aviso discreto
+        st.warning("Logo no encontrado en assets/logoMar.png")
+
+with col2:
+    st.markdown(f"""
+    <div class="mar-card" style="padding:12px 18px;">
+        <div style="display:flex; flex-direction:column; justify-content:center;">
+            <div class="mar-title">Sistema Integrado de Control de Proyectos</div>
+            <div class="mar-subtitle">Plataforma para gestión de información estratégica — Constructora Marval</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# -----------------------------
+# Sidebar: carga de archivos y ayuda
 # -----------------------------
 st.sidebar.subheader("Sube los archivos necesarios")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel", type=["xlsx"])
-img_file = st.sidebar.file_uploader("Sube la imagen de carga", type=["png", "jpg", "jpeg"])
+img_file = st.sidebar.file_uploader("Sube la imagen de carga (opcional)", type=["png", "jpg", "jpeg"])
 
 # -----------------------------
-# Splash fullscreen
+# Splash fullscreen (opcional) - mantiene tu lógica
 # -----------------------------
 placeholder = st.empty()
 if img_file:
@@ -59,10 +167,10 @@ if img_file:
     time.sleep(0.5)
     placeholder.empty()
 else:
-    st.info("Sube la imagen de carga para mostrar splash screen")
+    st.info("Sube la imagen de carga para mostrar splash screen (opcional)")
 
 # -----------------------------
-# Lectura de Excel
+# Lectura de Excel (mantener lógica)
 # -----------------------------
 if excel_file:
     try:
@@ -87,7 +195,7 @@ else:
     st.stop()
 
 # -----------------------------
-# Normalización de texto
+# Normalización de texto (mantener lógica)
 # -----------------------------
 def normalizar_texto(texto):
     texto = str(texto).lower()
@@ -131,7 +239,7 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
-# Cargos válidos
+# Cargos válidos (mantener)
 # -----------------------------
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Compras y Suministros", "Analista de Programación", "Arquitecto",
@@ -150,7 +258,7 @@ CARGOS_VALIDOS = [
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
-# Función de respuesta
+# Función de respuesta (mantener)
 # -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
@@ -248,10 +356,10 @@ pregunta = st.text_input("Escribe tu pregunta aquí:")
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    st.markdown(f"<p style='color:#333333'>{texto}</p>", unsafe_allow_html=True)
+    # Mostrar resultado en tarjeta
+    st.markdown(f"<div class='mar-card'><p style='color:var(--mar-primary); font-weight:700; margin:0 0 8px 0;'>{texto}</p></div>", unsafe_allow_html=True)
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
         st.dataframe(
             resultado.style.set_properties(**{'background-color': 'white', 'color': '#333333'}),
             use_container_width=True
         )
-
