@@ -349,15 +349,14 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# INTERFAZ: entrada y despliegue
+# INTERFAZ: input + botón al lado (Streamlit nativo)
 # -----------------------------
 st.markdown(
     f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
-    '<p style="margin:6px 0 0 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
+    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
     unsafe_allow_html=True
 )
 
-# --- CAMBIO PRINCIPAL: input + botón al lado ---
 col_input, col_button = st.columns([5, 1])
 with col_input:
     pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
