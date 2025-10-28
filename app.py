@@ -7,7 +7,6 @@ import unicodedata
 import matplotlib.pyplot as plt
 import time
 import base64
-import whisper
 
 # -----------------------------
 # Configuración general
@@ -192,46 +191,14 @@ def generar_respuesta(pregunta):
         df_res = df_restricciones[df_restricciones["Proyecto_norm"] == proyecto_norm]
         return f"📑 Información general del proyecto **{proyecto}**:", {"Avance": df_a, "Responsables": df_r, "Restricciones": df_res}
 
-    # DEL GERENTE
-    elif "del gerente" in pregunta_norm:
-        palabras = pregunta.split()
-        nombre_gerente = " ".join(palabras[palabras.index("gerente")+1:]).strip()
-        if not nombre_gerente:
-            return "❌ No detecté el nombre del gerente. Intenta con: 'dame la información del gerente de proyectos [NOMBRE]'", None
-        df_g = df_responsables[
-            (df_responsables["Cargo"].str.lower().str.contains("gerente de proyectos")) &
-            (df_responsables["Responsable"].str.lower().str.contains(nombre_gerente.lower()))
-        ]
-        if df_g.empty:
-            return f"❌ No encontré proyectos asociados al gerente '{nombre_gerente}'.", None
-        proyectos_gerente = df_g["Proyecto_norm"].unique()
-        resultados = {}
-        respuesta = f"📑 Información general de proyectos a cargo del Gerente **{nombre_gerente}**:\n\n"
-        for p_norm in proyectos_gerente:
-            p_real = projects_map.get(p_norm, p_norm)
-            df_a = df_avance[df_avance["Proyecto_norm"] == p_norm]
-            df_r = df_responsables[df_responsables["Proyecto_norm"] == p_norm]
-            df_res = df_restricciones[df_restricciones["Proyecto_norm"] == p_norm]
-            resultados[f"Avance - {p_real}"] = df_a
-            resultados[f"Responsables - {p_real}"] = df_r
-            resultados[f"Restricciones - {p_real}"] = df_res
-            respuesta += f"\n---\n📌 **Proyecto: {p_real}**\n"
-        return respuesta, resultados
-
     else:
-        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones', 'información general' o 'del gerente'.", None
+        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones' o 'información general'.", None
 
 # -----------------------------
 # Entrada de usuario
 # -----------------------------
 st.subheader("💬 Haz tu consulta por teclado")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
-
-# Modelo Whisper (solo si quieres procesar texto)
-@st.cache_resource
-def cargar_modelo():
-    return whisper.load_model("base")
-model = cargar_modelo()
 
 # -----------------------------
 # Procesar pregunta y mostrar resultados con filtros
