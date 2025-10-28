@@ -129,14 +129,62 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
-# Función de respuesta
+# Cargos válidos (igual que antes)
+# -----------------------------
+CARGOS_VALIDOS = [
+    "Analista de compras", "Analista de Compras y Suministros", "Analista de Programación", "Arquitecto",
+    "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
+    "Coordinador Eléctrico", "Coordinador Logístico", "Coordinador SIG", "Coordinadora de pilotaje",
+    "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
+    "Diseñador estructural", "Diseñador externo", "Equipo MARVAL", "Gerente de proyectos",
+    "Ingeniera Eléctrica", "Ingeniero Ambiental", "Ingeniero de Contratación", "Ingeniero electromecánico",
+    "Ingeniero FCA", "Ingeniero FCA #2", "Ingeniero Lean", "Ingeniero Lean 3", "Profesional SYST",
+    "Programador de obra", "Programador de obra #2", "Practicante de Interventoría #1",
+    "Practicante Lean", "Residente", "Residente #2", "Residente Administrativo de Equipos",
+    "Residente auxiliar", "Residente Auxiliar #2", "Residente Auxiliar #3", "Residente Auxiliar #4",
+    "Residente de acabados", "Residente de acabados #2", "Residente de control e interventoría",
+    "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
+]
+CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
+
+# -----------------------------
+# Función de respuesta (actualizada para distinguir los casos)
 # -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
 
-    # AVANCE
-    if "avance" in pregunta_norm and "avance de obra" not in pregunta_norm :
+    # Palabras clave específicas para avance en diseño (tabla completa)
+    diseño_keywords = [
+        "avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
+        "avance de diseno", "avance de diseño", "diseno", "diseño"
+    ]
+
+    # Palabras clave específicas para avance de obra
+    obra_keywords = [
+        "avance de obra", "avance obra", "avance en obra"
+    ]
+
+    # 1) AVANCE EN DISEÑO -> mostrar AvanceDiseño (tabla completa, sin filtro)
+    if any(k in pregunta_norm for k in diseño_keywords):
+        # Evitar que preguntas como "quien es el diseñador" entren aquí por accidente:
+        # comprobamos que además exista la palabra "avance" o que la pregunta sea exactamente "diseño"/"diseno"
+        if ("avance" in pregunta_norm) or (pregunta_norm.strip() in ["diseno", "diseño"]):
+            if df_avance_diseno.empty:
+                return "❌ No hay registros en la hoja AvanceDiseño.", None
+            return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
+
+    # 2) AVANCE DE OBRA -> mostrar Avance (con filtro por proyecto si corresponde)
+    if any(k in pregunta_norm for k in obra_keywords) or ("avance de obra" in pregunta_norm):
+        df = df_avance.copy()
+        if proyecto_norm:
+            df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
+        return f"📊 Avance de obra en {proyecto or 'todos'}:", df
+
+    # 3) AVANCE genérico (si contiene "avance" pero no coincide con diseño específico)
+    if "avance" in pregunta_norm:
         df = df_avance.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -144,23 +192,27 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
         return f"📊 Avances en {proyecto or 'todos'}:", df
 
-    # DISEÑO (Muestra tabla completa sin filtro)
-    elif "diseno" in pregunta_norm or "avance en diseño" in pregunta_norm:
-        if df_avance_diseno.empty:
-            return "❌ No hay registros en la hoja AvanceDiseño.", None
-        return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
-
     # RESPONSABLES
-    elif "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
+    if "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
         df = df_responsables.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
+        cargo_encontrado = None
+        for cargo_norm, cargo_real in CARGOS_VALIDOS_NORM.items():
+            if cargo_norm in pregunta_norm:
+                cargo_encontrado = cargo_real
+                break
+        if cargo_encontrado:
+            df = df[df["Cargo"].astype(str).str.lower().str.contains(cargo_encontrado.lower(), na=False)]
+            if df.empty:
+                return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
+            return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
         if df.empty:
             return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
 
     # RESTRICCIONES
-    elif "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
+    if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
         df = df_restricciones.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -169,7 +221,7 @@ def generar_respuesta(pregunta):
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
 
     # SOSTENIBILIDAD
-    elif any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
+    if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
         df = df_sostenibilidad.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -177,8 +229,8 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None
         return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
 
-    else:
-        return "❓ No entendí la pregunta. Intenta con 'avance', 'diseño', 'responsable', 'restricciones' o 'sostenibilidad'.", None
+    # fallback
+    return "❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', 'responsable', 'restricciones' o 'sostenibilidad'.", None
 
 # -----------------------------
 # Entrada de usuario
@@ -198,6 +250,3 @@ if st.button("Enviar") and pregunta:
             resultado.style.set_properties(**{'background-color': 'white', 'color': '#333333'}),
             use_container_width=True
         )
-
-
-
