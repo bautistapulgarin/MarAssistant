@@ -346,7 +346,7 @@ def generar_respuesta(pregunta):
 # -----------------------------
 st.markdown(
     f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
-    '<p style="margin:6px 0 0 0;">Escribe tu consulta en lenguaje natural (ej. "avance de obra en Proyecto X" o "¿quién es el responsable?")</p></div>',
+    '<p style="margin:6px 0 0 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
     unsafe_allow_html=True
 )
 
@@ -386,6 +386,7 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
+
 
 
 
