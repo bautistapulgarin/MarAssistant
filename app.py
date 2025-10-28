@@ -8,38 +8,35 @@ import time
 import base64
 
 # -----------------------------
-# Configuración general y tema Light
+# Configuración general
 # -----------------------------
 st.set_page_config(
     page_title="Mar Assistant",
     layout="wide",
     page_icon="🌊",
-    initial_sidebar_state="expanded",
-    menu_items={'About': "Mar Assistant v1.0"}
+    initial_sidebar_state="expanded"
 )
 
-# Forzar estilo Light (fondo blanco y texto gris oscuro)
+# -----------------------------
+# Forzar tema Light y fondo blanco
+# -----------------------------
 st.markdown("""
     <style>
-        /* Fondo general blanco */
-        .stApp { background-color: #FFFFFF; }
-
-        /* Texto general gris oscuro */
-        .stText, .stMarkdown, .stButton>button, .stSelectbox>div>div>div {
-            color: #333333 !important;
-            background-color: #FFFFFF !important;
+        .stApp {
+            background-color: white;
+            color: #333333;
         }
-
-        /* Tablas */
-        .stDataFrame table {
-            color: #333333 !important;
-            background-color: #FFFFFF !important;
+        .stButton>button {
+            background-color: #FFFFFF;
+            color: #333333;
         }
-
-        /* Encabezados de filtros */
-        div[role="listbox"] {
-            color: #333333 !important;
-            background-color: #FFFFFF !important;
+        .stSelectbox>div>div>div>div {
+            background-color: #FFFFFF;
+            color: #333333;
+        }
+        .stTextInput>div>input {
+            background-color: #FFFFFF;
+            color: #333333;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -60,7 +57,7 @@ st.markdown(f"""
         </h1>
         <img src="data:image/png;base64,{logo_b64}" style="height:60px;">
     </div>
-    <h3 style="color:#333333; font-size:20px; font-family:'Georgia', serif; margin-top:10px;">
+    <h3 style="color:#1B1F3B; font-size:20px; font-family:'Georgia', serif; margin-top:10px;">
         Asistente para el seguimiento y control de los proyectos de la Constructora Marval
     </h3>
 """, unsafe_allow_html=True)
@@ -186,7 +183,7 @@ def generar_respuesta(pregunta):
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
         if df.empty:
-            return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
+            return f"⚠️ No hay registros de avance en {proyecto or 'todos'}", None
         return f"📊 Avances en {proyecto or 'todos'}:", df
 
     # RESPONSABLES
@@ -202,10 +199,10 @@ def generar_respuesta(pregunta):
         if cargo_encontrado:
             df = df[df["Cargo"].str.lower().str.contains(cargo_encontrado.lower(), na=False)]
             if df.empty:
-                return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
+                return f"⚠️ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
             return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
         if df.empty:
-            return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
+            return f"👷 No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
 
     # RESTRICCIONES
@@ -214,13 +211,13 @@ def generar_respuesta(pregunta):
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
         if df.empty:
-            return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
+            return f"⚠️ No hay restricciones registradas en {proyecto or 'todos'}", None
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
 
     # INFORMACION GENERAL
     elif "informacion general" in pregunta_norm or "general de" in pregunta_norm:
         if not proyecto_norm:
-            return "❌ No detecté el proyecto. Por favor indica el nombre del proyecto.", None
+            return "⚠️ No detecté el proyecto. Por favor indica el nombre del proyecto.", None
         df_a = df_avance[df_avance["Proyecto_norm"] == proyecto_norm]
         df_r = df_responsables[df_responsables["Proyecto_norm"] == proyecto_norm]
         df_res = df_restricciones[df_restricciones["Proyecto_norm"] == proyecto_norm]
@@ -232,43 +229,43 @@ def generar_respuesta(pregunta):
 # -----------------------------
 # Entrada de usuario
 # -----------------------------
-st.subheader("💬 Haz tu consulta por teclado")
+st.subheader("🎙️ Haz tu consulta por teclado")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
 # -----------------------------
-# Procesar pregunta y mostrar resultados con filtros
+# Procesar pregunta y mostrar resultados con filtros seguros
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    st.markdown(f"<p style='color:#333333'>{texto}</p>", unsafe_allow_html=True)
+    st.markdown(f"<span style='color:#333333'>{texto}</span>", unsafe_allow_html=True)
 
     if isinstance(resultado, pd.DataFrame):
         if "tabla_base" not in st.session_state:
             st.session_state["tabla_base"] = resultado.copy()
         df_tabla = st.session_state["tabla_base"].copy()
 
-        # Filtros
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
-        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique()))
-        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique()))
-        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()))
-        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()))
-        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()))
-        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique()))
+        # Filtros seguros según columnas existentes
+        cols_filtros = {
+            "Sucursal": "Todas",
+            "Cluster": "Todos",
+            "Proyecto": "Todos",
+            "Cargo": "Todos",
+            "Estado": "Todos",
+            "Gerente de proyectos": "Todos"
+        }
+        col_obj = st.columns(len(cols_filtros))
+        filtros_seleccionados = {}
+        for i, (col_name, default) in enumerate(cols_filtros.items()):
+            if col_name in df_tabla.columns:
+                unique_vals = sorted(df_tabla[col_name].dropna().unique())
+                filtros_seleccionados[col_name] = col_obj[i].selectbox(col_name, [default] + unique_vals)
+            else:
+                filtros_seleccionados[col_name] = default
 
-        # Aplicar filtros progresivos
-        if sucursal_sel != "Todas":
-            df_tabla = df_tabla[df_tabla["Sucursal"] == sucursal_sel]
-        if cluster_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Cluster"] == cluster_sel]
-        if proyecto_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Proyecto"] == proyecto_sel]
-        if cargo_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Cargo"] == cargo_sel]
-        if estado_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Estado"] == estado_sel]
-        if gerente_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Responsable"] == gerente_sel]
+        # Aplicar filtros solo a columnas existentes
+        for col_name, valor in filtros_seleccionados.items():
+            if col_name in df_tabla.columns and valor != cols_filtros[col_name]:
+                df_tabla = df_tabla[df_tabla[col_name] == valor]
 
         if st.button("Restablecer filtros"):
             df_tabla = st.session_state["tabla_base"].copy()
