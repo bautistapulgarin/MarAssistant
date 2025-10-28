@@ -348,6 +348,23 @@ def generar_respuesta(pregunta):
         if df.empty:
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
 
+        # ---------------------------
+        # FILTROS COMBOBOX
+        # ---------------------------
+        col_suc, col_tipo = st.columns(2)
+        with col_suc:
+            if "Sucursal" in df.columns:
+                sucursales = ["Todos"] + sorted(df["Sucursal"].dropna().unique().tolist())
+                selected_sucursal = st.selectbox("Filtrar por Sucursal", sucursales)
+                if selected_sucursal != "Todos":
+                    df = df[df["Sucursal"] == selected_sucursal]
+        with col_tipo:
+            if "tipoRestriccion" in df.columns:
+                tipos = ["Todos"] + sorted(df["tipoRestriccion"].dropna().unique().tolist())
+                selected_tipo = st.selectbox("Filtrar por Tipo de Restricción", tipos)
+                if selected_tipo != "Todos":
+                    df = df[df["tipoRestriccion"] == selected_tipo]
+
         # Generar gráfico si plotly disponible
         grafico = None
         if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
@@ -412,31 +429,6 @@ if enviar and pregunta:
     if grafico:
         st.plotly_chart(grafico, use_container_width=True)
 
-    if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-        max_preview = 200
-        if len(resultado) > max_preview:
-            st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
-            df_preview = resultado.head(max_preview)
-        else:
-            df_preview = resultado
-
-        styled_df = df_preview.style.set_table_styles([
-            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
-            {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
-                                         ('color', 'white'),
-                                         ('font-weight', 'bold')]},
-        ])
-        st.dataframe(styled_df, use_container_width=True)
-
-# -----------------------------
-# FOOTER
-# -----------------------------
-st.markdown(
-    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
-    unsafe_allow_html=True
-)
-
-
-
-
-
+    # Mostrar tabla
+    if resultado is not None:
+        st.dataframe(resultado, use_container_width=True)
