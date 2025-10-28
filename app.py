@@ -44,7 +44,7 @@ st.markdown(f"""
     }}
     /* Background */
     .stApp {{
-        background-color: var(--mar-bg);
+        background-color: #ffffff;
         color: #1b2635;
     }}
     /* Header box */
@@ -387,6 +387,7 @@ if enviar and pregunta:
 # FOOTER
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
+
 
 
 
