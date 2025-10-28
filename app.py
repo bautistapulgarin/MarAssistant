@@ -112,17 +112,21 @@ st.markdown(f"""
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
+# -----------------------------
+# HEADER: logo + titles
+# -----------------------------
+logo_path = os.path.join("assets", "logoMar.png")
+
 # Header layout: small col for logo, rest for titles
 col_logo, col_title = st.columns([0.14, 0.86], gap="small")
 with col_logo:
     if os.path.exists(logo_path):
-        # Use width to avoid huge logo; responsive enough
         try:
             logo_img = Image.open(logo_path)
-            st.image(logo_img, use_container_width=True)
+            # Controlar el tamaño del logo manualmente
+            st.image(logo_img, width=130)  # Puedes ajustar entre 110 y 150 para igualar el tamaño del título
         except Exception:
-            # fallback in case PIL fails
-            st.image(logo_path, use_container_width=True)
+            st.image(logo_path, width=130)
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
 
@@ -140,6 +144,7 @@ with col_title:
     )
 
 st.write("")  # spacing
+
 
 # -----------------------------
 # SIDEBAR: Uploads y ayuda
@@ -406,3 +411,4 @@ if enviar and pregunta:
 # FOOTER - info de version ligera
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
+
