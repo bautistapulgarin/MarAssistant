@@ -18,46 +18,16 @@ st.set_page_config(
 )
 
 # -----------------------------
-# Estilos globales: fondo blanco y letras gris oscuro
+# Estilo visual (fondo blanco y textos gris oscuro)
 # -----------------------------
 st.markdown("""
     <style>
-        /* Fondo de toda la app */
         .stApp {
-            background-color: #ffffff;
-            color: #2E2E2E;
+            background-color: white;
+            color: #333333;
         }
-
-        /* Títulos, textos y subheaders */
-        .stText, .stMarkdown, .stSubheader, .stHeader {
-            color: #2E2E2E !important;
-        }
-
-        /* Inputs, selectbox, textarea, text_input */
-        .stTextInput>div>div>input, 
-        .stSelectbox>div>div>div>select, 
-        .stTextArea>div>div>textarea {
-            background-color: #ffffff;
-            color: #2E2E2E;
-        }
-
-        /* Botones */
-        .stButton>button {
-            color: #2E2E2E;
-            background-color: #f0f0f0;
-            border: 1px solid #d9d9d9;
-        }
-
-        /* Tablas */
-        div.stDataFrame div.row_widget.stDataFrame {
-            background-color: #ffffff;
-            color: #2E2E2E;
-        }
-
-        /* Sidebar */
-        .css-1d391kg {
-            background-color: #ffffff;
-            color: #2E2E2E;
+        .css-1d391kg p, .css-1d391kg span {
+            color: #333333;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -125,11 +95,11 @@ else:
 # -----------------------------
 if excel_file:
     try:
-        df_avance = pd.read_excel(excel_file, sheet_name="Avance", engine="openpyxl")
+        df_avance = pd.read_excel(excel_file, sheet_name="Avance")
         excel_file.seek(0)
-        df_responsables = pd.read_excel(excel_file, sheet_name="Responsables", engine="openpyxl")
+        df_responsables = pd.read_excel(excel_file, sheet_name="Responsables")
         excel_file.seek(0)
-        df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones", engine="openpyxl")
+        df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones")
         st.sidebar.success("✅ Hojas cargadas correctamente")
     except Exception as e:
         st.sidebar.error(f"Error al leer hojas: {e}")
@@ -244,39 +214,13 @@ def generar_respuesta(pregunta):
         df_res = df_restricciones[df_restricciones["Proyecto_norm"] == proyecto_norm]
         return f"📑 Información general del proyecto **{proyecto}**:", {"Avance": df_a, "Responsables": df_r, "Restricciones": df_res}
 
-    # DEL GERENTE
-    elif "del gerente" in pregunta_norm:
-        palabras = pregunta.split()
-        nombre_gerente = " ".join(palabras[palabras.index("gerente")+1:]).strip()
-        if not nombre_gerente:
-            return "❌ No detecté el nombre del gerente. Intenta con: 'dame la información del gerente de proyectos [NOMBRE]'", None
-        df_g = df_responsables[
-            (df_responsables["Cargo"].str.lower().str.contains("gerente de proyectos")) &
-            (df_responsables["Responsable"].str.lower().str.contains(nombre_gerente.lower()))
-        ]
-        if df_g.empty:
-            return f"❌ No encontré proyectos asociados al gerente '{nombre_gerente}'.", None
-        proyectos_gerente = df_g["Proyecto_norm"].unique()
-        resultados = {}
-        respuesta = f"📑 Información general de proyectos a cargo del Gerente **{nombre_gerente}**:\n\n"
-        for p_norm in proyectos_gerente:
-            p_real = projects_map.get(p_norm, p_norm)
-            df_a = df_avance[df_avance["Proyecto_norm"] == p_norm]
-            df_r = df_responsables[df_responsables["Proyecto_norm"] == p_norm]
-            df_res = df_restricciones[df_restricciones["Proyecto_norm"] == p_norm]
-            resultados[f"Avance - {p_real}"] = df_a
-            resultados[f"Responsables - {p_real}"] = df_r
-            resultados[f"Restricciones - {p_real}"] = df_res
-            respuesta += f"\n---\n📌 **Proyecto: {p_real}**\n"
-        return respuesta, resultados
-
     else:
-        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones', 'información general' o 'del gerente'.", None
+        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones' o 'información general'.", None
 
 # -----------------------------
-# Entrada de usuario (solo teclado)
+# Entrada de usuario
 # -----------------------------
-st.subheader("📝 Haz tu consulta por teclado")
+st.subheader("🎙️ Haz tu consulta por teclado")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
 # -----------------------------
@@ -286,41 +230,37 @@ if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
     st.write(texto)
 
+    # Si el resultado es un DataFrame simple (Avance, Responsables o Restricciones)
     if isinstance(resultado, pd.DataFrame):
-        if "tabla_base" not in st.session_state:
-            st.session_state["tabla_base"] = resultado.copy()
-        df_tabla = st.session_state["tabla_base"].copy()
+        df_tabla = resultado.copy()  # Tomamos solo la tabla correspondiente
 
-        # Verificar columnas antes de crear selectboxes
-        col_names = df_tabla.columns.str.lower().tolist()
+        # Filtros solo si existen las columnas
+        cols = df_tabla.columns.str.lower()
         col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique())) if "sucursal" in col_names else "Todas"
-        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique())) if "cluster" in col_names else "Todos"
-        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique())) if "proyecto" in col_names else "Todos"
-        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique())) if "cargo" in col_names else "Todos"
-        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique())) if "estado" in col_names else "Todos"
-        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique())) if "responsable" in col_names else "Todos"
+        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique())) if "sucursal" in cols else "Todas"
+        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique())) if "cluster" in cols else "Todos"
+        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique())) if "proyecto" in cols else "Todos"
+        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique())) if "cargo" in cols else "Todos"
+        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique())) if "estado" in cols else "Todos"
+        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique())) if "responsable" in cols else "Todos"
 
         # Aplicar filtros progresivos
-        if sucursal_sel != "Todas" and "Sucursal" in df_tabla.columns:
+        if sucursal_sel != "Todas":
             df_tabla = df_tabla[df_tabla["Sucursal"] == sucursal_sel]
-        if cluster_sel != "Todos" and "Cluster" in df_tabla.columns:
+        if cluster_sel != "Todos":
             df_tabla = df_tabla[df_tabla["Cluster"] == cluster_sel]
-        if proyecto_sel != "Todos" and "Proyecto" in df_tabla.columns:
+        if proyecto_sel != "Todos":
             df_tabla = df_tabla[df_tabla["Proyecto"] == proyecto_sel]
-        if cargo_sel != "Todos" and "Cargo" in df_tabla.columns:
+        if cargo_sel != "Todos":
             df_tabla = df_tabla[df_tabla["Cargo"] == cargo_sel]
-        if estado_sel != "Todos" and "Estado" in df_tabla.columns:
+        if estado_sel != "Todos":
             df_tabla = df_tabla[df_tabla["Estado"] == estado_sel]
-        if gerente_sel != "Todos" and "Responsable" in df_tabla.columns:
+        if gerente_sel != "Todos":
             df_tabla = df_tabla[df_tabla["Responsable"] == gerente_sel]
-
-        if st.button("Restablecer filtros"):
-            df_tabla = st.session_state["tabla_base"].copy()
 
         st.dataframe(df_tabla, use_container_width=True)
 
+    # Si el resultado es un diccionario (información general por proyecto)
     elif isinstance(resultado, dict):
         for nombre, df_out in resultado.items():
             if not df_out.empty:
