@@ -26,7 +26,7 @@ PALETTE = {
     "primary": "#154872",
     "accent": "#5DC0DC",
     "muted": "#437FAC",
-    "bg": "#D9DCE1"
+    "bg": "#ffffff"  # Fondo blanco
 }
 
 # -----------------------------
@@ -41,37 +41,38 @@ st.markdown(f"""
     --mar-bg: {PALETTE['bg']};
     --card-radius: 12px;
     --card-padding: 16px;
-    --title-size: 28px;
+    --title-size: 36px;  /* Título más grande */
 }}
 .stApp {{
     background-color: var(--mar-bg);
     color: #1b2635;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }}
 .header-box {{
     background-color: white;
-    padding: 16px;
+    padding: 20px;
     border-radius: var(--card-radius);
-    box-shadow: 0 6px 18px rgba(21,72,114,0.06);
+    box-shadow: 0 8px 20px rgba(21,72,114,0.08);
     display: flex;
     align-items: center;
 }}
 .header-text {{
-    margin-left: 16px;
+    margin-left: 20px;
 }}
 .title {{
     color: var(--mar-primary);
     font-size: var(--title-size);
-    font-weight: 700;
+    font-weight: 800;
     margin: 0;
+    font-family: 'Roboto Slab', serif;  /* Tipografía más corporativa y elegante */
 }}
 .subtitle {{
     color: #34495e;
-    font-size: 14px;
-    margin: 0;
+    font-size: 16px;
+    margin: 4px 0 0 0;
 }}
 .logo-header img {{
-    height: 100px;
+    height: 110px;
     width: auto;
 }}
 .mar-card {{
@@ -389,6 +390,6 @@ if enviar and pregunta:
 # FOOTER
 # -----------------------------
 st.markdown(
-    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.1</p>",
+    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
