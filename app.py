@@ -109,7 +109,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# -----------------------------
 # HEADER: logo + titles
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
@@ -138,21 +137,6 @@ if os.path.exists(logo_path):
 else:
     st.warning("Logo no encontrado en assets/logoMar.png")
 
-
-with col_title:
-    st.markdown(
-        f"""
-        <div class="header-box">
-            <div class="header-text">
-                <p class="title">Sistema Integrado de Control de Proyectos</p>
-                <p class="subtitle">Plataforma de consolidación y consulta — Constructora Marval</p>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-st.write("")
 
 # -----------------------------
 # SIDEBAR: Uploads y ayuda
@@ -402,4 +386,5 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
+
 
