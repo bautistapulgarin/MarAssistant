@@ -66,11 +66,15 @@ else:
 # -----------------------------
 if excel_file:
     try:
+        # Leer las hojas necesarias
+        excel_file.seek(0)
         df_avance = pd.read_excel(excel_file, sheet_name="Avance")
         excel_file.seek(0)
         df_responsables = pd.read_excel(excel_file, sheet_name="Responsables")
         excel_file.seek(0)
         df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones")
+        excel_file.seek(0)
+        df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
         st.sidebar.success("✅ Hojas cargadas correctamente")
     except Exception as e:
         st.sidebar.error(f"Error al leer hojas: {e}")
@@ -91,23 +95,35 @@ def normalizar_texto(texto):
 def quitar_tildes(texto):
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
 
-for df in [df_avance, df_responsables, df_restricciones]:
+# Asegurarse de que la columna 'Proyecto' exista en cada df
+for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
+                    ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
+    if "Proyecto" not in df.columns:
+        st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
+        st.stop()
+
+# Normalizar la columna 'Proyecto' en cada dataframe
+for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
     df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
+# Construir el mapa de proyectos a partir de todas las hojas
 all_projects = pd.concat([
     df_avance["Proyecto"].astype(str),
     df_responsables["Proyecto"].astype(str),
-    df_restricciones["Proyecto"].astype(str)
+    df_restricciones["Proyecto"].astype(str),
+    df_sostenibilidad["Proyecto"].astype(str)
 ]).dropna().unique()
 
 projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
 
 def extraer_proyecto(texto):
     texto_norm = quitar_tildes(normalizar_texto(texto))
+    # Buscar coincidencias exactas usando patrones para evitar subcoincidencias no deseadas
     for norm in sorted(projects_map.keys(), key=len, reverse=True):
         pattern = rf'(^|\W){re.escape(norm)}($|\W)'
         if re.search(pattern, texto_norm, flags=re.UNICODE):
             return projects_map[norm], norm
+    # Si no hubo match exacto, buscar por inclusión
     for norm in sorted(projects_map.keys(), key=len, reverse=True):
         if norm in texto_norm:
             return projects_map[norm], norm
@@ -159,7 +175,8 @@ def generar_respuesta(pregunta):
                 cargo_encontrado = cargo_real
                 break
         if cargo_encontrado:
-            df = df[df["Cargo"].str.lower().str.contains(cargo_encontrado.lower(), na=False)]
+            # Buscar por cargo (sin depender exactamente de mayúsculas)
+            df = df[df["Cargo"].astype(str).str.lower().str.contains(cargo_encontrado.lower(), na=False)]
             if df.empty:
                 return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
             return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
@@ -176,8 +193,17 @@ def generar_respuesta(pregunta):
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
 
+    # SOSTENIBILIDAD (palabras clave multiple)
+    elif any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
+        df = df_sostenibilidad.copy()
+        if proyecto_norm:
+            df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None
+        return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
+
     else:
-        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable' o 'restricciones'.", None
+        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones' o 'sostenibilidad'.", None
 
 # -----------------------------
 # Entrada de usuario
