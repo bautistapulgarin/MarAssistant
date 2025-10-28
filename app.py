@@ -18,19 +18,59 @@ st.set_page_config(
 )
 
 # -----------------------------
-# Estilo visual (fondo blanco y textos gris oscuro)
+# Estilo visual uniforme: fondo blanco y texto gris oscuro
 # -----------------------------
 st.markdown("""
     <style>
+        /* Fondo general de la app */
         .stApp {
             background-color: white;
-            color: #333333;
         }
-        .css-1d391kg p, .css-1d391kg span {
-            color: #333333;
+
+        /* Filtros (selectbox) */
+        div.stSelectbox div[role="combobox"] > div {
+            background-color: white !important;
+            color: #333333 !important;
+        }
+
+        /* Botones */
+        div.stButton > button {
+            background-color: white !important;
+            color: #333333 !important;
+            border: 1px solid #ccc !important;
+        }
+        div.stButton > button:hover {
+            background-color: #f0f0f0 !important;
+        }
+
+        /* Tablas */
+        .stDataFrame div[data-testid="stMarkdownContainer"] {
+            color: #333333 !important;
+            background-color: white !important;
+        }
+        .stDataFrame table {
+            background-color: white !important;
+            color: #333333 !important;
+        }
+        .stDataFrame th {
+            background-color: #f7f7f7 !important;
+            color: #333333 !important;
+        }
+
+        /* Inputs de texto */
+        div.stTextInput input {
+            background-color: white !important;
+            color: #333333 !important;
         }
     </style>
 """, unsafe_allow_html=True)
+
+
+
+
+
+
+
 
 # -----------------------------
 # Logo y título estilizado
@@ -266,3 +306,4 @@ if st.button("Enviar") and pregunta:
             if not df_out.empty:
                 st.subheader(nombre)
                 st.dataframe(df_out, use_container_width=True)
+
