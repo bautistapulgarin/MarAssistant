@@ -41,7 +41,8 @@ st.markdown(f"""
     --mar-bg: {PALETTE['bg']};
     --card-radius: 12px;
     --card-padding: 16px;
-    --title-size: 36px;  /* Título más grande */
+    --title-size: 48px;       /* Título principal más grande */
+    --subtitle-size: 20px;    /* Subtítulo más grande */
 }}
 .stApp {{
     background-color: var(--mar-bg);
@@ -64,11 +65,11 @@ st.markdown(f"""
     font-size: var(--title-size);
     font-weight: 800;
     margin: 0;
-    font-family: 'Roboto Slab', serif;  /* Tipografía más corporativa y elegante */
+    font-family: 'Roboto Slab', serif;
 }}
 .subtitle {{
     color: #34495e;
-    font-size: 16px;
+    font-size: var(--subtitle-size);
     margin: 4px 0 0 0;
 }}
 .logo-header img {{
@@ -107,6 +108,7 @@ st.markdown(f"""
 }}
 </style>
 """, unsafe_allow_html=True)
+
 
 # -----------------------------
 # HEADER: logo + titles
@@ -393,3 +395,4 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
+
