@@ -23,91 +23,87 @@ st.set_page_config(
 # PALETA DE COLORES (UX / BI)
 # -----------------------------
 PALETTE = {
-    "primary": "#154872",   # profundo
-    "accent": "#5DC0DC",    # cyan claro
-    "muted": "#437FAC",     # azul intermedio
-    "bg": "#D9DCE1"         # gris azulado suave
+    "primary": "#154872",
+    "accent": "#5DC0DC",
+    "muted": "#437FAC",
+    "bg": "#D9DCE1"
 }
 
 # -----------------------------
 # CSS GLOBAL (UX friendly)
 # -----------------------------
 st.markdown(f"""
-    <style>
-    :root {{
-        --mar-primary: {PALETTE['primary']};
-        --mar-accent: {PALETTE['accent']};
-        --mar-muted: {PALETTE['muted']};
-        --mar-bg: {PALETTE['bg']};
-        --card-radius: 12px;
-        --card-padding: 16px;
-        --title-size: 28px;
-    }}
-    .stApp {{
-        background-color: #ffffff;
-        color: #1b2635;
-        font-family: 'Arial', sans-serif;
-    }}
-    /* Header */
-    .header-box {{
-        background-color: white;
-        padding: 16px 24px;
-        border-radius: 12px;
-        box-shadow: 0 6px 18px rgba(21,72,114,0.08);
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }}
-    .title {{
-        font-size: var(--title-size);
-        font-weight: 800;
-        margin: 0;
-    }}
-    .subtitle {{
-        font-size: 14px;
-        color: #607d8b;
-        margin-top: 4px;
-    }}
-    .logo-header img {{
-        height: 80px;
-        width: auto;
-        border-radius: 8px;
-    }}
-    /* Card */
-    .mar-card {{
-        background-color: white;
-        padding: var(--card-padding);
-        border-radius: var(--card-radius);
-        box-shadow: 0 6px 18px rgba(21,72,114,0.06);
-        margin-bottom: 16px;
-    }}
-    /* Inputs */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea {{
-        background-color: white;
-        border: 1px solid rgba(21,72,114,0.12);
-        border-radius: 8px;
-        padding: 10px 12px;
-        font-size: 14px;
-    }}
-    /* Buttons */
-    .stButton>button {{
-        background-color: var(--mar-primary);
-        color: white;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-weight: 600;
-        border: none;
-    }}
-    .stButton>button:hover {{
-        background-color: var(--mar-muted);
-    }}
-    /* Sidebar */
-    [data-testid="stSidebar"] {{
-        background-color: white;
-        padding: 16px;
-        border-radius: 10px;
-    }}
-    </style>
+<style>
+:root {{
+    --mar-primary: {PALETTE['primary']};
+    --mar-accent: {PALETTE['accent']};
+    --mar-muted: {PALETTE['muted']};
+    --mar-bg: {PALETTE['bg']};
+    --card-radius: 12px;
+    --card-padding: 16px;
+    --title-size: 26px;
+}}
+.stApp {{
+    background-color: #ffffff;
+    color: #1b2635;
+}}
+.header-box {{
+    background-color: white;
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(21,72,114,0.06);
+    display: flex;
+    align-items: center;
+}}
+.header-text {{
+    margin-left: 0px;
+}}
+.title {{
+    color: var(--mar-primary);
+    font-size: var(--title-size);
+    font-weight: 700;
+    margin: 0;
+}}
+.subtitle {{
+    color: #34495e;
+    font-size: 14px;
+    margin: 0;
+}}
+.logo-header img {{
+    height: 120px;
+    width: auto;
+}}
+.mar-card {{
+    background-color: white;
+    padding: var(--card-padding);
+    border-radius: var(--card-radius);
+    box-shadow: 0 6px 18px rgba(21,72,114,0.06);
+    margin-bottom: 16px;
+}}
+.stTextInput>div>div>input {{
+    background-color: white;
+    border: 1px solid rgba(21,72,114,0.12);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+}}
+.stButton>button {{
+    background-color: var(--mar-primary);
+    color: white;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    border: none;
+}}
+.stButton>button:hover {{
+    background-color: var(--mar-muted);
+}}
+[data-testid="stSidebar"] {{
+    background-color: white;
+    padding: 16px;
+    border-radius: 10px;
+}}
+</style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
@@ -128,7 +124,7 @@ with col_logo:
                 unsafe_allow_html=True
             )
         except Exception:
-            st.image(logo_path, width=80)
+            st.image(logo_path, width=26)
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
 
@@ -150,10 +146,11 @@ st.write("")
 # -----------------------------
 # SIDEBAR: Uploads y ayuda
 # -----------------------------
-st.sidebar.title("🔹 Herramientas")
+st.sidebar.title("Herramientas")
 st.sidebar.subheader("Cargas")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
 img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
@@ -175,8 +172,7 @@ if img_file:
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s;">
+            z-index: 9999;">
             <div style="text-align:center; padding: 20px; border-radius: 12px;">
                 <img src="data:image/png;base64,{img_b64}" 
                      style="width:160px; max-width:50vw; height:auto; display:block; margin:0 auto;">
@@ -184,7 +180,7 @@ if img_file:
         </div>
         """
         placeholder.markdown(splash_html, unsafe_allow_html=True)
-        time.sleep(1.0)
+        time.sleep(0.5)
         placeholder.empty()
     except Exception:
         placeholder.empty()
@@ -235,8 +231,13 @@ for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
 for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
     df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
-all_projects = pd.concat([df_avance["Proyecto"], df_responsables["Proyecto"],
-                          df_restricciones["Proyecto"], df_sostenibilidad["Proyecto"]]).dropna().unique()
+all_projects = pd.concat([
+    df_avance["Proyecto"].astype(str),
+    df_responsables["Proyecto"].astype(str),
+    df_restricciones["Proyecto"].astype(str),
+    df_sostenibilidad["Proyecto"].astype(str)
+]).dropna().unique()
+
 projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
 
 def extraer_proyecto(texto):
@@ -354,10 +355,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Input más compacto
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
-# Botón de enviar
 enviar = st.button("Enviar", use_container_width=True)
 
 if enviar and pregunta:
@@ -368,21 +367,24 @@ if enviar and pregunta:
     )
 
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-        # Zebra striping para mejorar lectura
-        styled_df = resultado.style.set_table_styles(
-            [{'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]}]
-        )
         max_preview = 200
         if len(resultado) > max_preview:
             st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
-            st.dataframe(styled_df.head(max_preview), use_container_width=True)
+            df_preview = resultado.head(max_preview)
         else:
-            st.dataframe(styled_df, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+            df_preview = resultado
 
+        styled_df = df_preview.style.set_table_styles(
+            [{'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]}]
+        )
+
+        st.dataframe(styled_df, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
 # FOOTER
 # -----------------------------
-st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
-
+st.markdown(
+    "<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>",
+    unsafe_allow_html=True
+)
