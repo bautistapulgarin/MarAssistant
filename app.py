@@ -4,7 +4,6 @@ import streamlit as st
 import pandas as pd
 import re
 import unicodedata
-import matplotlib.pyplot as plt
 import time
 import base64
 
@@ -19,12 +18,46 @@ st.set_page_config(
 )
 
 # -----------------------------
-# Forzar fondo blanco
+# Estilos globales: fondo blanco y letras gris oscuro
 # -----------------------------
 st.markdown("""
     <style>
+        /* Fondo de toda la app */
         .stApp {
-            background-color: white;
+            background-color: #ffffff;
+            color: #2E2E2E;
+        }
+
+        /* Títulos, textos y subheaders */
+        .stText, .stMarkdown, .stSubheader, .stHeader {
+            color: #2E2E2E !important;
+        }
+
+        /* Inputs, selectbox, textarea, text_input */
+        .stTextInput>div>div>input, 
+        .stSelectbox>div>div>div>select, 
+        .stTextArea>div>div>textarea {
+            background-color: #ffffff;
+            color: #2E2E2E;
+        }
+
+        /* Botones */
+        .stButton>button {
+            color: #2E2E2E;
+            background-color: #f0f0f0;
+            border: 1px solid #d9d9d9;
+        }
+
+        /* Tablas */
+        div.stDataFrame div.row_widget.stDataFrame {
+            background-color: #ffffff;
+            color: #2E2E2E;
+        }
+
+        /* Sidebar */
+        .css-1d391kg {
+            background-color: #ffffff;
+            color: #2E2E2E;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -92,11 +125,11 @@ else:
 # -----------------------------
 if excel_file:
     try:
-        df_avance = pd.read_excel(excel_file, sheet_name="Avance")
+        df_avance = pd.read_excel(excel_file, sheet_name="Avance", engine="openpyxl")
         excel_file.seek(0)
-        df_responsables = pd.read_excel(excel_file, sheet_name="Responsables")
+        df_responsables = pd.read_excel(excel_file, sheet_name="Responsables", engine="openpyxl")
         excel_file.seek(0)
-        df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones")
+        df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones", engine="openpyxl")
         st.sidebar.success("✅ Hojas cargadas correctamente")
     except Exception as e:
         st.sidebar.error(f"Error al leer hojas: {e}")
@@ -258,24 +291,30 @@ if st.button("Enviar") and pregunta:
             st.session_state["tabla_base"] = resultado.copy()
         df_tabla = st.session_state["tabla_base"].copy()
 
-        # -----------------------------
-        # Filtros dinámicos según columnas existentes
-        # -----------------------------
-        filtros = {}
-        columnas_filtro = ["Sucursal", "Cluster", "Proyecto", "Cargo", "Estado", "Responsable"]
-        col_objs = st.columns(len(columnas_filtro))
-        
-        for i, col_name in enumerate(columnas_filtro):
-            if col_name in df_tabla.columns:
-                opciones = ["Todos"] + sorted(df_tabla[col_name].dropna().unique())
-                filtros[col_name] = col_objs[i].selectbox(col_name, opciones)
-            else:
-                filtros[col_name] = "Todos"
+        # Verificar columnas antes de crear selectboxes
+        col_names = df_tabla.columns.str.lower().tolist()
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-        # Aplicar filtros
-        for col_name, valor in filtros.items():
-            if valor != "Todos" and col_name in df_tabla.columns:
-                df_tabla = df_tabla[df_tabla[col_name] == valor]
+        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique())) if "sucursal" in col_names else "Todas"
+        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique())) if "cluster" in col_names else "Todos"
+        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique())) if "proyecto" in col_names else "Todos"
+        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique())) if "cargo" in col_names else "Todos"
+        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique())) if "estado" in col_names else "Todos"
+        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique())) if "responsable" in col_names else "Todos"
+
+        # Aplicar filtros progresivos
+        if sucursal_sel != "Todas" and "Sucursal" in df_tabla.columns:
+            df_tabla = df_tabla[df_tabla["Sucursal"] == sucursal_sel]
+        if cluster_sel != "Todos" and "Cluster" in df_tabla.columns:
+            df_tabla = df_tabla[df_tabla["Cluster"] == cluster_sel]
+        if proyecto_sel != "Todos" and "Proyecto" in df_tabla.columns:
+            df_tabla = df_tabla[df_tabla["Proyecto"] == proyecto_sel]
+        if cargo_sel != "Todos" and "Cargo" in df_tabla.columns:
+            df_tabla = df_tabla[df_tabla["Cargo"] == cargo_sel]
+        if estado_sel != "Todos" and "Estado" in df_tabla.columns:
+            df_tabla = df_tabla[df_tabla["Estado"] == estado_sel]
+        if gerente_sel != "Todos" and "Responsable" in df_tabla.columns:
+            df_tabla = df_tabla[df_tabla["Responsable"] == gerente_sel]
 
         if st.button("Restablecer filtros"):
             df_tabla = st.session_state["tabla_base"].copy()
