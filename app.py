@@ -258,28 +258,24 @@ if st.button("Enviar") and pregunta:
             st.session_state["tabla_base"] = resultado.copy()
         df_tabla = st.session_state["tabla_base"].copy()
 
-        # Filtros como encabezado
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
-        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique()))
-        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique()))
-        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()))
-        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()))
-        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()))
-        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique()))
+        # -----------------------------
+        # Filtros dinámicos según columnas existentes
+        # -----------------------------
+        filtros = {}
+        columnas_filtro = ["Sucursal", "Cluster", "Proyecto", "Cargo", "Estado", "Responsable"]
+        col_objs = st.columns(len(columnas_filtro))
+        
+        for i, col_name in enumerate(columnas_filtro):
+            if col_name in df_tabla.columns:
+                opciones = ["Todos"] + sorted(df_tabla[col_name].dropna().unique())
+                filtros[col_name] = col_objs[i].selectbox(col_name, opciones)
+            else:
+                filtros[col_name] = "Todos"
 
-        # Aplicar filtros progresivos
-        if sucursal_sel != "Todas":
-            df_tabla = df_tabla[df_tabla["Sucursal"] == sucursal_sel]
-        if cluster_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Cluster"] == cluster_sel]
-        if proyecto_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Proyecto"] == proyecto_sel]
-        if cargo_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Cargo"] == cargo_sel]
-        if estado_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Estado"] == estado_sel]
-        if gerente_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Responsable"] == gerente_sel]
+        # Aplicar filtros
+        for col_name, valor in filtros.items():
+            if valor != "Todos" and col_name in df_tabla.columns:
+                df_tabla = df_tabla[df_tabla[col_name] == valor]
 
         if st.button("Restablecer filtros"):
             df_tabla = st.session_state["tabla_base"].copy()
