@@ -124,9 +124,9 @@ with col_logo:
         try:
             logo_img = Image.open(logo_path)
             # Controlar el tamaño del logo manualmente
-            st.image(logo_img, width=130)  # Puedes ajustar entre 110 y 150 para igualar el tamaño del título
+            st.image(logo_img, width=100)  # Puedes ajustar entre 110 y 150 para igualar el tamaño del título
         except Exception:
-            st.image(logo_path, width=130)
+            st.image(logo_path, width=100)
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
 
@@ -411,4 +411,5 @@ if enviar and pregunta:
 # FOOTER - info de version ligera
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
+
 
