@@ -4,3 +4,4 @@ matplotlib
 sounddevice
 scipy
 whisper
+openpyxl
