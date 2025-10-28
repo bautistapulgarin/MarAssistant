@@ -4,12 +4,10 @@ import streamlit as st
 import pandas as pd
 import re
 import unicodedata
+import matplotlib.pyplot as plt
 import time
 import base64
 import whisper
-import sounddevice as sd
-from scipy.io.wavfile import write
-import tempfile
 
 # -----------------------------
 # Configuración general
@@ -22,28 +20,15 @@ st.set_page_config(
 )
 
 # -----------------------------
-# Tema Light y estilo de fondo y texto
-# -----------------------------
-st.markdown("""
-<style>
-    .stApp {background-color: white; color: #333333;}
-    .stButton>button {background-color: #FFFFFF; color: #333333;}
-    .stSelectbox>div>div>div>div {background-color: #FFFFFF; color: #333333;}
-    .stTextInput>div>input {background-color: #FFFFFF; color: #333333;}
-    .css-1d391kg p, .css-1d391kg span {color: #333333;}
-</style>
-""", unsafe_allow_html=True)
-
-# -----------------------------
 # Título estilizado
 # -----------------------------
 st.markdown("""
-<h1 style="color:#1E90FF; font-size:50px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
-    Hola, soy Mar 🌊
-</h1>
-<h3 style="color:#1B1F3B; font-size:22px;">
-    Asistente para el seguimiento y control de los proyectos de la Constructora Marval
-</h3>
+    <h1 style="color:#1E90FF; font-size:50px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+        Hola, soy Mar 🌊
+    </h1>
+    <h3 style="color:#1B1F3B; font-size:22px;">
+        Asistente para el seguimiento y control de los proyectos de la Constructora Marval
+    </h3>
 """, unsafe_allow_html=True)
 
 # -----------------------------
@@ -198,38 +183,105 @@ def generar_respuesta(pregunta):
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
 
+    # INFORMACION GENERAL
+    elif "informacion general" in pregunta_norm or "general de" in pregunta_norm:
+        if not proyecto_norm:
+            return "❌ No detecté el proyecto. Por favor indica el nombre del proyecto.", None
+        df_a = df_avance[df_avance["Proyecto_norm"] == proyecto_norm]
+        df_r = df_responsables[df_responsables["Proyecto_norm"] == proyecto_norm]
+        df_res = df_restricciones[df_restricciones["Proyecto_norm"] == proyecto_norm]
+        return f"📑 Información general del proyecto **{proyecto}**:", {"Avance": df_a, "Responsables": df_r, "Restricciones": df_res}
+
+    # DEL GERENTE
+    elif "del gerente" in pregunta_norm:
+        palabras = pregunta.split()
+        nombre_gerente = " ".join(palabras[palabras.index("gerente")+1:]).strip()
+        if not nombre_gerente:
+            return "❌ No detecté el nombre del gerente. Intenta con: 'dame la información del gerente de proyectos [NOMBRE]'", None
+        df_g = df_responsables[
+            (df_responsables["Cargo"].str.lower().str.contains("gerente de proyectos")) &
+            (df_responsables["Responsable"].str.lower().str.contains(nombre_gerente.lower()))
+        ]
+        if df_g.empty:
+            return f"❌ No encontré proyectos asociados al gerente '{nombre_gerente}'.", None
+        proyectos_gerente = df_g["Proyecto_norm"].unique()
+        resultados = {}
+        respuesta = f"📑 Información general de proyectos a cargo del Gerente **{nombre_gerente}**:\n\n"
+        for p_norm in proyectos_gerente:
+            p_real = projects_map.get(p_norm, p_norm)
+            df_a = df_avance[df_avance["Proyecto_norm"] == p_norm]
+            df_r = df_responsables[df_responsables["Proyecto_norm"] == p_norm]
+            df_res = df_restricciones[df_restricciones["Proyecto_norm"] == p_norm]
+            resultados[f"Avance - {p_real}"] = df_a
+            resultados[f"Responsables - {p_real}"] = df_r
+            resultados[f"Restricciones - {p_real}"] = df_res
+            respuesta += f"\n---\n📌 **Proyecto: {p_real}**\n"
+        return respuesta, resultados
+
     else:
-        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable' o 'restricciones'.", None
+        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones', 'información general' o 'del gerente'.", None
 
 # -----------------------------
 # Entrada de usuario
 # -----------------------------
-st.subheader("🎙️ Haz tu consulta por teclado")
+st.subheader("💬 Haz tu consulta por teclado")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
+
+# Modelo Whisper (solo si quieres procesar texto)
+@st.cache_resource
+def cargar_modelo():
+    return whisper.load_model("base")
+model = cargar_modelo()
 
 # -----------------------------
 # Procesar pregunta y mostrar resultados con filtros
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    st.markdown(f"<span style='color:#333333'>{texto}</span>", unsafe_allow_html=True)
+    
+    st.markdown(f"<p style='color:#333333'>{texto}</p>", unsafe_allow_html=True)
 
     if isinstance(resultado, pd.DataFrame):
-        df_tabla = resultado.copy()
+        if "tabla_base" not in st.session_state:
+            st.session_state["tabla_base"] = resultado.copy()
+        df_tabla = st.session_state["tabla_base"].copy()
 
-        # Filtros solo si existen las columnas
-        cols_filtros = ["Sucursal","Cluster","Proyecto","Cargo","Estado","Responsable"]
-        cols_presentes = [c for c in cols_filtros if c in df_tabla.columns]
-        if cols_presentes:
-            col_objects = st.columns(len(cols_presentes))
-            filtros = {}
-            for i, c in enumerate(cols_presentes):
-                unique_vals = sorted(df_tabla[c].dropna().unique())
-                default = "Todos"
-                filtros[c] = col_objects[i].selectbox(c, [default] + unique_vals)
-            # Aplicar filtros
-            for c, val in filtros.items():
-                if val != "Todos":
-                    df_tabla = df_tabla[df_tabla[c]==val]
+        # Filtros como encabezado
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique()))
+        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique()))
+        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()))
+        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()))
+        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()))
+        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique()))
 
-        st.dataframe(df_tabla, use_container_width=True)
+        # Aplicar filtros progresivos
+        if sucursal_sel != "Todas":
+            df_tabla = df_tabla[df_tabla["Sucursal"] == sucursal_sel]
+        if cluster_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Cluster"] == cluster_sel]
+        if proyecto_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Proyecto"] == proyecto_sel]
+        if cargo_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Cargo"] == cargo_sel]
+        if estado_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Estado"] == estado_sel]
+        if gerente_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Responsable"] == gerente_sel]
+
+        if st.button("Restablecer filtros"):
+            df_tabla = st.session_state["tabla_base"].copy()
+
+        st.dataframe(df_tabla.style.set_properties(**{
+            'background-color': 'white',
+            'color': '#333333'
+        }), use_container_width=True)
+
+    elif isinstance(resultado, dict):
+        for nombre, df_out in resultado.items():
+            if not df_out.empty:
+                st.subheader(nombre)
+                st.dataframe(df_out.style.set_properties(**{
+                    'background-color': 'white',
+                    'color': '#333333'
+                }), use_container_width=True)
