@@ -190,42 +190,10 @@ pregunta = st.text_input("Escribe tu pregunta aquí:")
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    
-    # Mensaje de texto
     st.markdown(f"<p style='color:#333333'>{texto}</p>", unsafe_allow_html=True)
 
-    # Mostrar DataFrame con filtros
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-        if "tabla_base" not in st.session_state:
-            st.session_state["tabla_base"] = resultado.copy()
-        
-        df_tabla = st.session_state["tabla_base"].copy()
-
-        # Crear filtros solo si existen las columnas
-        filtros = {}
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-        if "Proyecto" in df_tabla.columns:
-            filtros["Proyecto"] = col1.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()), key="filtro_proyecto")
-        if "Responsable" in df_tabla.columns:
-            filtros["Responsable"] = col2.selectbox("Responsable", ["Todos"] + sorted(df_tabla["Responsable"].dropna().unique()), key="filtro_responsable")
-        if "Cargo" in df_tabla.columns:
-            filtros["Cargo"] = col3.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()), key="filtro_cargo")
-        if "Avance" in df_tabla.columns:
-            filtros["Avance"] = col4.selectbox("Avance", ["Todos"] + sorted(df_tabla["Avance"].dropna().unique()), key="filtro_avance")
-        if "Restricciones" in df_tabla.columns:
-            filtros["Restricciones"] = col5.selectbox("Restricciones", ["Todos"] + sorted(df_tabla["Restricciones"].dropna().unique()), key="filtro_restricciones")
-        if "Estado" in df_tabla.columns:
-            filtros["Estado"] = col6.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()), key="filtro_estado")
-
-        # Aplicar filtros progresivos
-        df_filtrado = df_tabla.copy()
-        for key, value in filtros.items():
-            if value not in ["Todos", "Todas"]:
-                df_filtrado = df_filtrado[df_filtrado[key] == value]
-
-        # Mostrar DataFrame con estilo
-        st.dataframe(df_filtrado.style.set_properties(**{
-            'background-color': 'white',
-            'color': '#333333'
-        }), use_container_width=True)
+        st.dataframe(
+            resultado.style.set_properties(**{'background-color': 'white', 'color': '#333333'}),
+            use_container_width=True
+        )
