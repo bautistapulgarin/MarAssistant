@@ -41,22 +41,23 @@ st.markdown(f"""
     --mar-bg: {PALETTE['bg']};
     --card-radius: 12px;
     --card-padding: 16px;
-    --title-size: 26px;
+    --title-size: 28px;
 }}
 .stApp {{
-    background-color: #ffffff;
+    background-color: var(--mar-bg);
     color: #1b2635;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }}
 .header-box {{
     background-color: white;
-    padding: 12px;
-    border-radius: 10px;
+    padding: 16px;
+    border-radius: var(--card-radius);
     box-shadow: 0 6px 18px rgba(21,72,114,0.06);
     display: flex;
     align-items: center;
 }}
 .header-text {{
-    margin-left: 0px;
+    margin-left: 16px;
 }}
 .title {{
     color: var(--mar-primary);
@@ -70,7 +71,7 @@ st.markdown(f"""
     margin: 0;
 }}
 .logo-header img {{
-    height: 120px;
+    height: 100px;
     width: auto;
 }}
 .mar-card {{
@@ -78,11 +79,11 @@ st.markdown(f"""
     padding: var(--card-padding);
     border-radius: var(--card-radius);
     box-shadow: 0 6px 18px rgba(21,72,114,0.06);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }}
 .stTextInput>div>div>input {{
     background-color: white;
-    border: 1px solid rgba(21,72,114,0.12);
+    border: 1px solid rgba(21,72,114,0.2);
     border-radius: 8px;
     padding: 10px 12px;
     font-size: 14px;
@@ -91,7 +92,7 @@ st.markdown(f"""
     background-color: var(--mar-primary);
     color: white;
     border-radius: 8px;
-    padding: 8px 16px;
+    padding: 10px 20px;
     font-weight: 600;
     border: none;
 }}
@@ -100,8 +101,8 @@ st.markdown(f"""
 }}
 [data-testid="stSidebar"] {{
     background-color: white;
-    padding: 16px;
-    border-radius: 10px;
+    padding: 20px;
+    border-radius: var(--card-radius);
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -110,7 +111,7 @@ st.markdown(f"""
 # HEADER: logo + titles
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
-col_logo, col_title = st.columns([0.14, 0.86], gap="small")
+col_logo, col_title = st.columns([0.15, 0.85], gap="small")
 
 with col_logo:
     if os.path.exists(logo_path):
@@ -124,7 +125,7 @@ with col_logo:
                 unsafe_allow_html=True
             )
         except Exception:
-            st.image(logo_path, width=26)
+            st.image(logo_path, width=80)
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
 
@@ -152,7 +153,7 @@ excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xl
 img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
+st.sidebar.markdown("💡 Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
 # -----------------------------
 # SPLASH (opcional)
@@ -350,7 +351,7 @@ def generar_respuesta(pregunta):
 # INTERFAZ: entrada y despliegue
 # -----------------------------
 st.markdown(
-    '<div class="mar-card"><strong>Consulta rápida</strong>'
+    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
     '<p style="margin:6px 0 0 0;">Escribe tu consulta en lenguaje natural (ej. "avance de obra en Proyecto X" o "¿quién es el responsable?")</p></div>',
     unsafe_allow_html=True
 )
@@ -374,10 +375,13 @@ if enviar and pregunta:
         else:
             df_preview = resultado
 
-        styled_df = df_preview.style.set_table_styles(
-            [{'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]}]
-        )
-
+        # Estilo de tabla UX/BI friendly
+        styled_df = df_preview.style.set_table_styles([
+            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
+            {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
+                                         ('color', 'white'),
+                                         ('font-weight', 'bold')]}
+        ])
         st.dataframe(styled_df, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -385,6 +389,6 @@ if enviar and pregunta:
 # FOOTER
 # -----------------------------
 st.markdown(
-    "<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>",
+    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.1</p>",
     unsafe_allow_html=True
 )
