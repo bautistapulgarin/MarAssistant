@@ -70,6 +70,11 @@ st.markdown(f"""
         font-size: 14px;
         margin: 0;
     }}
+    /* Logo ajustado a tamaño del título */
+    .logo-header img {{
+        height: var(--title-size);
+        width: auto;
+    }}
     /* Card */
     .mar-card {{
         background-color: white;
@@ -112,21 +117,18 @@ st.markdown(f"""
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
-# -----------------------------
-# HEADER: logo + titles
-# -----------------------------
-logo_path = os.path.join("assets", "logoMar.png")
-
-# Header layout: small col for logo, rest for titles
 col_logo, col_title = st.columns([0.14, 0.86], gap="small")
 with col_logo:
     if os.path.exists(logo_path):
         try:
             logo_img = Image.open(logo_path)
-            # Controlar el tamaño del logo manualmente
-            st.image(logo_img, width=100)  # Puedes ajustar entre 110 y 150 para igualar el tamaño del título
+            buffered = base64.b64encode(logo_img.tobytes()).decode()
+            st.markdown(
+                f'<div class="logo-header"><img src="data:image/png;base64,{buffered}" /></div>',
+                unsafe_allow_html=True
+            )
         except Exception:
-            st.image(logo_path, width=100)
+            st.image(logo_path, width=26)  # fallback simple
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
 
@@ -145,7 +147,6 @@ with col_title:
 
 st.write("")  # spacing
 
-
 # -----------------------------
 # SIDEBAR: Uploads y ayuda
 # -----------------------------
@@ -158,7 +159,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
 # -----------------------------
-# SPLASH (opcional) - comportamiento original
+# SPLASH (opcional)
 # -----------------------------
 placeholder = st.empty()
 if img_file:
@@ -186,20 +187,15 @@ if img_file:
         time.sleep(0.5)
         placeholder.empty()
     except Exception:
-        # silencioso si falla el splash
         placeholder.empty()
-else:
-    # mensaje discreto en sidebar ya mostrado
-    pass
 
 # -----------------------------
-# LECTURA DE EXCEL - mantiene tu lógica
+# LECTURA DE EXCEL
 # -----------------------------
 if not excel_file:
     st.info("Sube el archivo Excel en la barra lateral para cargar las hojas.")
     st.stop()
 
-# Intento de lectura de hojas esperadas
 try:
     excel_file.seek(0)
     df_avance = pd.read_excel(excel_file, sheet_name="Avance")
@@ -210,7 +206,6 @@ try:
     excel_file.seek(0)
     df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
     excel_file.seek(0)
-    # hojas sin columna 'Proyecto' o con estructura distinta
     df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
     excel_file.seek(0)
     df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")
@@ -220,7 +215,7 @@ except Exception as e:
     st.stop()
 
 # -----------------------------
-# NORMALIZACIÓN (mantener)
+# NORMALIZACIÓN
 # -----------------------------
 def normalizar_texto(texto):
     texto = str(texto).lower()
@@ -231,18 +226,15 @@ def normalizar_texto(texto):
 def quitar_tildes(texto):
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
 
-# Chequear que ciertas hojas tengan 'Proyecto'
 for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
                     ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
     if "Proyecto" not in df.columns:
         st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
         st.stop()
 
-# Normalizar columna proyecto donde existe
 for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
     df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
-# Crear mapa de proyectos para búsqueda por texto libre
 all_projects = pd.concat([
     df_avance["Proyecto"].astype(str),
     df_responsables["Proyecto"].astype(str),
@@ -264,10 +256,10 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
-# LISTA DE CARGOS (mantener)
+# LISTA DE CARGOS
 # -----------------------------
 CARGOS_VALIDOS = [
-    "Analista de compras", "Analista de Compras y Suministros", "Analista de Programación", "Arquitecto",
+    "Analista de compras", "Analista de Programación", "Arquitecto",
     "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
     "Coordinador Eléctrico", "Coordinador Logístico", "Coordinador SIG", "Coordinadora de pilotaje",
     "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
@@ -283,36 +275,28 @@ CARGOS_VALIDOS = [
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
-# FUNCION DE RESPUESTA (mantener)
+# FUNCION DE RESPUESTA
 # -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
 
-    # Palabras clave
-    estado_diseno_keywords = [
-        "estado diseño", "estado diseno", "inventario diseño", "inventario diseno"
-    ]
-    diseño_keywords = [
-        "avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
-        "avance de diseno", "avance de diseño", "diseno", "diseño"
-    ]
+    estado_diseno_keywords = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
+    diseño_keywords = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
+                       "avance de diseno", "avance de diseño", "diseno", "diseño"]
     obra_keywords = ["avance de obra", "avance obra", "avance en obra"]
 
-    # 0) ESTADO DISEÑO -> mostrar InventarioDiseño
     if any(k in pregunta_norm for k in estado_diseno_keywords):
         if df_inventario_diseno.empty:
             return "❌ No hay registros en la hoja InventarioDiseño.", None
         return "📐 Estado de Diseño (InventarioDiseño):", df_inventario_diseno
 
-    # 1) AVANCE EN DISEÑO -> mostrar AvanceDiseño (tabla completa)
     if any(k in pregunta_norm for k in diseño_keywords):
         if ("avance" in pregunta_norm) or (pregunta_norm.strip() in ["diseno", "diseño"]):
             if df_avance_diseno.empty:
                 return "❌ No hay registros en la hoja AvanceDiseño.", None
             return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
 
-    # 2) AVANCE DE OBRA -> mostrar Avance
     if any(k in pregunta_norm for k in obra_keywords):
         df = df_avance.copy()
         if proyecto_norm:
@@ -321,7 +305,6 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
         return f"📊 Avance de obra en {proyecto or 'todos'}:", df
 
-    # 3) AVANCE genérico
     if "avance" in pregunta_norm:
         df = df_avance.copy()
         if proyecto_norm:
@@ -330,7 +313,6 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
         return f"📊 Avances en {proyecto or 'todos'}:", df
 
-    # 4) RESPONSABLES
     if "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
         df = df_responsables.copy()
         if proyecto_norm:
@@ -349,7 +331,6 @@ def generar_respuesta(pregunta):
             return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
 
-    # 5) RESTRICCIONES
     if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
         df = df_restricciones.copy()
         if proyecto_norm:
@@ -358,7 +339,6 @@ def generar_respuesta(pregunta):
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
 
-    # 6) SOSTENIBILIDAD
     if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
         df = df_sostenibilidad.copy()
         if proyecto_norm:
@@ -367,7 +347,6 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None
         return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
 
-    # Fallback
     return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
@@ -378,7 +357,6 @@ st.markdown('<div class="mar-card"><strong>Consulta rápida</strong><p style="ma
 
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
-# Botón enviar junto a un pequeño selector de formato de salida (opcional)
 col_btn_1, col_btn_2 = st.columns([0.3, 0.7])
 with col_btn_1:
     enviar = st.button("Enviar")
@@ -387,29 +365,20 @@ with col_btn_2:
 
 if enviar and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-
-    # Mostrar texto en tarjeta
     st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p></div>", unsafe_allow_html=True)
 
-    # Si el resultado es DataFrame y no esta vacío, mostrarlo
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
         if mostrar_raw:
             st.dataframe(resultado, use_container_width=True)
         else:
-            # Mostrar un preview limpio: limitar filas y mantener contenedor ancho
-            max_preview = 200  # limite razonable para UX
+            max_preview = 200
             if len(resultado) > max_preview:
                 st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}. Usa 'Mostrar tabla completa (raw)' para ver todo.")
                 st.dataframe(resultado.head(max_preview), use_container_width=True)
             else:
                 st.dataframe(resultado, use_container_width=True)
-    else:
-        # Mensaje de error o info (texto ya tiene la info)
-        pass
 
 # -----------------------------
-# FOOTER - info de version ligera
+# FOOTER
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
-
-
