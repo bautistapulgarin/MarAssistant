@@ -64,7 +64,7 @@ st.markdown(f"""
     font-size: var(--title-size);
     font-weight: 800;
     margin: 0;
-    font-family: 'Roboto Slab', serif;  /* Tipografía más corporativa y elegante */
+    font-family: 'Roboto Slab', serif;
 }}
 .subtitle {{
     color: #34495e;
@@ -88,21 +88,23 @@ st.markdown(f"""
     border-radius: 8px;
     padding: 10px 12px;
     font-size: 14px;
+    height: 40px;
 }}
 .stTextInput>div>div>input::placeholder {{
-    color: rgba(0, 0, 0, 0.4);  /* gris opaco */
+    color: rgba(0, 0, 0, 0.4);
     font-style: italic;
 }}
 .stTextInput>div>div>input:focus {{
-    color: #000000;  /* negro al escribir */
+    color: #000000;
 }}
 .stButton>button {{
     background-color: var(--mar-primary);
     color: white;
     border-radius: 8px;
-    padding: 10px 20px;
+    padding: 0 20px;
     font-weight: 600;
     border: none;
+    height: 40px; /* misma altura que el input */
 }}
 .stButton>button:hover {{
     background-color: var(--mar-muted);
@@ -120,7 +122,6 @@ st.markdown(f"""
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
-# HTML para header con logo + título al lado
 if os.path.exists(logo_path):
     try:
         logo_img = Image.open(logo_path)
@@ -356,13 +357,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- CAMBIO PRINCIPAL: placeholder en el input ---
-pregunta = st.text_input(
-    label="",  # Label vacío para que no aparezca arriba
-    placeholder="Escribe tu pregunta aquí"  # Texto dentro del cuadro
-)
-
-enviar = st.button("Enviar", use_container_width=True)
+# --- CAMBIO PRINCIPAL: input + botón al lado ---
+col_input, col_button = st.columns([5, 1])
+with col_input:
+    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
+with col_button:
+    enviar = st.button("Enviar", use_container_width=True)
 
 if enviar and pregunta:
     texto, resultado = generar_respuesta(pregunta)
@@ -379,7 +379,6 @@ if enviar and pregunta:
         else:
             df_preview = resultado
 
-        # Estilo de tabla UX/BI friendly
         styled_df = df_preview.style.set_table_styles([
             {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
             {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
