@@ -10,13 +10,7 @@ import base64
 # -----------------------------
 # Configuración general
 # -----------------------------
-st.set_page_config(
-    page_title="Mar Assistant",
-    layout="wide",
-    page_icon="🌊",
-    initial_sidebar_state="expanded",
-    menu_items=None
-)
+st.set_page_config(page_title="Mar Assistant", layout="wide", page_icon="🌊", initial_sidebar_state="expanded")
 
 # -----------------------------
 # Título estilizado
@@ -120,6 +114,25 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
+# Cargos válidos
+# -----------------------------
+CARGOS_VALIDOS = [
+    "Analista de compras", "Analista de Compras y Suministros", "Analista de Programación", "Arquitecto",
+    "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
+    "Coordinador Eléctrico", "Coordinador Logístico", "Coordinador SIG", "Coordinadora de pilotaje",
+    "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
+    "Diseñador estructural", "Diseñador externo", "Equipo MARVAL", "Gerente de proyectos",
+    "Ingeniera Eléctrica", "Ingeniero Ambiental", "Ingeniero de Contratación", "Ingeniero electromecánico",
+    "Ingeniero FCA", "Ingeniero FCA #2", "Ingeniero Lean", "Ingeniero Lean 3", "Profesional SYST",
+    "Programador de obra", "Programador de obra #2", "Practicante de Interventoría #1",
+    "Practicante Lean", "Residente", "Residente #2", "Residente Administrativo de Equipos",
+    "Residente auxiliar", "Residente Auxiliar #2", "Residente Auxiliar #3", "Residente Auxiliar #4",
+    "Residente de acabados", "Residente de acabados #2", "Residente de control e interventoría",
+    "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
+]
+CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
+
+# -----------------------------
 # Función de respuesta
 # -----------------------------
 def generar_respuesta(pregunta):
@@ -140,6 +153,16 @@ def generar_respuesta(pregunta):
         df = df_responsables.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
+        cargo_encontrado = None
+        for cargo_norm, cargo_real in CARGOS_VALIDOS_NORM.items():
+            if cargo_norm in pregunta_norm:
+                cargo_encontrado = cargo_real
+                break
+        if cargo_encontrado:
+            df = df[df["Cargo"].str.lower().str.contains(cargo_encontrado.lower(), na=False)]
+            if df.empty:
+                return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
+            return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
         if df.empty:
             return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
@@ -159,7 +182,7 @@ def generar_respuesta(pregunta):
 # -----------------------------
 # Entrada de usuario
 # -----------------------------
-st.subheader("💬 Escribe tu consulta")
+st.subheader("📝 Escribe tu consulta")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
 # -----------------------------
@@ -167,35 +190,42 @@ pregunta = st.text_input("Escribe tu pregunta aquí:")
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
+    
+    # Mensaje de texto
     st.markdown(f"<p style='color:#333333'>{texto}</p>", unsafe_allow_html=True)
 
-    if isinstance(resultado, pd.DataFrame):
-        df_tabla = resultado.copy()
+    # Mostrar DataFrame con filtros
+    if isinstance(resultado, pd.DataFrame) and not resultado.empty:
+        if "tabla_base" not in st.session_state:
+            st.session_state["tabla_base"] = resultado.copy()
+        
+        df_tabla = st.session_state["tabla_base"].copy()
 
-        # Filtros dinámicos según columnas disponibles
-        cols_disponibles = df_tabla.columns.tolist()
+        # Crear filtros solo si existen las columnas
         filtros = {}
-
         col1, col2, col3, col4, col5, col6 = st.columns(6)
-        if "Proyecto" in cols_disponibles:
-            filtros["Proyecto"] = col1.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()))
-        if "Responsable" in cols_disponibles:
-            filtros["Responsable"] = col2.selectbox("Responsable", ["Todos"] + sorted(df_tabla["Responsable"].dropna().unique()))
-        if "Cargo" in cols_disponibles:
-            filtros["Cargo"] = col3.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()))
-        if "Avance" in cols_disponibles:
-            filtros["Avance"] = col4.selectbox("Avance", ["Todos"] + sorted(df_tabla["Avance"].dropna().unique()))
-        if "Restricciones" in cols_disponibles:
-            filtros["Restricciones"] = col5.selectbox("Restricciones", ["Todos"] + sorted(df_tabla["Restricciones"].dropna().unique()))
-        if "Estado" in cols_disponibles:
-            filtros["Estado"] = col6.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()))
 
-        # Aplicar filtros
+        if "Proyecto" in df_tabla.columns:
+            filtros["Proyecto"] = col1.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()), key="filtro_proyecto")
+        if "Responsable" in df_tabla.columns:
+            filtros["Responsable"] = col2.selectbox("Responsable", ["Todos"] + sorted(df_tabla["Responsable"].dropna().unique()), key="filtro_responsable")
+        if "Cargo" in df_tabla.columns:
+            filtros["Cargo"] = col3.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()), key="filtro_cargo")
+        if "Avance" in df_tabla.columns:
+            filtros["Avance"] = col4.selectbox("Avance", ["Todos"] + sorted(df_tabla["Avance"].dropna().unique()), key="filtro_avance")
+        if "Restricciones" in df_tabla.columns:
+            filtros["Restricciones"] = col5.selectbox("Restricciones", ["Todos"] + sorted(df_tabla["Restricciones"].dropna().unique()), key="filtro_restricciones")
+        if "Estado" in df_tabla.columns:
+            filtros["Estado"] = col6.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()), key="filtro_estado")
+
+        # Aplicar filtros progresivos
+        df_filtrado = df_tabla.copy()
         for key, value in filtros.items():
             if value not in ["Todos", "Todas"]:
-                df_tabla = df_tabla[df_tabla[key] == value]
+                df_filtrado = df_filtrado[df_filtrado[key] == value]
 
-        st.dataframe(df_tabla.style.set_properties(**{
+        # Mostrar DataFrame con estilo
+        st.dataframe(df_filtrado.style.set_properties(**{
             'background-color': 'white',
             'color': '#333333'
         }), use_container_width=True)
