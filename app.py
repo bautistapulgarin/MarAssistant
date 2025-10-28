@@ -4,7 +4,6 @@ import streamlit as st
 import pandas as pd
 import re
 import unicodedata
-import matplotlib.pyplot as plt
 import time
 import base64
 
@@ -15,7 +14,8 @@ st.set_page_config(
     page_title="Mar Assistant",
     layout="wide",
     page_icon="🌊",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items=None
 )
 
 # -----------------------------
@@ -120,25 +120,6 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
-# Cargos válidos
-# -----------------------------
-CARGOS_VALIDOS = [
-    "Analista de compras", "Analista de Compras y Suministros", "Analista de Programación", "Arquitecto",
-    "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
-    "Coordinador Eléctrico", "Coordinador Logístico", "Coordinador SIG", "Coordinadora de pilotaje",
-    "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
-    "Diseñador estructural", "Diseñador externo", "Equipo MARVAL", "Gerente de proyectos",
-    "Ingeniera Eléctrica", "Ingeniero Ambiental", "Ingeniero de Contratación", "Ingeniero electromecánico",
-    "Ingeniero FCA", "Ingeniero FCA #2", "Ingeniero Lean", "Ingeniero Lean 3", "Profesional SYST",
-    "Programador de obra", "Programador de obra #2", "Practicante de Interventoría #1",
-    "Practicante Lean", "Residente", "Residente #2", "Residente Administrativo de Equipos",
-    "Residente auxiliar", "Residente Auxiliar #2", "Residente Auxiliar #3", "Residente Auxiliar #4",
-    "Residente de acabados", "Residente de acabados #2", "Residente de control e interventoría",
-    "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
-]
-CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
-
-# -----------------------------
 # Función de respuesta
 # -----------------------------
 def generar_respuesta(pregunta):
@@ -159,16 +140,6 @@ def generar_respuesta(pregunta):
         df = df_responsables.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
-        cargo_encontrado = None
-        for cargo_norm, cargo_real in CARGOS_VALIDOS_NORM.items():
-            if cargo_norm in pregunta_norm:
-                cargo_encontrado = cargo_real
-                break
-        if cargo_encontrado:
-            df = df[df["Cargo"].str.lower().str.contains(cargo_encontrado.lower(), na=False)]
-            if df.empty:
-                return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
-            return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
         if df.empty:
             return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
@@ -182,22 +153,13 @@ def generar_respuesta(pregunta):
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
 
-    # INFORMACION GENERAL
-    elif "informacion general" in pregunta_norm or "general de" in pregunta_norm:
-        if not proyecto_norm:
-            return "❌ No detecté el proyecto. Por favor indica el nombre del proyecto.", None
-        df_a = df_avance[df_avance["Proyecto_norm"] == proyecto_norm]
-        df_r = df_responsables[df_responsables["Proyecto_norm"] == proyecto_norm]
-        df_res = df_restricciones[df_restricciones["Proyecto_norm"] == proyecto_norm]
-        return f"📑 Información general del proyecto **{proyecto}**:", {"Avance": df_a, "Responsables": df_r, "Restricciones": df_res}
-
     else:
-        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones' o 'información general'.", None
+        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable' o 'restricciones'.", None
 
 # -----------------------------
 # Entrada de usuario
 # -----------------------------
-st.subheader("💬 Haz tu consulta por teclado")
+st.subheader("💬 Escribe tu consulta")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
 # -----------------------------
@@ -205,50 +167,35 @@ pregunta = st.text_input("Escribe tu pregunta aquí:")
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    
     st.markdown(f"<p style='color:#333333'>{texto}</p>", unsafe_allow_html=True)
 
     if isinstance(resultado, pd.DataFrame):
-        if "tabla_base" not in st.session_state:
-            st.session_state["tabla_base"] = resultado.copy()
-        df_tabla = st.session_state["tabla_base"].copy()
+        df_tabla = resultado.copy()
 
-        # Filtros como encabezado
+        # Filtros dinámicos según columnas disponibles
+        cols_disponibles = df_tabla.columns.tolist()
+        filtros = {}
+
         col1, col2, col3, col4, col5, col6 = st.columns(6)
-        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique()))
-        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique()))
-        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()))
-        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()))
-        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()))
-        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique()))
+        if "Proyecto" in cols_disponibles:
+            filtros["Proyecto"] = col1.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()))
+        if "Responsable" in cols_disponibles:
+            filtros["Responsable"] = col2.selectbox("Responsable", ["Todos"] + sorted(df_tabla["Responsable"].dropna().unique()))
+        if "Cargo" in cols_disponibles:
+            filtros["Cargo"] = col3.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()))
+        if "Avance" in cols_disponibles:
+            filtros["Avance"] = col4.selectbox("Avance", ["Todos"] + sorted(df_tabla["Avance"].dropna().unique()))
+        if "Restricciones" in cols_disponibles:
+            filtros["Restricciones"] = col5.selectbox("Restricciones", ["Todos"] + sorted(df_tabla["Restricciones"].dropna().unique()))
+        if "Estado" in cols_disponibles:
+            filtros["Estado"] = col6.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()))
 
-        # Aplicar filtros progresivos
-        if sucursal_sel != "Todas":
-            df_tabla = df_tabla[df_tabla["Sucursal"] == sucursal_sel]
-        if cluster_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Cluster"] == cluster_sel]
-        if proyecto_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Proyecto"] == proyecto_sel]
-        if cargo_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Cargo"] == cargo_sel]
-        if estado_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Estado"] == estado_sel]
-        if gerente_sel != "Todos":
-            df_tabla = df_tabla[df_tabla["Responsable"] == gerente_sel]
-
-        if st.button("Restablecer filtros"):
-            df_tabla = st.session_state["tabla_base"].copy()
+        # Aplicar filtros
+        for key, value in filtros.items():
+            if value not in ["Todos", "Todas"]:
+                df_tabla = df_tabla[df_tabla[key] == value]
 
         st.dataframe(df_tabla.style.set_properties(**{
             'background-color': 'white',
             'color': '#333333'
         }), use_container_width=True)
-
-    elif isinstance(resultado, dict):
-        for nombre, df_out in resultado.items():
-            if not df_out.empty:
-                st.subheader(nombre)
-                st.dataframe(df_out.style.set_properties(**{
-                    'background-color': 'white',
-                    'color': '#333333'
-                }), use_container_width=True)
