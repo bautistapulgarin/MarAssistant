@@ -7,6 +7,7 @@ import unicodedata
 import time
 import base64
 import os
+import io
 
 # -----------------------------
 # CONFIGURACIÓN GENERAL
@@ -40,40 +41,37 @@ st.markdown(f"""
         --mar-bg: {PALETTE['bg']};
         --card-radius: 12px;
         --card-padding: 16px;
-        --title-size: 26px;
+        --title-size: 28px;
     }}
-    /* Background */
     .stApp {{
         background-color: #ffffff;
         color: #1b2635;
+        font-family: 'Arial', sans-serif;
     }}
-    /* Header box */
+    /* Header */
     .header-box {{
         background-color: white;
-        padding: 12px;
-        border-radius: 10px;
-        box-shadow: 0 6px 18px rgba(21,72,114,0.06);
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(21,72,114,0.08);
         display: flex;
         align-items: center;
-    }}
-    .header-text {{
-        margin-left: 0px;
+        gap: 16px;
     }}
     .title {{
-        color: var(--mar-primary);
         font-size: var(--title-size);
-        font-weight: 700;
+        font-weight: 800;
         margin: 0;
     }}
     .subtitle {{
-        color: #34495e;
         font-size: 14px;
-        margin: 0;
+        color: #607d8b;
+        margin-top: 4px;
     }}
-    /* Logo ajustado a tamaño del título */
     .logo-header img {{
-        height: 120px;
+        height: 80px;
         width: auto;
+        border-radius: 8px;
     }}
     /* Card */
     .mar-card {{
@@ -84,7 +82,7 @@ st.markdown(f"""
         margin-bottom: 16px;
     }}
     /* Inputs */
-    .stTextInput>div>div>input {{
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {{
         background-color: white;
         border: 1px solid rgba(21,72,114,0.12);
         border-radius: 8px;
@@ -116,26 +114,23 @@ st.markdown(f"""
 # HEADER: logo + titles
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
-
 col_logo, col_title = st.columns([0.14, 0.86], gap="small")
-import io  # asegúrate de tener esto importado
 
 with col_logo:
     if os.path.exists(logo_path):
         try:
             logo_img = Image.open(logo_path)
             buffered = io.BytesIO()
-            logo_img.save(buffered, format="PNG")  # guardar como PNG en buffer
-            img_b64 = base64.b64encode(buffered.getvalue()).decode()  # codificar a base64
+            logo_img.save(buffered, format="PNG")
+            img_b64 = base64.b64encode(buffered.getvalue()).decode()
             st.markdown(
                 f'<div class="logo-header"><img src="data:image/png;base64,{img_b64}" /></div>',
                 unsafe_allow_html=True
             )
         except Exception:
-            st.image(logo_path, width=26)  # fallback simple
+            st.image(logo_path, width=80)
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
-
 
 with col_title:
     st.markdown(
@@ -150,16 +145,15 @@ with col_title:
         unsafe_allow_html=True
     )
 
-st.write("")  # spacing
+st.write("")
 
 # -----------------------------
 # SIDEBAR: Uploads y ayuda
 # -----------------------------
-st.sidebar.title("Herramientas")
+st.sidebar.title("🔹 Herramientas")
 st.sidebar.subheader("Cargas")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
 img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
-
 st.sidebar.markdown("---")
 st.sidebar.markdown("Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
@@ -181,7 +175,8 @@ if img_file:
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;">
+            z-index: 9999;
+            transition: opacity 0.5s;">
             <div style="text-align:center; padding: 20px; border-radius: 12px;">
                 <img src="data:image/png;base64,{img_b64}" 
                      style="width:160px; max-width:50vw; height:auto; display:block; margin:0 auto;">
@@ -189,7 +184,7 @@ if img_file:
         </div>
         """
         placeholder.markdown(splash_html, unsafe_allow_html=True)
-        time.sleep(0.5)
+        time.sleep(1.0)
         placeholder.empty()
     except Exception:
         placeholder.empty()
@@ -240,13 +235,8 @@ for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
 for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
     df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
-all_projects = pd.concat([
-    df_avance["Proyecto"].astype(str),
-    df_responsables["Proyecto"].astype(str),
-    df_restricciones["Proyecto"].astype(str),
-    df_sostenibilidad["Proyecto"].astype(str)
-]).dropna().unique()
-
+all_projects = pd.concat([df_avance["Proyecto"], df_responsables["Proyecto"],
+                          df_restricciones["Proyecto"], df_sostenibilidad["Proyecto"]]).dropna().unique()
 projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
 
 def extraer_proyecto(texto):
@@ -360,38 +350,32 @@ def generar_respuesta(pregunta):
 # -----------------------------
 st.markdown('<div class="mar-card"><strong>Consulta rápida</strong><p style="margin:6px 0 0 0;">Escribe tu consulta en lenguaje natural (ej. "avance de obra en Proyecto X" o "¿quién es el responsable?")</p></div>', unsafe_allow_html=True)
 
-pregunta = st.text_input("Escribe tu pregunta aquí:")
-
-col_btn_1, col_btn_2 = st.columns([0.3, 0.7])
-with col_btn_1:
-    enviar = st.button("Enviar")
-with col_btn_2:
-    mostrar_raw = st.checkbox("Mostrar tabla completa (raw)", value=False)
+pregunta = st.text_area("Escribe tu pregunta aquí:", height=60)
+col_btn_1, col_btn_2 = st.columns([0.3,0.7])
+with col_btn_1: enviar = st.button("Enviar", use_container_width=True)
+with col_btn_2: mostrar_raw = st.checkbox("Mostrar tabla completa (raw)", value=False)
 
 if enviar and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>", unsafe_allow_html=True)
 
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
+        # Zebra striping
+        styled_df = resultado.style.set_table_styles(
+            [{'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]}]
+        )
         if mostrar_raw:
-            st.dataframe(resultado, use_container_width=True)
+            st.dataframe(styled_df, use_container_width=True)
         else:
             max_preview = 200
             if len(resultado) > max_preview:
                 st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}. Usa 'Mostrar tabla completa (raw)' para ver todo.")
-                st.dataframe(resultado.head(max_preview), use_container_width=True)
+                st.dataframe(styled_df.head(max_preview), use_container_width=True)
             else:
-                st.dataframe(resultado, use_container_width=True)
+                st.dataframe(styled_df, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
 # FOOTER
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
-
-
-
-
-
-
-
-
