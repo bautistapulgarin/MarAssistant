@@ -120,18 +120,22 @@ if os.path.exists(logo_path):
         buffered = io.BytesIO()
         logo_img.save(buffered, format="PNG")
         img_b64 = base64.b64encode(buffered.getvalue()).decode()
-        st.markdown(
-            f"""
-            <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-                <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
-                <div>
-                    <p class="title">Sistema Integrado de Información de Proyectos</p>
-                    <p class="subtitle"> Asistente para el Seguimiento y Control  — Constructora Marval</p>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+       st.markdown(
+    f"""
+    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+        <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
+        <div>
+            <p style="font-size:48px; font-weight:800; margin:0; color:#154872;">
+                Sistema Integrado de Información de Proyectos
+            </p>
+            <p style="font-size:20px; margin:4px 0 0 0; color:#34495e;">
+                Asistente para el Seguimiento y Control — Constructora Marval
+            </p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
     except Exception:
         st.image(logo_path, width=80)
 else:
@@ -386,6 +390,7 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
+
 
 
 
