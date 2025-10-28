@@ -57,8 +57,7 @@ st.markdown(f"""
         align-items: center;
     }}
     .header-text {{
-    ################################################################################################
-        margin-left: 2px;
+        margin-left: 0px;
     }}
     .title {{
         color: var(--mar-primary);
@@ -118,7 +117,7 @@ st.markdown(f"""
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
-col_logo, col_title = st.columns([0.14, 0.86], gap="small")
+col_logo, col_title = st.columns([0.14, 0.86], gap=0)
 import io  # asegúrate de tener esto importado
 
 with col_logo:
@@ -388,6 +387,7 @@ if enviar and pregunta:
 # FOOTER
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
+
 
 
 
