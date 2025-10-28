@@ -108,26 +108,38 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Logo y título principal
+# HEADER: logo + titles
 # -----------------------------
-col_logo, col_title = st.columns([1, 4])  # Proporción para mejor alineación
+logo_path = os.path.join("assets", "logoMar.png")
 
+# Header layout: small col for logo, rest for titles
+col_logo, col_title = st.columns([0.14, 0.86], gap="small")
 with col_logo:
-    st.image(
-        "assets/logoMar.png", 
-        width=130  # Ajusta este número hasta que visualmente quede igual al tamaño del texto
-    )
+    if os.path.exists(logo_path):
+        # Use width to avoid huge logo; responsive enough
+        try:
+            logo_img = Image.open(logo_path)
+            st.image(logo_img, use_container_width=True)
+        except Exception:
+            # fallback in case PIL fails
+            st.image(logo_path, use_container_width=True)
+    else:
+        st.warning("Logo no encontrado en assets/logoMar.png")
 
 with col_title:
-    st.markdown("""
-        <h1 style="color:#154872; font-weight:700; margin-bottom:0;">
-            Sistema Integrado de Control de Proyectos
-        </h1>
-        <h3 style="color:#437FAC; font-weight:400; margin-top:0;">
-            Plataforma de consolidación y consulta — Constructora Marval
-        </h3>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="header-box">
+            <div class="header-text">
+                <p class="title">Sistema Integrado de Control de Proyectos</p>
+                <p class="subtitle">Plataforma de consolidación y consulta — Constructora Marval</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
+st.write("")  # spacing
 
 # -----------------------------
 # SIDEBAR: Uploads y ayuda
@@ -394,4 +406,3 @@ if enviar and pregunta:
 # FOOTER - info de version ligera
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
-
