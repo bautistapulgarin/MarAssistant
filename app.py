@@ -433,3 +433,4 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b6b6b;text-align:center;'>© Constructora Marval — Todos los derechos reservados</p>",
     unsafe_allow_html=True
 )
+
