@@ -8,7 +8,13 @@ import time
 import base64
 import os
 import io
-import plotly.express as px  # Para la gráfica de barras
+
+# Intentamos importar plotly
+try:
+    import plotly.express as px
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
 
 # -----------------------------
 # CONFIGURACIÓN GENERAL
@@ -279,7 +285,7 @@ CARGOS_VALIDOS = [
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
-# FUNCION DE RESPUESTA CON GRÁFICO
+# FUNCION DE RESPUESTA
 # -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
@@ -335,30 +341,28 @@ def generar_respuesta(pregunta):
             return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
 
-            # Crear gráfico de barras por tipoRestriccion
-        if "tipoRestriccion" in df.columns:
-            fig = px.histogram(
-                df,
-                x="tipoRestriccion",
-                color="tipoRestriccion",
-                title=f"Reconteo de restricciones por tipo en {proyecto or 'todos'}",
-                text_auto=True,
-                color_discrete_sequence=px.colors.qualitative.Set2
-            )
-            fig.update_layout(showlegend=False, xaxis_title="Tipo de Restricción", yaxis_title="Cantidad")
-        else:
-            fig = None
-        
-        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, fig
-
     if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
         df = df_restricciones.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
         if df.empty:
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
-        
 
+        # Generar gráfico si plotly disponible
+        grafico = None
+        if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
+            grafico = px.bar(
+                df.groupby("tipoRestriccion").size().reset_index(name="count"),
+                x="tipoRestriccion",
+                y="count",
+                text="count",
+                labels={"tipoRestriccion": "Tipo de Restricción", "count": "Cantidad"},
+                color="tipoRestriccion",
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
+            grafico.update_layout(showlegend=False, xaxis_title="Tipo de Restricción", yaxis_title="Cantidad")
+
+        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico
 
     if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
         df = df_sostenibilidad.copy()
@@ -388,11 +392,11 @@ with col_enviar:
 with col_voz:
     voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
 
-# -----------------------------
-# LÓGICA DE BOTÓN
-# -----------------------------
+# Lógica de botones
 if enviar and pregunta:
     respuesta = generar_respuesta(pregunta)
+
+    # Ver si regresó gráfico
     if len(respuesta) == 3:
         texto, resultado, grafico = respuesta
     else:
@@ -403,6 +407,10 @@ if enviar and pregunta:
         f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
         unsafe_allow_html=True
     )
+
+    # Mostrar gráfico si existe
+    if grafico:
+        st.plotly_chart(grafico, use_container_width=True)
 
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
         max_preview = 200
@@ -419,21 +427,3 @@ if enviar and pregunta:
                                          ('font-weight', 'bold')]},
         ])
         st.dataframe(styled_df, use_container_width=True)
-
-    if grafico:
-        st.plotly_chart(grafico, use_container_width=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-if voz:
-    pass  # El botón de voz no realiza ninguna acción
-
-# -----------------------------
-# FOOTER
-# -----------------------------
-st.markdown(
-    f"<br><hr><p style='font-size:12px;color:#6b6b6b;text-align:center;'>© Constructora Marval — Todos los derechos reservados</p>",
-    unsafe_allow_html=True
-)
-
-
