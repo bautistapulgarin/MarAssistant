@@ -75,7 +75,7 @@ if excel_file:
         excel_file.seek(0)
         df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
         excel_file.seek(0)
-        df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
+        df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")  # SIN columna Proyecto
         st.sidebar.success("✅ Hojas cargadas correctamente")
     except Exception as e:
         st.sidebar.error(f"Error al leer hojas: {e}")
@@ -96,25 +96,23 @@ def normalizar_texto(texto):
 def quitar_tildes(texto):
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
 
-# Validación de columnas
+# Asegurarse de que la columna 'Proyecto' exista solo en las hojas que la tienen
 for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
-                    ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad),
-                    ("AvanceDiseño", df_avance_diseno)]:
+                    ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
     if "Proyecto" not in df.columns:
         st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
         st.stop()
 
-# Normalizar todas las hojas
-for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad, df_avance_diseno]:
+# Normalizar la columna 'Proyecto' solo en hojas que la contienen
+for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
     df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
-# Construir mapa de proyectos
+# Construir el mapa de proyectos
 all_projects = pd.concat([
     df_avance["Proyecto"].astype(str),
     df_responsables["Proyecto"].astype(str),
     df_restricciones["Proyecto"].astype(str),
-    df_sostenibilidad["Proyecto"].astype(str),
-    df_avance_diseno["Proyecto"].astype(str)
+    df_sostenibilidad["Proyecto"].astype(str)
 ]).dropna().unique()
 
 projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
@@ -131,25 +129,6 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
-# Cargos válidos
-# -----------------------------
-CARGOS_VALIDOS = [
-    "Analista de compras", "Analista de Compras y Suministros", "Analista de Programación", "Arquitecto",
-    "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
-    "Coordinador Eléctrico", "Coordinador Logístico", "Coordinador SIG", "Coordinadora de pilotaje",
-    "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
-    "Diseñador estructural", "Diseñador externo", "Equipo MARVAL", "Gerente de proyectos",
-    "Ingeniera Eléctrica", "Ingeniero Ambiental", "Ingeniero de Contratación", "Ingeniero electromecánico",
-    "Ingeniero FCA", "Ingeniero FCA #2", "Ingeniero Lean", "Ingeniero Lean 3", "Profesional SYST",
-    "Programador de obra", "Programador de obra #2", "Practicante de Interventoría #1",
-    "Practicante Lean", "Residente", "Residente #2", "Residente Administrativo de Equipos",
-    "Residente auxiliar", "Residente Auxiliar #2", "Residente Auxiliar #3", "Residente Auxiliar #4",
-    "Residente de acabados", "Residente de acabados #2", "Residente de control e interventoría",
-    "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
-]
-CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
-
-# -----------------------------
 # Función de respuesta
 # -----------------------------
 def generar_respuesta(pregunta):
@@ -157,7 +136,7 @@ def generar_respuesta(pregunta):
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
 
     # AVANCE
-    if "avance" in pregunta_norm:
+    if "avance" in pregunta_norm and "diseno" not in pregunta_norm and "diseño" not in pregunta_norm:
         df = df_avance.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -165,30 +144,17 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
         return f"📊 Avances en {proyecto or 'todos'}:", df
 
-    # DISEÑO
+    # DISEÑO (Muestra tabla completa sin filtro)
     elif "diseno" in pregunta_norm or "diseño" in pregunta_norm:
-        df = df_avance_diseno.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        if df.empty:
-            return f"❌ No hay registros de diseño en {proyecto or 'todos'}", None
-        return f"📐 Avance de diseño en {proyecto or 'todos'}:", df
+        if df_avance_diseno.empty:
+            return "❌ No hay registros en la hoja AvanceDiseño.", None
+        return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
 
     # RESPONSABLES
     elif "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
         df = df_responsables.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
-        cargo_encontrado = None
-        for cargo_norm, cargo_real in CARGOS_VALIDOS_NORM.items():
-            if cargo_norm in pregunta_norm:
-                cargo_encontrado = cargo_real
-                break
-        if cargo_encontrado:
-            df = df[df["Cargo"].astype(str).str.lower().str.contains(cargo_encontrado.lower(), na=False)]
-            if df.empty:
-                return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
-            return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
         if df.empty:
             return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
