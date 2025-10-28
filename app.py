@@ -41,8 +41,7 @@ st.markdown(f"""
     --mar-bg: {PALETTE['bg']};
     --card-radius: 12px;
     --card-padding: 16px;
-    --title-size: 48px;       /* Título principal más grande */
-    --subtitle-size: 20px;    /* Subtítulo más grande */
+    --title-size: 36px;  /* Título más grande */
 }}
 .stApp {{
     background-color: var(--mar-bg);
@@ -62,20 +61,16 @@ st.markdown(f"""
 }}
 .title {{
     color: var(--mar-primary);
-    font-size: 72px;        /* Título grande */
-    font-weight: 900;        /* Negrita */
+    font-size: var(--title-size);
+    font-weight: 800;
     margin: 0;
-    font-family: 'Roboto Slab', serif;
+    font-family: 'Roboto Slab', serif;  /* Tipografía más corporativa y elegante */
 }}
 .subtitle {{
     color: #34495e;
-    font-size: 28px;         /* Subtítulo más pequeño */
-    margin: 6px 0 0 0;
-    font-weight: 400;        /* Normal, no negrita */
-    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    margin: 4px 0 0 0;
 }}
-
-
 .logo-header img {{
     height: 110px;
     width: auto;
@@ -113,11 +108,11 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-
 # -----------------------------
 # HEADER: logo + titles
 # -----------------------------
-col_logo, col_title = st.columns([0.12, 0.88], gap="small")  # reducimos el espacio del logo
+logo_path = os.path.join("assets", "logoMar.png")
+col_logo, col_title = st.columns([0.15, 0.85], gap="small")
 
 with col_logo:
     if os.path.exists(logo_path):
@@ -131,15 +126,15 @@ with col_logo:
                 unsafe_allow_html=True
             )
         except Exception:
-            st.image(logo_path, width=100)
+            st.image(logo_path, width=80)
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
 
 with col_title:
     st.markdown(
         f"""
-        <div class="header-box" style="padding:12px 12px 12px 0;">
-            <div class="header-text" style="margin-left:10px;">  <!-- reducido de 20px a 10px -->
+        <div class="header-box">
+            <div class="header-text">
                 <p class="title">Sistema Integrado de Control de Proyectos</p>
                 <p class="subtitle">Plataforma de consolidación y consulta — Constructora Marval</p>
             </div>
@@ -148,6 +143,7 @@ with col_title:
         unsafe_allow_html=True
     )
 
+st.write("")
 
 # -----------------------------
 # SIDEBAR: Uploads y ayuda
@@ -397,12 +393,3 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
-
-
-
-
-
-
-
-
-
