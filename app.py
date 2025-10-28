@@ -26,11 +26,11 @@ PALETTE = {
     "primary": "#154872",
     "accent": "#5DC0DC",
     "muted": "#437FAC",
-    "bg": "#ffffff"  # Fondo blanco
+    "bg": "#ffffff"
 }
 
 # -----------------------------
-# CSS GLOBAL (UX friendly)
+# CSS GLOBAL
 # -----------------------------
 st.markdown(f"""
 <style>
@@ -41,7 +41,7 @@ st.markdown(f"""
     --mar-bg: {PALETTE['bg']};
     --card-radius: 12px;
     --card-padding: 16px;
-    --title-size: 36px;  /* Título más grande */
+    --title-size: 36px;
 }}
 .stApp {{
     background-color: var(--mar-bg);
@@ -56,9 +56,6 @@ st.markdown(f"""
     display: flex;
     align-items: center;
 }}
-.header-text {{
-    margin-left: 20px;
-}}
 .title {{
     color: var(--mar-primary);
     font-size: var(--title-size);
@@ -70,10 +67,6 @@ st.markdown(f"""
     color: #34495e;
     font-size: 16px;
     margin: 4px 0 0 0;
-}}
-.logo-header img {{
-    height: 110px;
-    width: auto;
 }}
 .mar-card {{
     background-color: white;
@@ -94,9 +87,6 @@ st.markdown(f"""
     color: rgba(0, 0, 0, 0.4);
     font-style: italic;
 }}
-.stTextInput>div>div>input:focus {{
-    color: #000000;
-}}
 .stButton>button {{
     background-color: var(--mar-primary);
     color: white;
@@ -104,7 +94,7 @@ st.markdown(f"""
     padding: 0 20px;
     font-weight: 600;
     border: none;
-    height: 40px; /* misma altura que el input */
+    height: 40px;
 }}
 .stButton>button:hover {{
     background-color: var(--mar-muted);
@@ -134,7 +124,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# HEADER: logo + titles
+# HEADER: logo + títulos
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
@@ -150,7 +140,7 @@ if os.path.exists(logo_path):
                 <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
                 <div>
                     <p class="title">Sistema Integrado de Información de Proyectos</p>
-                    <p class="subtitle"> Asistente para el Seguimiento y Control  — Constructora Marval</p>
+                    <p class="subtitle"> Asistente para el Seguimiento y Control — Constructora Marval</p>
                 </div>
             </div>
             """,
@@ -162,13 +152,12 @@ else:
     st.warning("Logo no encontrado en assets/logoMar.png")
 
 # -----------------------------
-# SIDEBAR: Uploads y ayuda
+# SIDEBAR: Uploads
 # -----------------------------
 st.sidebar.title("Herramientas")
 st.sidebar.subheader("Cargas")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
 img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
-
 st.sidebar.markdown("---")
 st.sidebar.markdown("💡 Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
@@ -365,7 +354,7 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# INTERFAZ: input + botón al lado + botón voz
+# INTERFAZ: input + botón al lado + voz
 # -----------------------------
 st.markdown(
     f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
@@ -381,9 +370,7 @@ with col_enviar:
 with col_voz:
     voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
 
-# -----------------------------
 # Lógica de botones
-# -----------------------------
 if enviar and pregunta:
     texto, resultado = generar_respuesta(pregunta)
     st.markdown(
@@ -409,7 +396,7 @@ if enviar and pregunta:
     st.markdown("</div>", unsafe_allow_html=True)
 
 if voz:
-    st.info("Función de entrada por voz aún no implementada. Aquí puedes integrar Speech-to-Text.")
+    pass  # El botón de voz no realiza ninguna acción
 
 # -----------------------------
 # FOOTER
