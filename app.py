@@ -89,6 +89,13 @@ st.markdown(f"""
     padding: 10px 12px;
     font-size: 14px;
 }}
+.stTextInput>div>div>input::placeholder {{
+    color: rgba(0, 0, 0, 0.4);  /* gris opaco */
+    font-style: italic;
+}}
+.stTextInput>div>div>input:focus {{
+    color: #000000;  /* negro al escribir */
+}}
 .stButton>button {{
     background-color: var(--mar-primary);
     color: white;
@@ -136,7 +143,6 @@ if os.path.exists(logo_path):
         st.image(logo_path, width=80)
 else:
     st.warning("Logo no encontrado en assets/logoMar.png")
-
 
 # -----------------------------
 # SIDEBAR: Uploads y ayuda
@@ -350,7 +356,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-pregunta = st.text_input("Escribe tu pregunta aquí:")
+# --- CAMBIO PRINCIPAL: placeholder en el input ---
+pregunta = st.text_input(
+    label="",  # Label vacío para que no aparezca arriba
+    placeholder="Escribe tu pregunta aquí"  # Texto dentro del cuadro
+)
 
 enviar = st.button("Enviar", use_container_width=True)
 
@@ -386,11 +396,3 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
-
-
-
-
-
-
-
-
