@@ -136,7 +136,7 @@ def generar_respuesta(pregunta):
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
 
     # AVANCE
-    if "avance" in pregunta_norm and "avance en diseño" not in pregunta_norm :
+    if "avance" in pregunta_norm and "avance" not in pregunta_norm :
         df = df_avance.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -145,7 +145,7 @@ def generar_respuesta(pregunta):
         return f"📊 Avances en {proyecto or 'todos'}:", df
 
     # DISEÑO (Muestra tabla completa sin filtro)
-    elif "diseno" in pregunta_norm or "diseño" in pregunta_norm:
+    elif "diseno" in pregunta_norm or "avance en diseño" in pregunta_norm:
         if df_avance_diseno.empty:
             return "❌ No hay registros en la hoja AvanceDiseño.", None
         return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
@@ -198,4 +198,5 @@ if st.button("Enviar") and pregunta:
             resultado.style.set_properties(**{'background-color': 'white', 'color': '#333333'}),
             use_container_width=True
         )
+
 
