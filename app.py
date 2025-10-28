@@ -39,10 +39,18 @@ if img_file:
     img_b64 = base64.b64encode(img_file.read()).decode()
     splash_html = f"""
     <div style="
-        position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-        background-color: white; display: flex; justify-content: center; align-items: center; z-index: 9999;">
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background-color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;">
         <div style="text-align:center; padding: 20px; border-radius: 12px;">
-            <img src="data:image/png;base64,{img_b64}"
+            <img src="data:image/png;base64,{img_b64}" 
                  style="width:150px; max-width:40vw; height:auto; display:block; margin:0 auto;">
         </div>
     </div>
@@ -58,6 +66,7 @@ else:
 # -----------------------------
 if excel_file:
     try:
+        # Leer las hojas necesarias
         excel_file.seek(0)
         df_avance = pd.read_excel(excel_file, sheet_name="Avance")
         excel_file.seek(0)
@@ -66,8 +75,6 @@ if excel_file:
         df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones")
         excel_file.seek(0)
         df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
-        excel_file.seek(0)
-        df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")  # ✅ Nueva hoja
         st.sidebar.success("✅ Hojas cargadas correctamente")
     except Exception as e:
         st.sidebar.error(f"Error al leer hojas: {e}")
@@ -88,35 +95,35 @@ def normalizar_texto(texto):
 def quitar_tildes(texto):
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
 
-# Asegurar la columna 'Proyecto'
+# Asegurarse de que la columna 'Proyecto' exista en cada df
 for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
-                    ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad),
-                    ("AvanceDiseño", df_avance_diseno)]:
+                    ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
     if "Proyecto" not in df.columns:
         st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
         st.stop()
 
-# Normalizar
-for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad, df_avance_diseno]:
+# Normalizar la columna 'Proyecto' en cada dataframe
+for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
     df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
-# Mapa proyectos
+# Construir el mapa de proyectos a partir de todas las hojas
 all_projects = pd.concat([
     df_avance["Proyecto"].astype(str),
     df_responsables["Proyecto"].astype(str),
     df_restricciones["Proyecto"].astype(str),
-    df_sostenibilidad["Proyecto"].astype(str),
-    df_avance_diseno["Proyecto"].astype(str)
+    df_sostenibilidad["Proyecto"].astype(str)
 ]).dropna().unique()
 
 projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
 
 def extraer_proyecto(texto):
     texto_norm = quitar_tildes(normalizar_texto(texto))
+    # Buscar coincidencias exactas usando patrones para evitar subcoincidencias no deseadas
     for norm in sorted(projects_map.keys(), key=len, reverse=True):
         pattern = rf'(^|\W){re.escape(norm)}($|\W)'
         if re.search(pattern, texto_norm, flags=re.UNICODE):
             return projects_map[norm], norm
+    # Si no hubo match exacto, buscar por inclusión
     for norm in sorted(projects_map.keys(), key=len, reverse=True):
         if norm in texto_norm:
             return projects_map[norm], norm
@@ -125,7 +132,20 @@ def extraer_proyecto(texto):
 # -----------------------------
 # Cargos válidos
 # -----------------------------
-CARGOS_VALIDOS = [ ... ]  # (mismos cargos que ya tenías, los mantengo idénticos)
+CARGOS_VALIDOS = [
+    "Analista de compras", "Analista de Compras y Suministros", "Analista de Programación", "Arquitecto",
+    "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
+    "Coordinador Eléctrico", "Coordinador Logístico", "Coordinador SIG", "Coordinadora de pilotaje",
+    "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
+    "Diseñador estructural", "Diseñador externo", "Equipo MARVAL", "Gerente de proyectos",
+    "Ingeniera Eléctrica", "Ingeniero Ambiental", "Ingeniero de Contratación", "Ingeniero electromecánico",
+    "Ingeniero FCA", "Ingeniero FCA #2", "Ingeniero Lean", "Ingeniero Lean 3", "Profesional SYST",
+    "Programador de obra", "Programador de obra #2", "Practicante de Interventoría #1",
+    "Practicante Lean", "Residente", "Residente #2", "Residente Administrativo de Equipos",
+    "Residente auxiliar", "Residente Auxiliar #2", "Residente Auxiliar #3", "Residente Auxiliar #4",
+    "Residente de acabados", "Residente de acabados #2", "Residente de control e interventoría",
+    "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
+]
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
@@ -135,16 +155,7 @@ def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
 
-    # Avance diseño (antes que general de avance)
-    if any(k in pregunta_norm for k in ["avance diseño", "avancediseño", "avance de diseño"]):
-        df = df_avance_diseno.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        if df.empty:
-            return f"❌ No hay registros de avance de diseño en {proyecto or 'todos'}", None
-        return f"📐 Avance de diseño en {proyecto or 'todos'}:", df
-
-    # AVANCE general
+    # AVANCE
     if "avance" in pregunta_norm:
         df = df_avance.copy()
         if proyecto_norm:
@@ -154,7 +165,7 @@ def generar_respuesta(pregunta):
         return f"📊 Avances en {proyecto or 'todos'}:", df
 
     # RESPONSABLES
-    if "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
+    elif "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
         df = df_responsables.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -164,27 +175,35 @@ def generar_respuesta(pregunta):
                 cargo_encontrado = cargo_real
                 break
         if cargo_encontrado:
+            # Buscar por cargo (sin depender exactamente de mayúsculas)
             df = df[df["Cargo"].astype(str).str.lower().str.contains(cargo_encontrado.lower(), na=False)]
             if df.empty:
                 return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
             return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
+        if df.empty:
+            return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
 
     # RESTRICCIONES
-    if "restriccion" in pregunta_norm or "restricción" in pregunta_norm:
+    elif "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
         df = df_restricciones.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
 
-    # SOSTENIBILIDAD
-    if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
+    # SOSTENIBILIDAD (palabras clave multiple)
+    elif any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
         df = df_sostenibilidad.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None
         return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
 
-    return "❓ No entendí la pregunta. Intenta con 'avance', 'avance diseño', 'responsable', 'restricciones' o 'sostenibilidad'.", None
+    else:
+        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones' o 'sostenibilidad'.", None
 
 # -----------------------------
 # Entrada de usuario
@@ -193,13 +212,15 @@ st.subheader("📝 Escribe tu consulta")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
 # -----------------------------
-# Procesar pregunta
+# Procesar pregunta y mostrar resultados con filtros
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
     st.markdown(f"<p style='color:#333333'>{texto}</p>", unsafe_allow_html=True)
+
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
         st.dataframe(
             resultado.style.set_properties(**{'background-color': 'white', 'color': '#333333'}),
             use_container_width=True
         )
+
