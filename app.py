@@ -6,6 +6,10 @@ import re
 import unicodedata
 import time
 import base64
+import whisper
+import sounddevice as sd
+from scipy.io.wavfile import write
+import tempfile
 
 # -----------------------------
 # Configuración general
@@ -18,48 +22,28 @@ st.set_page_config(
 )
 
 # -----------------------------
-# Forzar tema Light y fondo blanco
+# Tema Light y estilo de fondo y texto
 # -----------------------------
 st.markdown("""
-    <style>
-        .stApp {
-            background-color: white;
-            color: #333333;
-        }
-        .stButton>button {
-            background-color: #FFFFFF;
-            color: #333333;
-        }
-        .stSelectbox>div>div>div>div {
-            background-color: #FFFFFF;
-            color: #333333;
-        }
-        .stTextInput>div>input {
-            background-color: #FFFFFF;
-            color: #333333;
-        }
-    </style>
+<style>
+    .stApp {background-color: white; color: #333333;}
+    .stButton>button {background-color: #FFFFFF; color: #333333;}
+    .stSelectbox>div>div>div>div {background-color: #FFFFFF; color: #333333;}
+    .stTextInput>div>input {background-color: #FFFFFF; color: #333333;}
+    .css-1d391kg p, .css-1d391kg span {color: #333333;}
+</style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Logo y título estilizado
+# Título estilizado
 # -----------------------------
-try:
-    with open("assets/logoMar.png", "rb") as f:
-        logo_b64 = base64.b64encode(f.read()).decode()
-except FileNotFoundError:
-    logo_b64 = ""
-
-st.markdown(f"""
-    <div style="display:flex; align-items:center; gap:15px;">
-        <h1 style="color:#0B3D91; font-size:48px; font-family:'Georgia', serif; font-weight:bold; margin:0;">
-            Hola, soy Mar
-        </h1>
-        <img src="data:image/png;base64,{logo_b64}" style="height:60px;">
-    </div>
-    <h3 style="color:#1B1F3B; font-size:20px; font-family:'Georgia', serif; margin-top:10px;">
-        Asistente para el seguimiento y control de los proyectos de la Constructora Marval
-    </h3>
+st.markdown("""
+<h1 style="color:#1E90FF; font-size:50px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+    Hola, soy Mar 🌊
+</h1>
+<h3 style="color:#1B1F3B; font-size:22px;">
+    Asistente para el seguimiento y control de los proyectos de la Constructora Marval
+</h3>
 """, unsafe_allow_html=True)
 
 # -----------------------------
@@ -183,7 +167,7 @@ def generar_respuesta(pregunta):
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
         if df.empty:
-            return f"⚠️ No hay registros de avance en {proyecto or 'todos'}", None
+            return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
         return f"📊 Avances en {proyecto or 'todos'}:", df
 
     # RESPONSABLES
@@ -199,10 +183,10 @@ def generar_respuesta(pregunta):
         if cargo_encontrado:
             df = df[df["Cargo"].str.lower().str.contains(cargo_encontrado.lower(), na=False)]
             if df.empty:
-                return f"⚠️ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
+                return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
             return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
         if df.empty:
-            return f"👷 No hay responsables registrados en {proyecto or 'todos'}", None
+            return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
 
     # RESTRICCIONES
@@ -211,20 +195,11 @@ def generar_respuesta(pregunta):
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
         if df.empty:
-            return f"⚠️ No hay restricciones registradas en {proyecto or 'todos'}", None
+            return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
 
-    # INFORMACION GENERAL
-    elif "informacion general" in pregunta_norm or "general de" in pregunta_norm:
-        if not proyecto_norm:
-            return "⚠️ No detecté el proyecto. Por favor indica el nombre del proyecto.", None
-        df_a = df_avance[df_avance["Proyecto_norm"] == proyecto_norm]
-        df_r = df_responsables[df_responsables["Proyecto_norm"] == proyecto_norm]
-        df_res = df_restricciones[df_restricciones["Proyecto_norm"] == proyecto_norm]
-        return f"📑 Información general del proyecto **{proyecto}**:", {"Avance": df_a, "Responsables": df_r, "Restricciones": df_res}
-
     else:
-        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones' o 'información general'.", None
+        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable' o 'restricciones'.", None
 
 # -----------------------------
 # Entrada de usuario
@@ -233,47 +208,28 @@ st.subheader("🎙️ Haz tu consulta por teclado")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
 # -----------------------------
-# Procesar pregunta y mostrar resultados con filtros seguros
+# Procesar pregunta y mostrar resultados con filtros
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
     st.markdown(f"<span style='color:#333333'>{texto}</span>", unsafe_allow_html=True)
 
     if isinstance(resultado, pd.DataFrame):
-        if "tabla_base" not in st.session_state:
-            st.session_state["tabla_base"] = resultado.copy()
-        df_tabla = st.session_state["tabla_base"].copy()
+        df_tabla = resultado.copy()
 
-        # Filtros seguros según columnas existentes
-        cols_filtros = {
-            "Sucursal": "Todas",
-            "Cluster": "Todos",
-            "Proyecto": "Todos",
-            "Cargo": "Todos",
-            "Estado": "Todos",
-            "Gerente de proyectos": "Todos"
-        }
-        col_obj = st.columns(len(cols_filtros))
-        filtros_seleccionados = {}
-        for i, (col_name, default) in enumerate(cols_filtros.items()):
-            if col_name in df_tabla.columns:
-                unique_vals = sorted(df_tabla[col_name].dropna().unique())
-                filtros_seleccionados[col_name] = col_obj[i].selectbox(col_name, [default] + unique_vals)
-            else:
-                filtros_seleccionados[col_name] = default
-
-        # Aplicar filtros solo a columnas existentes
-        for col_name, valor in filtros_seleccionados.items():
-            if col_name in df_tabla.columns and valor != cols_filtros[col_name]:
-                df_tabla = df_tabla[df_tabla[col_name] == valor]
-
-        if st.button("Restablecer filtros"):
-            df_tabla = st.session_state["tabla_base"].copy()
+        # Filtros solo si existen las columnas
+        cols_filtros = ["Sucursal","Cluster","Proyecto","Cargo","Estado","Responsable"]
+        cols_presentes = [c for c in cols_filtros if c in df_tabla.columns]
+        if cols_presentes:
+            col_objects = st.columns(len(cols_presentes))
+            filtros = {}
+            for i, c in enumerate(cols_presentes):
+                unique_vals = sorted(df_tabla[c].dropna().unique())
+                default = "Todos"
+                filtros[c] = col_objects[i].selectbox(c, [default] + unique_vals)
+            # Aplicar filtros
+            for c, val in filtros.items():
+                if val != "Todos":
+                    df_tabla = df_tabla[df_tabla[c]==val]
 
         st.dataframe(df_tabla, use_container_width=True)
-
-    elif isinstance(resultado, dict):
-        for nombre, df_out in resultado.items():
-            if not df_out.empty:
-                st.subheader(nombre)
-                st.dataframe(df_out, use_container_width=True)
