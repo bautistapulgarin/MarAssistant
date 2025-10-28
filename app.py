@@ -8,69 +8,41 @@ import time
 import base64
 
 # -----------------------------
-# Configuración general
+# Configuración general y tema Light
 # -----------------------------
 st.set_page_config(
     page_title="Mar Assistant",
     layout="wide",
     page_icon="🌊",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={'About': "Mar Assistant v1.0"}
 )
 
-# -----------------------------
-# Estilo visual uniforme: fondo blanco y texto gris oscuro
-# -----------------------------
+# Forzar estilo Light (fondo blanco y texto gris oscuro)
 st.markdown("""
     <style>
-        /* Fondo general de la app */
-        .stApp {
-            background-color: white;
-        }
+        /* Fondo general blanco */
+        .stApp { background-color: #FFFFFF; }
 
-        /* Filtros (selectbox) */
-        div.stSelectbox div[role="combobox"] > div {
-            background-color: white !important;
+        /* Texto general gris oscuro */
+        .stText, .stMarkdown, .stButton>button, .stSelectbox>div>div>div {
             color: #333333 !important;
-        }
-
-        /* Botones */
-        div.stButton > button {
-            background-color: white !important;
-            color: #333333 !important;
-            border: 1px solid #ccc !important;
-        }
-        div.stButton > button:hover {
-            background-color: #f0f0f0 !important;
+            background-color: #FFFFFF !important;
         }
 
         /* Tablas */
-        .stDataFrame div[data-testid="stMarkdownContainer"] {
-            color: #333333 !important;
-            background-color: white !important;
-        }
         .stDataFrame table {
-            background-color: white !important;
             color: #333333 !important;
-        }
-        .stDataFrame th {
-            background-color: #f7f7f7 !important;
-            color: #333333 !important;
+            background-color: #FFFFFF !important;
         }
 
-        /* Inputs de texto */
-        div.stTextInput input {
-            background-color: white !important;
+        /* Encabezados de filtros */
+        div[role="listbox"] {
             color: #333333 !important;
+            background-color: #FFFFFF !important;
         }
     </style>
 """, unsafe_allow_html=True)
-
-
-
-
-
-
-
 
 # -----------------------------
 # Logo y título estilizado
@@ -88,7 +60,7 @@ st.markdown(f"""
         </h1>
         <img src="data:image/png;base64,{logo_b64}" style="height:60px;">
     </div>
-    <h3 style="color:#1B1F3B; font-size:20px; font-family:'Georgia', serif; margin-top:10px;">
+    <h3 style="color:#333333; font-size:20px; font-family:'Georgia', serif; margin-top:10px;">
         Asistente para el seguimiento y control de los proyectos de la Constructora Marval
     </h3>
 """, unsafe_allow_html=True)
@@ -260,7 +232,7 @@ def generar_respuesta(pregunta):
 # -----------------------------
 # Entrada de usuario
 # -----------------------------
-st.subheader("🎙️ Haz tu consulta por teclado")
+st.subheader("💬 Haz tu consulta por teclado")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
 # -----------------------------
@@ -268,21 +240,21 @@ pregunta = st.text_input("Escribe tu pregunta aquí:")
 # -----------------------------
 if st.button("Enviar") and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    st.write(texto)
+    st.markdown(f"<p style='color:#333333'>{texto}</p>", unsafe_allow_html=True)
 
-    # Si el resultado es un DataFrame simple (Avance, Responsables o Restricciones)
     if isinstance(resultado, pd.DataFrame):
-        df_tabla = resultado.copy()  # Tomamos solo la tabla correspondiente
+        if "tabla_base" not in st.session_state:
+            st.session_state["tabla_base"] = resultado.copy()
+        df_tabla = st.session_state["tabla_base"].copy()
 
-        # Filtros solo si existen las columnas
-        cols = df_tabla.columns.str.lower()
+        # Filtros
         col1, col2, col3, col4, col5, col6 = st.columns(6)
-        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique())) if "sucursal" in cols else "Todas"
-        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique())) if "cluster" in cols else "Todos"
-        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique())) if "proyecto" in cols else "Todos"
-        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique())) if "cargo" in cols else "Todos"
-        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique())) if "estado" in cols else "Todos"
-        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique())) if "responsable" in cols else "Todos"
+        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique()))
+        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique()))
+        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()))
+        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()))
+        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()))
+        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique()))
 
         # Aplicar filtros progresivos
         if sucursal_sel != "Todas":
@@ -298,12 +270,13 @@ if st.button("Enviar") and pregunta:
         if gerente_sel != "Todos":
             df_tabla = df_tabla[df_tabla["Responsable"] == gerente_sel]
 
+        if st.button("Restablecer filtros"):
+            df_tabla = st.session_state["tabla_base"].copy()
+
         st.dataframe(df_tabla, use_container_width=True)
 
-    # Si el resultado es un diccionario (información general por proyecto)
     elif isinstance(resultado, dict):
         for nombre, df_out in resultado.items():
             if not df_out.empty:
                 st.subheader(nombre)
                 st.dataframe(df_out, use_container_width=True)
-
