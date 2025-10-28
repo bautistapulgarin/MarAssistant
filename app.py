@@ -1,6 +1,6 @@
-# streamlit run app.py
-
+# app.py
 import streamlit as st
+from PIL import Image
 import pandas as pd
 import re
 import unicodedata
@@ -9,12 +9,17 @@ import base64
 import os
 
 # -----------------------------
-# Configuración general
+# CONFIGURACIÓN GENERAL
 # -----------------------------
-st.set_page_config(page_title="Mar Assistant", layout="wide", page_icon="🌊", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="Mar Assistant",
+    page_icon="🌊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # -----------------------------
-# Variables de paleta (UX / BI)
+# PALETA DE COLORES (UX / BI)
 # -----------------------------
 PALETTE = {
     "primary": "#154872",   # profundo
@@ -24,178 +29,193 @@ PALETTE = {
 }
 
 # -----------------------------
-# CSS global para UI (UX-friendly)
+# CSS GLOBAL (UX friendly)
 # -----------------------------
 st.markdown(f"""
-<style>
-:root {{
-    --mar-primary: {PALETTE['primary']};
-    --mar-accent: {PALETTE['accent']};
-    --mar-muted: {PALETTE['muted']};
-    --mar-bg: {PALETTE['bg']};
-    --card-radius: 12px;
-}}
-
-body {{
-    background-color: var(--mar-bg);
-}}
-
-header .title {{
-    margin: 0;
-}}
-
-.stApp {{
-    padding-top: 16px;
-}}
-
-/* Inputs */
-.stTextInput > div > div > input {{
-    background-color: white;
-    border: 1px solid rgba(21,72,114,0.15);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 15px;
-}}
-
-/* Botones */
-.stButton button {{
-    background-color: var(--mar-primary);
-    color: white;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-weight: 600;
-    border: none;
-}}
-.stButton button:hover {{
-    background-color: var(--mar-muted);
-}}
-
-/* Tarjeta de resultado */
-.mar-card {{
-    background-color: white;
-    padding: 18px;
-    border-radius: var(--card-radius);
-    box-shadow: 0 6px 18px rgba(21,72,114,0.07);
-    margin-bottom: 18px;
-}}
-
-/* Títulos y textos */
-.mar-title {{
-    color: var(--mar-primary);
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 4px;
-}}
-.mar-subtitle {{
-    color: #2E3A49;
-    font-size: 14px;
-    margin-top: 0;
-    margin-bottom: 8px;
-}}
-
-/* Logo sizing */
-.mar-logo {{
-    max-width: 140px;
-    height: auto;
-}}
-
-/* Sidebar refinamiento */
-[data-testid="stSidebar"] {{
-    background-color: white;
-    border-radius: 12px;
-    padding: 16px;
-}}
-</style>
+    <style>
+    :root {{
+        --mar-primary: {PALETTE['primary']};
+        --mar-accent: {PALETTE['accent']};
+        --mar-muted: {PALETTE['muted']};
+        --mar-bg: {PALETTE['bg']};
+        --card-radius: 12px;
+        --card-padding: 16px;
+        --title-size: 26px;
+    }}
+    /* Background */
+    .stApp {{
+        background-color: var(--mar-bg);
+        color: #1b2635;
+    }}
+    /* Header box */
+    .header-box {{
+        background-color: white;
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(21,72,114,0.06);
+        display: flex;
+        align-items: center;
+    }}
+    .header-text {{
+        margin-left: 14px;
+    }}
+    .title {{
+        color: var(--mar-primary);
+        font-size: var(--title-size);
+        font-weight: 700;
+        margin: 0;
+    }}
+    .subtitle {{
+        color: #34495e;
+        font-size: 14px;
+        margin: 0;
+    }}
+    /* Card */
+    .mar-card {{
+        background-color: white;
+        padding: var(--card-padding);
+        border-radius: var(--card-radius);
+        box-shadow: 0 6px 18px rgba(21,72,114,0.06);
+        margin-bottom: 16px;
+    }}
+    /* Inputs */
+    .stTextInput>div>div>input {{
+        background-color: white;
+        border: 1px solid rgba(21,72,114,0.12);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+    }}
+    /* Buttons */
+    .stButton>button {{
+        background-color: var(--mar-primary);
+        color: white;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: 600;
+        border: none;
+    }}
+    .stButton>button:hover {{
+        background-color: var(--mar-muted);
+    }}
+    /* Sidebar */
+    [data-testid="stSidebar"] {{
+        background-color: white;
+        padding: 16px;
+        border-radius: 10px;
+    }}
+    </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Header con logo (UX: logo + título)
+# HEADER: logo + titles
 # -----------------------------
-logo_path = os.path.join("assets", "logoMar.png")  # ruta relativa: assets/logoMar.png
+logo_path = os.path.join("assets", "logoMar.png")
 
-# Crear layout del header: logo a la izquierda, texto a la derecha
-col1, col2 = st.columns([1, 6], gap="small")
-with col1:
+# Header layout: small col for logo, rest for titles
+col_logo, col_title = st.columns([0.14, 0.86], gap="small")
+with col_logo:
     if os.path.exists(logo_path):
-        st.image(logo_path, use_column_width=False, width=110, caption=None)
+        # Use width to avoid huge logo; responsive enough
+        try:
+            logo_img = Image.open(logo_path)
+            st.image(logo_img, use_container_width=True)
+        except Exception:
+            # fallback in case PIL fails
+            st.image(logo_path, use_container_width=True)
     else:
-        # Si no existe el logo, mostrar aviso discreto
         st.warning("Logo no encontrado en assets/logoMar.png")
 
-with col2:
-    st.markdown(f"""
-    <div class="mar-card" style="padding:12px 18px;">
-        <div style="display:flex; flex-direction:column; justify-content:center;">
-            <div class="mar-title">Sistema Integrado de Control de Proyectos</div>
-            <div class="mar-subtitle">Plataforma para gestión de información estratégica — Constructora Marval</div>
+with col_title:
+    st.markdown(
+        f"""
+        <div class="header-box">
+            <div class="header-text">
+                <p class="title">Sistema Integrado de Control de Proyectos</p>
+                <p class="subtitle">Plataforma de consolidación y consulta — Constructora Marval</p>
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )
+
+st.write("")  # spacing
 
 # -----------------------------
-# Sidebar: carga de archivos y ayuda
+# SIDEBAR: Uploads y ayuda
 # -----------------------------
-st.sidebar.subheader("Sube los archivos necesarios")
-excel_file = st.sidebar.file_uploader("Sube tu archivo Excel", type=["xlsx"])
-img_file = st.sidebar.file_uploader("Sube la imagen de carga (opcional)", type=["png", "jpg", "jpeg"])
+st.sidebar.title("Herramientas")
+st.sidebar.subheader("Cargas")
+excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
+img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
 # -----------------------------
-# Splash fullscreen (opcional) - mantiene tu lógica
+# SPLASH (opcional) - comportamiento original
 # -----------------------------
 placeholder = st.empty()
 if img_file:
-    img_b64 = base64.b64encode(img_file.read()).decode()
-    splash_html = f"""
-    <div style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100vh;
-        background-color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;">
-        <div style="text-align:center; padding: 20px; border-radius: 12px;">
-            <img src="data:image/png;base64,{img_b64}" 
-                 style="width:150px; max-width:40vw; height:auto; display:block; margin:0 auto;">
+    try:
+        img_b64 = base64.b64encode(img_file.read()).decode()
+        splash_html = f"""
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;">
+            <div style="text-align:center; padding: 20px; border-radius: 12px;">
+                <img src="data:image/png;base64,{img_b64}" 
+                     style="width:160px; max-width:50vw; height:auto; display:block; margin:0 auto;">
+            </div>
         </div>
-    </div>
-    """
-    placeholder.markdown(splash_html, unsafe_allow_html=True)
-    time.sleep(0.5)
-    placeholder.empty()
+        """
+        placeholder.markdown(splash_html, unsafe_allow_html=True)
+        time.sleep(0.5)
+        placeholder.empty()
+    except Exception:
+        # silencioso si falla el splash
+        placeholder.empty()
 else:
-    st.info("Sube la imagen de carga para mostrar splash screen (opcional)")
+    # mensaje discreto en sidebar ya mostrado
+    pass
 
 # -----------------------------
-# Lectura de Excel (mantener lógica)
+# LECTURA DE EXCEL - mantiene tu lógica
 # -----------------------------
-if excel_file:
-    try:
-        excel_file.seek(0)
-        df_avance = pd.read_excel(excel_file, sheet_name="Avance")
-        excel_file.seek(0)
-        df_responsables = pd.read_excel(excel_file, sheet_name="Responsables")
-        excel_file.seek(0)
-        df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones")
-        excel_file.seek(0)
-        df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
-        excel_file.seek(0)
-        df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")  # SIN columna Proyecto
-        excel_file.seek(0)
-        df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")  # NUEVA HOJA
-        st.sidebar.success("✅ Hojas cargadas correctamente")
-    except Exception as e:
-        st.sidebar.error(f"Error al leer hojas: {e}")
-        st.stop()
-else:
-    st.info("Sube el archivo Excel para continuar")
+if not excel_file:
+    st.info("Sube el archivo Excel en la barra lateral para cargar las hojas.")
+    st.stop()
+
+# Intento de lectura de hojas esperadas
+try:
+    excel_file.seek(0)
+    df_avance = pd.read_excel(excel_file, sheet_name="Avance")
+    excel_file.seek(0)
+    df_responsables = pd.read_excel(excel_file, sheet_name="Responsables")
+    excel_file.seek(0)
+    df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones")
+    excel_file.seek(0)
+    df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
+    excel_file.seek(0)
+    # hojas sin columna 'Proyecto' o con estructura distinta
+    df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
+    excel_file.seek(0)
+    df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")
+    st.sidebar.success("✅ Hojas cargadas correctamente")
+except Exception as e:
+    st.sidebar.error(f"Error al leer una o varias hojas: {e}")
     st.stop()
 
 # -----------------------------
-# Normalización de texto (mantener lógica)
+# NORMALIZACIÓN (mantener)
 # -----------------------------
 def normalizar_texto(texto):
     texto = str(texto).lower()
@@ -206,18 +226,18 @@ def normalizar_texto(texto):
 def quitar_tildes(texto):
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
 
-# Asegurarse de que la columna 'Proyecto' exista solo en las hojas que la tienen
+# Chequear que ciertas hojas tengan 'Proyecto'
 for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
                     ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
     if "Proyecto" not in df.columns:
         st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
         st.stop()
 
-# Normalizar la columna 'Proyecto' solo en hojas que la contienen
+# Normalizar columna proyecto donde existe
 for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
     df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
-# Construir el mapa de proyectos
+# Crear mapa de proyectos para búsqueda por texto libre
 all_projects = pd.concat([
     df_avance["Proyecto"].astype(str),
     df_responsables["Proyecto"].astype(str),
@@ -239,7 +259,7 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
-# Cargos válidos (mantener)
+# LISTA DE CARGOS (mantener)
 # -----------------------------
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Compras y Suministros", "Analista de Programación", "Arquitecto",
@@ -258,7 +278,7 @@ CARGOS_VALIDOS = [
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
-# Función de respuesta (mantener)
+# FUNCION DE RESPUESTA (mantener)
 # -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
@@ -343,23 +363,46 @@ def generar_respuesta(pregunta):
         return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
 
     # Fallback
-    return "❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', 'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'.", None
+    return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
+            "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# Entrada de usuario
+# INTERFAZ: entrada y despliegue
 # -----------------------------
-st.subheader("📝 Escribe tu consulta")
+st.markdown('<div class="mar-card"><strong>Consulta rápida</strong><p style="margin:6px 0 0 0;">Escribe tu consulta en lenguaje natural (ej. "avance de obra en Proyecto X" o "¿quién es el responsable?")</p></div>', unsafe_allow_html=True)
+
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
-# -----------------------------
-# Procesar pregunta y mostrar resultados
-# -----------------------------
-if st.button("Enviar") and pregunta:
+# Botón enviar junto a un pequeño selector de formato de salida (opcional)
+col_btn_1, col_btn_2 = st.columns([0.3, 0.7])
+with col_btn_1:
+    enviar = st.button("Enviar")
+with col_btn_2:
+    mostrar_raw = st.checkbox("Mostrar tabla completa (raw)", value=False)
+
+if enviar and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    # Mostrar resultado en tarjeta
-    st.markdown(f"<div class='mar-card'><p style='color:var(--mar-primary); font-weight:700; margin:0 0 8px 0;'>{texto}</p></div>", unsafe_allow_html=True)
+
+    # Mostrar texto en tarjeta
+    st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p></div>", unsafe_allow_html=True)
+
+    # Si el resultado es DataFrame y no esta vacío, mostrarlo
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-        st.dataframe(
-            resultado.style.set_properties(**{'background-color': 'white', 'color': '#333333'}),
-            use_container_width=True
-        )
+        if mostrar_raw:
+            st.dataframe(resultado, use_container_width=True)
+        else:
+            # Mostrar un preview limpio: limitar filas y mantener contenedor ancho
+            max_preview = 200  # limite razonable para UX
+            if len(resultado) > max_preview:
+                st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}. Usa 'Mostrar tabla completa (raw)' para ver todo.")
+                st.dataframe(resultado.head(max_preview), use_container_width=True)
+            else:
+                st.dataframe(resultado, use_container_width=True)
+    else:
+        # Mensaje de error o info (texto ya tiene la info)
+        pass
+
+# -----------------------------
+# FOOTER - info de version ligera
+# -----------------------------
+st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
