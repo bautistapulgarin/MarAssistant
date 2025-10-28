@@ -7,19 +7,36 @@ import unicodedata
 import matplotlib.pyplot as plt
 import time
 import base64
-import whisper
-import tempfile
 
 # -----------------------------
 # Configuración general
 # -----------------------------
-st.set_page_config(page_title="Mar Assistant", layout="wide", page_icon="🌊", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="Mar Assistant",
+    layout="wide",
+    page_icon="🌊",
+    initial_sidebar_state="expanded"
+)
+
+# -----------------------------
+# Forzar fondo blanco
+# -----------------------------
+st.markdown("""
+    <style>
+        .stApp {
+            background-color: white;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # -----------------------------
 # Logo y título estilizado
 # -----------------------------
-with open("assets/logoMar.png", "rb") as f:
-    logo_b64 = base64.b64encode(f.read()).decode()
+try:
+    with open("assets/logoMar.png", "rb") as f:
+        logo_b64 = base64.b64encode(f.read()).decode()
+except FileNotFoundError:
+    logo_b64 = ""
 
 st.markdown(f"""
     <div style="display:flex; align-items:center; gap:15px;">
@@ -194,20 +211,83 @@ def generar_respuesta(pregunta):
         df_res = df_restricciones[df_restricciones["Proyecto_norm"] == proyecto_norm]
         return f"📑 Información general del proyecto **{proyecto}**:", {"Avance": df_a, "Responsables": df_r, "Restricciones": df_res}
 
+    # DEL GERENTE
+    elif "del gerente" in pregunta_norm:
+        palabras = pregunta.split()
+        nombre_gerente = " ".join(palabras[palabras.index("gerente")+1:]).strip()
+        if not nombre_gerente:
+            return "❌ No detecté el nombre del gerente. Intenta con: 'dame la información del gerente de proyectos [NOMBRE]'", None
+        df_g = df_responsables[
+            (df_responsables["Cargo"].str.lower().str.contains("gerente de proyectos")) &
+            (df_responsables["Responsable"].str.lower().str.contains(nombre_gerente.lower()))
+        ]
+        if df_g.empty:
+            return f"❌ No encontré proyectos asociados al gerente '{nombre_gerente}'.", None
+        proyectos_gerente = df_g["Proyecto_norm"].unique()
+        resultados = {}
+        respuesta = f"📑 Información general de proyectos a cargo del Gerente **{nombre_gerente}**:\n\n"
+        for p_norm in proyectos_gerente:
+            p_real = projects_map.get(p_norm, p_norm)
+            df_a = df_avance[df_avance["Proyecto_norm"] == p_norm]
+            df_r = df_responsables[df_responsables["Proyecto_norm"] == p_norm]
+            df_res = df_restricciones[df_restricciones["Proyecto_norm"] == p_norm]
+            resultados[f"Avance - {p_real}"] = df_a
+            resultados[f"Responsables - {p_real}"] = df_r
+            resultados[f"Restricciones - {p_real}"] = df_res
+            respuesta += f"\n---\n📌 **Proyecto: {p_real}**\n"
+        return respuesta, resultados
+
     else:
-        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones' o 'información general'.", None
+        return "❓ No entendí la pregunta. Intenta con 'avance', 'responsable', 'restricciones', 'información general' o 'del gerente'.", None
 
 # -----------------------------
-# Entrada de usuario
+# Entrada de usuario (solo teclado)
 # -----------------------------
 st.subheader("📝 Haz tu consulta por teclado")
 pregunta = st.text_input("Escribe tu pregunta aquí:")
 
-# Modelo Whisper
-@st.cache_resource
-def cargar_modelo():
-    return whisper.load_model("base")
-model = cargar_modelo()
-
 # -----------------------------
-#
+# Procesar pregunta y mostrar resultados con filtros
+# -----------------------------
+if st.button("Enviar") and pregunta:
+    texto, resultado = generar_respuesta(pregunta)
+    st.write(texto)
+
+    if isinstance(resultado, pd.DataFrame):
+        if "tabla_base" not in st.session_state:
+            st.session_state["tabla_base"] = resultado.copy()
+        df_tabla = st.session_state["tabla_base"].copy()
+
+        # Filtros como encabezado
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        sucursal_sel = col1.selectbox("Sucursal", ["Todas"] + sorted(df_tabla["Sucursal"].dropna().unique()))
+        cluster_sel = col2.selectbox("Cluster", ["Todos"] + sorted(df_tabla["Cluster"].dropna().unique()))
+        proyecto_sel = col3.selectbox("Proyecto", ["Todos"] + sorted(df_tabla["Proyecto"].dropna().unique()))
+        cargo_sel = col4.selectbox("Cargo", ["Todos"] + sorted(df_tabla["Cargo"].dropna().unique()))
+        estado_sel = col5.selectbox("Estado", ["Todos"] + sorted(df_tabla["Estado"].dropna().unique()))
+        gerente_sel = col6.selectbox("Gerente de proyectos", ["Todos"] + sorted(df_tabla[df_tabla["Cargo"]=="Gerente de proyectos"]["Responsable"].dropna().unique()))
+
+        # Aplicar filtros progresivos
+        if sucursal_sel != "Todas":
+            df_tabla = df_tabla[df_tabla["Sucursal"] == sucursal_sel]
+        if cluster_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Cluster"] == cluster_sel]
+        if proyecto_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Proyecto"] == proyecto_sel]
+        if cargo_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Cargo"] == cargo_sel]
+        if estado_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Estado"] == estado_sel]
+        if gerente_sel != "Todos":
+            df_tabla = df_tabla[df_tabla["Responsable"] == gerente_sel]
+
+        if st.button("Restablecer filtros"):
+            df_tabla = st.session_state["tabla_base"].copy()
+
+        st.dataframe(df_tabla, use_container_width=True)
+
+    elif isinstance(resultado, dict):
+        for nombre, df_out in resultado.items():
+            if not df_out.empty:
+                st.subheader(nombre)
+                st.dataframe(df_out, use_container_width=True)
