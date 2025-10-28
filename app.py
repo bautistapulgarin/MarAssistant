@@ -348,34 +348,41 @@ def generar_respuesta(pregunta):
 # -----------------------------
 # INTERFAZ: entrada y despliegue
 # -----------------------------
-st.markdown('<div class="mar-card"><strong>Consulta rápida</strong><p style="margin:6px 0 0 0;">Escribe tu consulta en lenguaje natural (ej. "avance de obra en Proyecto X" o "¿quién es el responsable?")</p></div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="mar-card"><strong>Consulta rápida</strong>'
+    '<p style="margin:6px 0 0 0;">Escribe tu consulta en lenguaje natural (ej. "avance de obra en Proyecto X" o "¿quién es el responsable?")</p></div>',
+    unsafe_allow_html=True
+)
 
-pregunta = st.text_area("Escribe tu pregunta aquí:", height=60)
-col_btn_1, col_btn_2 = st.columns([0.3,0.7])
-with col_btn_1: enviar = st.button("Enviar", use_container_width=True)
-with col_btn_2: mostrar_raw = st.checkbox("Mostrar tabla completa (raw)", value=False)
+# Input más compacto
+pregunta = st.text_input("Escribe tu pregunta aquí:")
+
+# Botón de enviar
+enviar = st.button("Enviar", use_container_width=True)
 
 if enviar and pregunta:
     texto, resultado = generar_respuesta(pregunta)
-    st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
+        unsafe_allow_html=True
+    )
 
     if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-        # Zebra striping
+        # Zebra striping para mejorar lectura
         styled_df = resultado.style.set_table_styles(
             [{'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]}]
         )
-        if mostrar_raw:
-            st.dataframe(styled_df, use_container_width=True)
+        max_preview = 200
+        if len(resultado) > max_preview:
+            st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
+            st.dataframe(styled_df.head(max_preview), use_container_width=True)
         else:
-            max_preview = 200
-            if len(resultado) > max_preview:
-                st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}. Usa 'Mostrar tabla completa (raw)' para ver todo.")
-                st.dataframe(styled_df.head(max_preview), use_container_width=True)
-            else:
-                st.dataframe(styled_df, use_container_width=True)
+            st.dataframe(styled_df, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # -----------------------------
 # FOOTER
 # -----------------------------
 st.markdown("<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.0</p>", unsafe_allow_html=True)
+
