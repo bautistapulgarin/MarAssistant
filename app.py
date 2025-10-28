@@ -254,3 +254,4 @@ if st.button("Enviar") and pregunta:
             resultado.style.set_properties(**{'background-color': 'white', 'color': '#333333'}),
             use_container_width=True
         )
+
