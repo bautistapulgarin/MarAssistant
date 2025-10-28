@@ -1,8 +1,3 @@
-Perfecto. Vamos a quitar **toda la funcionalidad de grabación de audio**, incluyendo las librerías `sounddevice` y `scipy`, y mantener solo la **entrada por teclado**. También dejamos el logo y el splash funcionando.
-
-Aquí tienes el **código corregido**:
-
-```python
 # streamlit run app.py
 
 import streamlit as st
@@ -216,4 +211,3 @@ model = cargar_modelo()
 
 # -----------------------------
 #
-```
