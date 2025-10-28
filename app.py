@@ -125,8 +125,8 @@ if os.path.exists(logo_path):
             <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
                 <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
                 <div>
-                    <p class="title">Sistema Integrado de Control de Proyectos</p>
-                    <p class="subtitle">Plataforma de consolidación y consulta — Constructora Marval</p>
+                    <p class="title">Sistema Integrado de mando central Proyectos</p>
+                    <p class="subtitle"> Asistente para el Seguimiento y Control  — Constructora Marval</p>
                 </div>
             </div>
             """,
@@ -386,5 +386,6 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
+
 
 
