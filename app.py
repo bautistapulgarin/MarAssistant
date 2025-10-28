@@ -140,7 +140,7 @@ if os.path.exists(logo_path):
                 <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
                 <div>
                     <p class="title">Sistema Integrado de Información de Proyectos</p>
-                    <p class="subtitle">Asistente para el Seguimiento y Control — Constructora Marval</p>
+                    <p class="subtitle"> Asistente para el Seguimiento y Control — Constructora Marval</p>
                 </div>
             </div>
             """,
@@ -354,37 +354,21 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# INTERFAZ: input + botones alineados
+# INTERFAZ: input + botón al lado + voz
 # -----------------------------
 st.markdown(
-    f'''
-    <div class="mar-card">
-        <strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>
-        <p style="margin:6px 0 10px 0;">
-            Escribe tu consulta relacionada con el estado u contexto de los proyectos
-        </p>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <input type="text" id="pregunta" placeholder="Escribe tu pregunta aquí" 
-                   style="flex:5; height:40px; padding:10px 12px; border-radius:8px; border:1px solid rgba(21,72,114,0.2); font-size:14px;">
-            <button id="enviar" style="
-                   flex:1; height:40px; background-color:{PALETTE['primary']}; color:white; 
-                   border:none; border-radius:8px; font-weight:600; cursor:pointer;">
-                   Enviar
-            </button>
-            <button id="voz" style="
-                   flex:1; height:40px; background-color:{PALETTE['accent']}; color:white; 
-                   border:none; border-radius:8px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;">
-                   🎤 Voz
-            </button>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True
+    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
+    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
+    unsafe_allow_html=True
 )
 
-# Streamlit back-end para la lógica
-pregunta = st.text_input("", placeholder="", key="hidden_input", label_visibility="collapsed")
-enviar = st.button("Enviar", key="hidden_enviar")
-voz = st.button("🎤 Voz", key="hidden_voz")
+col_input, col_enviar, col_voz = st.columns([5, 1, 1])
+with col_input:
+    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
+with col_enviar:
+    enviar = st.button("Enviar", use_container_width=True)
+with col_voz:
+    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
 
 # Lógica de botones
 if enviar and pregunta:
@@ -421,3 +405,4 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
+
