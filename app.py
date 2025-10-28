@@ -62,7 +62,7 @@ st.markdown(f"""
 }}
 .title {{
     color: var(--mar-primary);
-    font-size: 72px;       /* Título muy grande y prominente */
+    font-size: 90px;       /* Título muy grande y prominente */
     font-weight: 900;
     margin: 0;
     font-family: 'Roboto Slab', serif;
@@ -397,5 +397,6 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
+
 
 
