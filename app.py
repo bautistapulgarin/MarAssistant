@@ -62,16 +62,18 @@ st.markdown(f"""
 }}
 .title {{
     color: var(--mar-primary);
-    font-size: var(--title-size);
-    font-weight: 800;
+    font-size: 72px;       /* Título muy grande y prominente */
+    font-weight: 900;
     margin: 0;
     font-family: 'Roboto Slab', serif;
 }}
 .subtitle {{
     color: #34495e;
-    font-size: var(--subtitle-size);
-    margin: 4px 0 0 0;
+    font-size: 28px;       /* Subtítulo más grande y visible */
+    margin: 6px 0 0 0;
+    font-weight: 500;
 }}
+
 .logo-header img {{
     height: 110px;
     width: auto;
@@ -395,4 +397,5 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • UI organizada según lineamientos UX & BI • Versión: 1.2</p>",
     unsafe_allow_html=True
 )
+
 
