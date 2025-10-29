@@ -454,14 +454,18 @@ if excel_file:
             st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
             st.stop()
 
-    for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
-        df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
+    for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad, df_avance_diseno, df_inventario_diseno]:
+        # Aseguramos que la columna 'Proyecto' exista antes de intentar normalizarla
+        if "Proyecto" in df.columns:
+            df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
     all_projects = pd.concat([
         df_avance["Proyecto"].astype(str),
         df_responsables["Proyecto"].astype(str),
         df_restricciones["Proyecto"].astype(str),
-        df_sostenibilidad["Proyecto"].astype(str)
+        df_sostenibilidad["Proyecto"].astype(str),
+        df_avance_diseno["Proyecto"].astype(str),
+        df_inventario_diseno["Proyecto"].astype(str),
     ]).dropna().unique()
 
     projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
@@ -516,9 +520,88 @@ if excel_file:
         pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
         proyecto, proyecto_norm = extraer_proyecto(pregunta)
         
-        # ... [Resto de lógica de palabras clave (Avance, Responsables, etc. - se mantiene)] ...
+        # 🎯 CAMBIO CLAVE: Lógica para Avance de Obra
+        if "avance de obra" in pregunta_norm or "avance obra" in pregunta_norm:
+            df = df_avance.copy()
+            if proyecto_norm:
+                df = df[df["Proyecto_norm"] == proyecto_norm]
+            if df.empty:
+                return f"❌ No hay registros de avance de obra en {proyecto or 'todos'}", None, None, 'general', None
+            
+            # Gráfico de avance (si existe la columna Avance)
+            grafico = None
+            if PLOTLY_AVAILABLE and "Avance" in df.columns:
+                # Agrupamos por etapa si es posible (asumiendo que hay una columna 'Etapa' o similar)
+                if 'Etapa' in df.columns and len(df['Etapa'].unique()) > 1:
+                    df_sum = df.groupby('Etapa')['Avance'].mean().reset_index()
+                    grafico = px.bar(
+                        df_sum,
+                        x="Etapa",
+                        y="Avance",
+                        text=df_sum["Avance"].apply(lambda x: f'{x:.1f}%'),
+                        labels={"Etapa": "Etapa", "Avance": "Avance Promedio (%)"},
+                        title=f"Avance Promedio por Etapa en {proyecto or 'Todos los Proyectos'}",
+                        color_discrete_sequence=[PALETTE['primary']]
+                    )
+                    grafico.update_layout(
+                        plot_bgcolor='white',
+                        paper_bgcolor='white',
+                        margin=dict(t=50, l=10, r=10, b=10)
+                    )
+                else:
+                    # Alternativa simple si no hay Etapas o solo hay una
+                    grafico = None # Opcional: mostrar un indicador de avance general. Por ahora, None.
 
-        # 🎯 Bloque de Restricciones (Ajustado)
+            return f"🚧 Avance de obra en {proyecto or 'todos'}:", df, grafico, 'general', None
+
+        # 🎯 CAMBIO CLAVE: Lógica para Avance en Diseño y Estado Diseño (combinadas)
+        if "avance en diseno" in pregunta_norm or "avance diseno" in pregunta_norm or "estado diseno" in pregunta_norm or "inventario diseno" in pregunta_norm:
+            
+            # Buscar si se pide inventario específico
+            if "inventario" in pregunta_norm:
+                df = df_inventario_diseno.copy()
+                titulo_prefijo = "📑 Inventario de Diseño"
+            else:
+                df = df_avance_diseno.copy()
+                titulo_prefijo = "📐 Avance de Diseño"
+            
+            if proyecto_norm:
+                df = df[df["Proyecto_norm"] == proyecto_norm]
+            
+            if df.empty:
+                return f"❌ No hay registros de diseño en {proyecto or 'todos'}", None, None, 'general', None
+            
+            # No se implementa gráfico complejo por ahora para diseño.
+            return f"{titulo_prefijo} en {proyecto or 'todos'}:", df, None, 'general', None
+            
+        # 🎯 CAMBIO CLAVE: Lógica para Responsables
+        if "responsable" in pregunta_norm or "cargo" in pregunta_norm or any(c_norm in pregunta_norm for c_norm in CARGOS_VALIDOS_NORM.keys()):
+            df = df_responsables.copy()
+            
+            # 1. Filtrar por Proyecto si se encuentra
+            if proyecto_norm:
+                df = df[df["Proyecto_norm"] == proyecto_norm]
+            
+            # 2. Filtrar por Cargo si se encuentra en la pregunta
+            cargo_encontrado = None
+            for cargo_norm, cargo_real in CARGOS_VALIDOS_NORM.items():
+                if cargo_norm in pregunta_norm:
+                    cargo_encontrado = cargo_real
+                    break
+            
+            if cargo_encontrado:
+                # Asumiendo que la columna de cargos en df_responsables se llama 'Cargo'
+                if 'Cargo' in df.columns:
+                    df = df[df['Cargo'] == cargo_encontrado]
+                else:
+                    st.warning("La columna 'Cargo' no se encontró en la hoja 'Responsables' para filtrar.")
+                    
+            if df.empty:
+                return f"❌ No se encontró responsable ({cargo_encontrado or 'cualquiera'}) en {proyecto or 'todos'}", None, None, 'general', None
+            
+            return f"👤 Responsables ({cargo_encontrado or 'todos'}) en {proyecto or 'todos'}:", df, None, 'general', None
+
+        # 🎯 Bloque de Restricciones (Se mantiene corregido)
         if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
             df = df_restricciones.copy()
             
@@ -568,7 +651,7 @@ if excel_file:
             return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico, 'restricciones', tipo_restriccion_preseleccionado
 
         if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
-            # ... (Lógica de Sostenibilidad) ...
+            # Lógica de Sostenibilidad (se mantiene)
             df = df_sostenibilidad.copy()
             if proyecto_norm:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -851,11 +934,11 @@ elif st.session_state.current_view == 'chat':
             with col_filtro:
                 st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-top:15px; margin-bottom:10px;">Detalle de Restricciones ({len(df_filtrado)} encontradas)</p>', unsafe_allow_html=True)
                 
-                # 🎯 CAMBIO CLAVE: Agregamos 'numeroReprogramacionesCompromiso'
+                # 🎯 LISTA DE COLUMNAS ACTUALIZADA
                 columns_to_show = [
                     'Actividad', 
                     'Restriccion', 
-                    'numeroReprogramacionesCompromiso', # Nueva columna solicitada
+                    'numeroReprogramacionesCompromiso', 
                     'Descripción', 
                     'tipoRestriccion', 
                     'FechaCompromisoInicial', 
@@ -893,7 +976,10 @@ elif st.session_state.current_view == 'chat':
             if df_resultado is not None:
                 st.markdown(f'<div class="mar-card" style="margin-top:0px;">', unsafe_allow_html=True)
                 if grafico:
+                    # Si hay gráfico (Avance de Obra), lo mostramos primero
                     st.plotly_chart(grafico, use_container_width=True)
+                
+                # Mostramos el detalle del DataFrame
                 st.dataframe(df_resultado.drop(columns=["Proyecto_norm"], errors='ignore'), use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
             else:
