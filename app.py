@@ -1,3 +1,8 @@
+# app_autocomplete_mar_assistant.py
+# Versión corregida del Mar Assistant con autocompletado estilo "Google"
+# Implementación: campo de búsqueda hecho en HTML/JS (st.components.v1.html) con sugerencias
+# Al seleccionar una sugerencia o pulsar Enter se recarga la app con ?q=<consulta>
+
 import streamlit as st
 from PIL import Image
 import pandas as pd
@@ -7,6 +12,8 @@ import time
 import base64
 import os
 import io
+import json
+import streamlit.components.v1 as components
 
 # Intentamos importar plotly
 try:
@@ -36,7 +43,35 @@ PALETTE = {
 }
 
 # -----------------------------
-# CSS GLOBAL
+# FUNCIONES DE NORMALIZACIÓN
+# -----------------------------
+
+def normalizar_texto(texto):
+    texto = str(texto).lower()
+    texto = re.sub(r"[.,;:%]", "", texto)
+    texto = re.sub(r"\s+", " ", texto)
+    return texto.strip()
+
+
+def quitar_tildes(texto):
+    return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
+
+# -----------------------------
+# PALABRAS CLAVE (base para autocompletado)
+# -----------------------------
+PALABRAS_CLAVE = [
+    "estado de diseño", "inventario de diseño",
+    "avance de diseño", "avance en diseño",
+    "avance diseño", "avance diseno", "avance de diseno",
+    "avance de obra", "avance obra", "avance en obra",
+    "restricciones", "problemas", "restriccion", "restricción",
+    "responsable", "quien es el responsable", "quién es el responsable",
+    "sostenibilidad", "edge", "ambiental", "proyectos sostenibles",
+    "avance", "estado diseño", "inventario diseno"
+]
+
+# -----------------------------
+# CSS GLOBAL (pequeño) para apariencia
 # -----------------------------
 st.markdown(f"""
 <style>
@@ -54,26 +89,6 @@ st.markdown(f"""
     color: #1b2635;
     font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }}
-.header-box {{
-    background-color: white;
-    padding: 20px;
-    border-radius: var(--card-radius);
-    box-shadow: 0 8px 20px rgba(21,72,114,0.08);
-    display: flex;
-    align-items: center;
-}}
-.title {{
-    color: var(--mar-primary);
-    font-size: var(--title-size);
-    font-weight: 800;
-    margin: 0;
-    font-family: 'Roboto Slab', serif;
-}}
-.subtitle {{
-    color: #34495e;
-    font-size: 16px;
-    margin: 4px 0 0 0;
-}}
 .mar-card {{
     background-color: white;
     padding: var(--card-padding);
@@ -81,140 +96,19 @@ st.markdown(f"""
     box-shadow: 0 6px 18px rgba(21,72,114,0.06);
     margin-bottom: 20px;
 }}
-.stTextInput>div>div>input {{
-    background-color: white;
-    border: 1px solid rgba(21,72,114,0.2);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 14px;
-    height: 40px;
+.search-box {{
+    max-width: 880px;
+    margin: 8px 0 16px 0;
 }}
-.stTextInput>div>div>input::placeholder {{
-    color: rgba(0, 0, 0, 0.4);
-    font-style: italic;
-}}
-.stButton>button {{
-    background-color: var(--mar-primary);
-    color: white;
-    border-radius: 8px;
-    padding: 0 20px;
-    font-weight: 600;
-    border: none;
-    height: 40px;
-}}
-.stButton>button:hover {{
-    background-color: var(--mar-muted);
-}}
-.stButton>button.btn-voz {{
-    background-color: #5DC0DC;
-    color: white;
-    border-radius: 8px;
-    padding: 0 12px;
-    font-weight: 600;
-    border: none;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}}
-.stButton>button.btn-voz:hover {{
-    background-color: #3aa6c1;
-}}
-[data-testid="stSidebar"] {{
-    background-color: white;
-    padding: 20px;
-    border-radius: var(--card-radius);
-}}
-@keyframes floatY {{
-    0% {{ top: -10%; }}
-    100% {{ top: 110%; }}
+.suggestion-item:hover {{
+    background-color: #f1f5f9;
+    cursor: pointer;
 }}
 </style>
 """, unsafe_allow_html=True)
 
-
-
-
-
-
-
-# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
-st.markdown("""
-<style>
-@keyframes floatDown {
-    0% { top: -10%; }
-    100% { top: 100%; }
-}
-
-@keyframes floatY {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(10px); }
-    100% { transform: translateY(0); }
-}
-</style>
-
-<!-- Fantasmas en la parte derecha (solo arriba → abajo) -->
-<div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:10%; right:7%; font-size:28px; opacity:0.1; animation:floatDown 18s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:20%; right:6%; font-size:25px; opacity:0.1; animation:floatDown 16s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:25%; right:8%; font-size:20px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:10%; right:5%; font-size:28px; opacity:0.1; animation:floatDown 13s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:20%; right:7%; font-size:25px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:25%; right:9%; font-size:20px; opacity:0.1; animation:floatDown 11s linear infinite; z-index:9999;">❄️</div>
-
-
-
-
-<!-- Calabazas en la parte inferior izquierda (rebote suave) -->
-<div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
-<div style="position:fixed; bottom:8%; left:10%; font-size:20px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
-<div style="position:fixed; bottom:6%; left:12%; font-size:18px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🎃</div>
-""", unsafe_allow_html=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # -----------------------------
-# HEADER: logo + títulos
-# -----------------------------
-logo_path = os.path.join("assets", "logoMar.png")
-
-if os.path.exists(logo_path):
-    try:
-        logo_img = Image.open(logo_path)
-        buffered = io.BytesIO()
-        logo_img.save(buffered, format="PNG")
-        img_b64 = base64.b64encode(buffered.getvalue()).decode()
-        st.markdown(
-            f"""
-            <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-                <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
-                <div>
-                    <p class="title">Sistema Integrado de Información de Proyectos</p>
-                    <p class="subtitle"> Asistente para el Seguimiento y Control — Constructora Marval</p>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    except Exception:
-        st.image(logo_path, width=80)
-else:
-    st.warning("Logo no encontrado en assets/logoMar.png")
-
-# -----------------------------
-# SIDEBAR: Uploads
+# SIDEBAR: Uploads (igual que tu app)
 # -----------------------------
 st.sidebar.title("Herramientas")
 st.sidebar.subheader("Cargas")
@@ -224,104 +118,75 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("💡 Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
 # -----------------------------
-# SPLASH (opcional)
+# LECTURA DE EXCEL (si existe)
 # -----------------------------
-placeholder = st.empty()
-if img_file:
+if excel_file:
     try:
-        img_b64 = base64.b64encode(img_file.read()).decode()
-        splash_html = f"""
-        <div style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;">
-            <div style="text-align:center; padding: 20px; border-radius: 12px;">
-                <img src="data:image/png;base64,{img_b64}" 
-                     style="width:160px; max-width:50vw; height:auto; display:block; margin:0 auto;">
-            </div>
-        </div>
-        """
-        placeholder.markdown(splash_html, unsafe_allow_html=True)
-        time.sleep(0.5)
-        placeholder.empty()
-    except Exception:
-        placeholder.empty()
+        excel_file.seek(0)
+        df_avance = pd.read_excel(excel_file, sheet_name="Avance")
+        excel_file.seek(0)
+        df_responsables = pd.read_excel(excel_file, sheet_name="Responsables")
+        excel_file.seek(0)
+        df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones")
+        excel_file.seek(0)
+        df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
+        excel_file.seek(0)
+        df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
+        excel_file.seek(0)
+        df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")
+        st.sidebar.success("✅ Hojas cargadas correctamente")
+    except Exception as e:
+        st.sidebar.error(f"Error al leer una o varias hojas: {e}")
+        st.stop()
+else:
+    # Crear dataframes vacíos para que el resto del código no falle
+    df_avance = pd.DataFrame()
+    df_responsables = pd.DataFrame()
+    df_restricciones = pd.DataFrame()
+    df_sostenibilidad = pd.DataFrame()
+    df_avance_diseno = pd.DataFrame()
+    df_inventario_diseno = pd.DataFrame()
 
 # -----------------------------
-# LECTURA DE EXCEL
+# Normalización de nombres de proyecto (si existen)
 # -----------------------------
-if not excel_file:
-    st.info("Sube el archivo Excel en la barra lateral para cargar las hojas.")
-    st.stop()
-
-try:
-    excel_file.seek(0)
-    df_avance = pd.read_excel(excel_file, sheet_name="Avance")
-    excel_file.seek(0)
-    df_responsables = pd.read_excel(excel_file, sheet_name="Responsables")
-    excel_file.seek(0)
-    df_restricciones = pd.read_excel(excel_file, sheet_name="Restricciones")
-    excel_file.seek(0)
-    df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
-    excel_file.seek(0)
-    df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
-    excel_file.seek(0)
-    df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")
-    st.sidebar.success("✅ Hojas cargadas correctamente")
-except Exception as e:
-    st.sidebar.error(f"Error al leer una o varias hojas: {e}")
-    st.stop()
-
-# -----------------------------
-# NORMALIZACIÓN
-# -----------------------------
-def normalizar_texto(texto):
-    texto = str(texto).lower()
-    texto = re.sub(r"[.,;:%]", "", texto)
-    texto = re.sub(r"\s+", " ", texto)
-    return texto.strip()
-
-def quitar_tildes(texto):
-    return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
-
 for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
                     ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
-    if "Proyecto" not in df.columns:
+    if not df.empty and "Proyecto" not in df.columns:
         st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
         st.stop()
 
 for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
-    df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
+    if not df.empty:
+        df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
-all_projects = pd.concat([
-    df_avance["Proyecto"].astype(str),
-    df_responsables["Proyecto"].astype(str),
-    df_restricciones["Proyecto"].astype(str),
-    df_sostenibilidad["Proyecto"].astype(str)
-]).dropna().unique()
+all_projects = []
+if not df_avance.empty:
+    all_projects += df_avance["Proyecto"].astype(str).tolist()
+if not df_responsables.empty:
+    all_projects += df_responsables["Proyecto"].astype(str).tolist()
+if not df_restricciones.empty:
+    all_projects += df_restricciones["Proyecto"].astype(str).tolist()
+if not df_sostenibilidad.empty:
+    all_projects += df_sostenibilidad["Proyecto"].astype(str).tolist()
 
+all_projects = [p for p in pd.unique(all_projects) if pd.notna(p)]
 projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
 
-def extraer_proyecto(texto):
-    texto_norm = quitar_tildes(normalizar_texto(texto))
-    for norm in sorted(projects_map.keys(), key=len, reverse=True):
-        pattern = rf'(^|\W){re.escape(norm)}($|\W)'
-        if re.search(pattern, texto_norm, flags=re.UNICODE):
-            return projects_map[norm], norm
-    for norm in sorted(projects_map.keys(), key=len, reverse=True):
-        if norm in texto_norm:
-            return projects_map[norm], norm
-    return None, None
+# Agregar nombres de proyectos a las sugerencias para ser más amigable
+suggestions_list = PALABRAS_CLAVE.copy()
+# incluir variantes exactas de proyectos (sin tildes y la versión original)
+for p in all_projects:
+    if p and str(p).strip():
+        suggestions_list.append(str(p))
+        suggestions_list.append(quitar_tildes(normalizar_texto(str(p))))
+
+# garantizar unicidad y orden
+# ordenar por longitud descendente para coincidir términos largos primero
+suggestions_list = sorted(list(dict.fromkeys(suggestions_list)), key=lambda x: (-len(x), x))
 
 # -----------------------------
-# LISTA DE CARGOS
+# FUNCION DE RESPUESTA (igual que la tuya)
 # -----------------------------
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Programación", "Arquitecto",
@@ -339,9 +204,19 @@ CARGOS_VALIDOS = [
 ]
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
-# -----------------------------
-# FUNCION DE RESPUESTA
-# -----------------------------
+
+def extraer_proyecto(texto):
+    texto_norm = quitar_tildes(normalizar_texto(texto))
+    for norm in sorted(projects_map.keys(), key=len, reverse=True):
+        pattern = rf'(^|\W){re.escape(norm)}($|\W)'
+        if re.search(pattern, texto_norm, flags=re.UNICODE):
+            return projects_map[norm], norm
+    for norm in sorted(projects_map.keys(), key=len, reverse=True):
+        if norm in texto_norm:
+            return projects_map[norm], norm
+    return None, None
+
+
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
@@ -403,7 +278,6 @@ def generar_respuesta(pregunta):
         if df.empty:
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
 
-        # Generar gráfico si plotly disponible
         grafico = None
         if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
             grafico = px.bar(
@@ -431,27 +305,143 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# INTERFAZ: input + botón al lado + voz
+# HEADER: logo + títulos (igual que el original)
 # -----------------------------
-st.markdown(
-    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
-    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
-    unsafe_allow_html=True
-)
+logo_path = os.path.join("assets", "logoMar.png")
 
-col_input, col_enviar, col_voz = st.columns([5, 1, 1])
-with col_input:
-    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
-with col_enviar:
-    enviar = st.button("Enviar", use_container_width=True)
-with col_voz:
-    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
+if os.path.exists(logo_path):
+    try:
+        logo_img = Image.open(logo_path)
+        buffered = io.BytesIO()
+        logo_img.save(buffered, format="PNG")
+        img_b64 = base64.b64encode(buffered.getvalue()).decode()
+        st.markdown(
+            f"""
+            <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+                <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
+                <div>
+                    <p style='margin:0;font-size:24px;font-weight:800;color:{PALETTE['primary']};'>Sistema Integrado de Información de Proyectos</p>
+                    <p style="margin:4px 0 0 0;color:#34495e;"> Asistente para el Seguimiento y Control — Constructora Marval</p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    except Exception:
+        st.image(logo_path, width=80)
+else:
+    st.warning("Logo no encontrado en assets/logoMar.png")
 
-# Lógica de botones
-if enviar and pregunta:
+# -----------------------------
+# AUTOCOMPLETADO: componente HTML + JS (modo flotante moderno)
+# -----------------------------
+# Pasamos la lista de sugerencias como JSON al HTML
+suggestions_json = json.dumps(suggestions_list)
+
+html_component = f"""
+<div class='mar-card search-box'>
+  <label style='font-weight:700;color:{PALETTE['primary']};display:block;margin-bottom:6px;'>Consulta rápida</label>
+  <div style='position:relative;'>
+    <input id='search' type='text' placeholder='Escribe tu pregunta aquí' autocomplete='off' 
+      style='width:100%; padding:12px 14px; border-radius:8px; border:1px solid rgba(21,72,114,0.2); font-size:15px; height:44px;' />
+    <button id='sendBtn' onclick='submitQuery()' style='position:absolute;right:6px;top:6px;height:32px;border-radius:8px;padding:0 12px;border:none;background:{PALETTE['primary']};color:white;font-weight:600;'>Enviar</button>
+
+    <div id='suggestions' style='position:absolute; left:0; right:0; top:52px; background:white; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.08); max-height:260px; overflow:auto; display:none; z-index:9999;'>
+    </div>
+  </div>
+  <small style='color:#6b7280;'>Sugerencias mientras escribes. Haz clic para autocompletar.</small>
+</div>
+
+<script>
+const suggestions = {suggestions_json};
+const input = document.getElementById('search');
+const sugBox = document.getElementById('suggestions');
+
+function escapeHtml(text){
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>\"']/g, function(m) { return map[m]; });
+}
+
+function filterSuggestions(query){
+  if(!query) return [];
+  const q = query.trim().toLowerCase();
+  const results = suggestions.filter(s => s.toLowerCase().startsWith(q));
+  // si no hay resultados que empiecen, buscar que contengan
+  if(results.length === 0){
+    return suggestions.filter(s => s.toLowerCase().includes(q)).slice(0, 40);
+  }
+  return results.slice(0, 40);
+}
+
+function renderSuggestions(items){
+  if(!items || items.length === 0){
+    sugBox.style.display = 'none';
+    sugBox.innerHTML = '';
+    return;
+  }
+  sugBox.innerHTML = items.map(it => `<div class='suggestion-item' style='padding:10px 12px;border-bottom:1px solid #f3f4f6;' onclick="selectSuggestion('${escapeHtml(it).replace(/'/g, "\\'")}')">${escapeHtml(it)}</div>`).join('');
+  sugBox.style.display = 'block';
+}
+
+function selectSuggestion(value){
+  input.value = value;
+  // recargar la app con el query param
+  submitQuery(value);
+}
+
+function submitQuery(value=null){
+  const v = value !== null ? value : input.value;
+  const url = window.location.pathname + '?q=' + encodeURIComponent(v);
+  window.location.href = url;
+}
+
+input.addEventListener('input', function(e){
+  const q = e.target.value;
+  if(!q || q.trim().length === 0){
+    renderSuggestions([]);
+    return;
+  }
+  const items = filterSuggestions(q);
+  renderSuggestions(items);
+});
+
+// cerrar sugerencias al hacer click fuera
+document.addEventListener('click', function(e){
+  if(!document.querySelector('.search-box').contains(e.target)){
+    sugBox.style.display = 'none';
+  }
+});
+
+// si hay q en query params, rellenar el input (esto no se mantiene si se recarga desde Python, pero es util en sesiones)
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get('q');
+  if(q){
+    input.value = decodeURIComponent(q);
+  }
+})();
+</script>
+"""
+
+# Renderizamos el componente
+components.html(html_component, height=140)
+
+# -----------------------------
+# Tomamos la query param ?q= y la usamos
+# -----------------------------
+query_params = st.experimental_get_query_params()
+pregunta = query_params.get('q', [''])[0]
+
+# Mostrar la consulta actual (si existe)
+if pregunta:
+    st.markdown(f"<div class='mar-card'><strong style='color:{PALETTE['primary']};'>Consulta:</strong> {pregunta}</div>", unsafe_allow_html=True)
+
+# -----------------------------
+# Si existe pregunta, procesarla con la función generar_respuesta
+# -----------------------------
+if pregunta:
     respuesta = generar_respuesta(pregunta)
 
-    # Ver si regresó gráfico
     if len(respuesta) == 3:
         texto, resultado, grafico = respuesta
     else:
@@ -463,7 +453,6 @@ if enviar and pregunta:
         unsafe_allow_html=True
     )
 
-    # Mostrar gráfico si existe
     if grafico:
         st.plotly_chart(grafico, use_container_width=True)
 
@@ -490,26 +479,3 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
