@@ -240,3 +240,216 @@ try:
 except Exception as e:
     st.sidebar.error(f"Error al leer una o varias hojas: {e}")
     st.stop()
+
+# -----------------------------
+# NORMALIZACIÓN
+# -----------------------------
+def normalizar_texto(texto):
+    texto = str(texto).lower()
+    texto = re.sub(r"[.,;:%]", "", texto)
+    texto = re.sub(r"\s+", " ", texto)
+    return texto.strip()
+
+def quitar_tildes(texto):
+    return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
+
+for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
+                    ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
+    if "Proyecto" not in df.columns:
+        st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
+        st.stop()
+
+for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
+    df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
+
+all_projects = pd.concat([
+    df_avance["Proyecto"].astype(str),
+    df_responsables["Proyecto"].astype(str),
+    df_restricciones["Proyecto"].astype(str),
+    df_sostenibilidad["Proyecto"].astype(str)
+]).dropna().unique()
+
+projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
+
+def extraer_proyecto(texto):
+    texto_norm = quitar_tildes(normalizar_texto(texto))
+    for norm in sorted(projects_map.keys(), key=len, reverse=True):
+        pattern = rf'(^|\W){re.escape(norm)}($|\W)'
+        if re.search(pattern, texto_norm, flags=re.UNICODE):
+            return projects_map[norm], norm
+    for norm in sorted(projects_map.keys(), key=len, reverse=True):
+        if norm in texto_norm:
+            return projects_map[norm], norm
+    return None, None
+
+# -----------------------------
+# LISTA DE CARGOS
+# -----------------------------
+CARGOS_VALIDOS = [
+    "Analista de compras", "Analista de Programación", "Arquitecto",
+    "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
+    "Coordinador Eléctrico", "Coordinador Logístico", "Coordinador SIG", "Coordinadora de pilotaje",
+    "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
+    "Diseñador estructural", "Diseñador externo", "Equipo MARVAL", "Gerente de proyectos",
+    "Ingeniera Eléctrica", "Ingeniero Ambiental", "Ingeniero de Contratación", "Ingeniero electromecánico",
+    "Ingeniero FCA", "Ingeniero FCA #2", "Ingeniero Lean", "Ingeniero Lean 3", "Profesional SYST",
+    "Programador de obra", "Programador de obra #2", "Practicante de Interventoría #1",
+    "Practicante Lean", "Residente", "Residente #2", "Residente Administrativo de Equipos",
+    "Residente auxiliar", "Residente Auxiliar #2", "Residente Auxiliar #3", "Residente Auxiliar #4",
+    "Residente de acabados", "Residente de acabados #2", "Residente de control e interventoría",
+    "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
+]
+CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
+
+# -----------------------------
+# FUNCION DE RESPUESTA
+# -----------------------------
+def generar_respuesta(pregunta):
+    pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
+    proyecto, proyecto_norm = extraer_proyecto(pregunta)
+
+    estado_diseno_keywords = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
+    diseño_keywords = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
+                       "avance de diseno", "avance de diseño", "diseno", "diseño"]
+    obra_keywords = ["avance de obra", "avance obra", "avance en obra"]
+
+    if any(k in pregunta_norm for k in estado_diseno_keywords):
+        if df_inventario_diseno.empty:
+            return "❌ No hay registros en la hoja InventarioDiseño.", None
+        return "📐 Estado de Diseño (InventarioDiseño):", df_inventario_diseno
+
+    if any(k in pregunta_norm for k in diseño_keywords):
+        if ("avance" in pregunta_norm) or (pregunta_norm.strip() in ["diseno", "diseño"]):
+            if df_avance_diseno.empty:
+                return "❌ No hay registros en la hoja AvanceDiseño.", None
+            return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
+
+    if any(k in pregunta_norm for k in obra_keywords):
+        df = df_avance.copy()
+        if proyecto_norm:
+            df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
+        return f"📊 Avance de obra en {proyecto or 'todos'}:", df
+
+    if "avance" in pregunta_norm:
+        df = df_avance.copy()
+        if proyecto_norm:
+            df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
+        return f"📊 Avances en {proyecto or 'todos'}:", df
+
+    if "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
+        df = df_responsables.copy()
+        if proyecto_norm:
+            df = df[df["Proyecto_norm"] == proyecto_norm]
+        cargo_encontrado = None
+        for cargo_norm, cargo_real in CARGOS_VALIDOS_NORM.items():
+            if cargo_norm in pregunta_norm:
+                cargo_encontrado = cargo_real
+                break
+        if cargo_encontrado:
+            df = df[df["Cargo"].astype(str).str.lower().str.contains(cargo_encontrado.lower(), na=False)]
+            if df.empty:
+                return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
+            return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
+        if df.empty:
+            return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
+        return f"👷 Responsables en {proyecto or 'todos'}:", df
+
+    if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
+        df = df_restricciones.copy()
+        if proyecto_norm:
+            df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
+
+        # Generar gráfico si plotly disponible
+        grafico = None
+        if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
+            grafico = px.bar(
+                df.groupby("tipoRestriccion").size().reset_index(name="count"),
+                x="tipoRestriccion",
+                y="count",
+                text="count",
+                labels={"tipoRestriccion": "Tipo de Restricción", "count": "Cantidad"},
+                color="tipoRestriccion",
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
+            grafico.update_layout(showlegend=False, xaxis_title="Tipo de Restricción", yaxis_title="Cantidad")
+
+        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico
+
+    if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
+        df = df_sostenibilidad.copy()
+        if proyecto_norm:
+            df = df[df["Proyecto_norm"] == proyecto_norm]
+        if df.empty:
+            return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None
+        return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
+
+    return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
+            "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
+
+# -----------------------------
+# INTERFAZ: input + botón al lado + voz
+# -----------------------------
+st.markdown(
+    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
+    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
+    unsafe_allow_html=True
+)
+
+col_input, col_enviar, col_voz = st.columns([5, 1, 1])
+with col_input:
+    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
+with col_enviar:
+    enviar = st.button("Enviar", use_container_width=True)
+with col_voz:
+    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
+
+# Lógica de botones
+if enviar and pregunta:
+    respuesta = generar_respuesta(pregunta)
+
+    # Ver si regresó gráfico
+    if len(respuesta) == 3:
+        texto, resultado, grafico = respuesta
+    else:
+        texto, resultado = respuesta
+        grafico = None
+
+    st.markdown(
+        f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
+        unsafe_allow_html=True
+    )
+
+    # Mostrar gráfico si existe
+    if grafico:
+        st.plotly_chart(grafico, use_container_width=True)
+
+    if isinstance(resultado, pd.DataFrame) and not resultado.empty:
+        max_preview = 200
+        if len(resultado) > max_preview:
+            st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
+            df_preview = resultado.head(max_preview)
+        else:
+            df_preview = resultado
+
+        styled_df = df_preview.style.set_table_styles([
+            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
+            {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
+                                         ('color', 'white'),
+                                         ('font-weight', 'bold')]},
+        ])
+        st.dataframe(styled_df, use_container_width=True)
+
+# -----------------------------
+# FOOTER
+# -----------------------------
+st.markdown(
+    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
+    unsafe_allow_html=True
+)
+
