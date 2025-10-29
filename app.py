@@ -789,7 +789,7 @@ elif st.session_state.current_view == 'chat':
             # Dividimos la sección de resultados en dos columnas (después de aplicar el filtro)
             col_dias, col_filtro = st.columns([1, 2])
             
-            # 🎯 CAMBIO CLAVE 1: Cálculo de DiasDiferencia en el df_filtrado para mostrarlo en la tabla
+            # Cálculo de DiasDiferencia en el df_filtrado para mostrarlo en la tabla
             if all(col in df_filtrado.columns for col in ["FechaCompromisoActual", "FechaCompromisoInicial"]):
                 # Convertir a datetime (manejando errores)
                 df_filtrado['FechaCompromisoActual'] = pd.to_datetime(df_filtrado['FechaCompromisoActual'], errors='coerce')
@@ -801,7 +801,7 @@ elif st.session_state.current_view == 'chat':
                  df_filtrado['DiasDiferencia'] = pd.NA # Si faltan columnas, agregamos NA
 
             
-            ## 🎯 CAMBIO CLAVE 2: Recalcular la tarjeta de resumen usando df_filtrado (y quitando la suma total)
+            # Recalcular la tarjeta de resumen
             with col_dias:
                 dias_diferencia_df = None
                 
@@ -813,7 +813,6 @@ elif st.session_state.current_view == 'chat':
                     restricciones_reprogramadas = df_valido[df_valido['DiasDiferencia'] > 0]
                     total_restricciones = len(df_valido)
                     total_restricciones_reprogramadas = len(restricciones_reprogramadas)
-                    # total_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].sum() # CAMPO ELIMINADO
                     promedio_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].mean()
                     
                     # Creamos la tabla de resumen (CON LOS CAMPOS CORREGIDOS)
@@ -852,19 +851,26 @@ elif st.session_state.current_view == 'chat':
             with col_filtro:
                 st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-top:15px; margin-bottom:10px;">Detalle de Restricciones ({len(df_filtrado)} encontradas)</p>', unsafe_allow_html=True)
                 
-                # Definimos las columnas a mostrar y reordenamos
+                # 🎯 CAMBIO CLAVE: Agregamos 'Actividad' y 'Restriccion' (y mantenemos 'Descripción' por si acaso)
                 columns_to_show = [
+                    'Actividad', # Nueva columna solicitada
+                    'Restriccion', # Nueva columna solicitada
                     'Descripción', 
                     'tipoRestriccion', 
                     'FechaCompromisoInicial', 
                     'FechaCompromisoActual', 
-                    'DiasDiferencia', # 🎯 CAMBIO CLAVE 3: Agregamos la nueva columna aquí
+                    'DiasDiferencia', 
                     'Responsable', 
                     'Comentarios'
                 ]
                 
                 # Seleccionamos las columnas que existen y mostramos el DataFrame
-                df_display = df_filtrado.filter(items=columns_to_show).rename(columns={'DiasDiferencia': 'Diferencia (Días)'})
+                # Usamos filter(items=...) para seleccionar solo las columnas que realmente existen
+                df_display = df_filtrado.filter(items=columns_to_show)
+                
+                # Renombramos la columna calculada para la visualización (si existe)
+                if 'DiasDiferencia' in df_display.columns:
+                     df_display = df_display.rename(columns={'DiasDiferencia': 'Diferencia (Días)'})
                 
                 st.dataframe(df_display, use_container_width=True)
                 
