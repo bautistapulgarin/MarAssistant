@@ -154,6 +154,7 @@ st.markdown(f"""
 # -----------------------------------------------------------------------
 
 
+
 # ----------------------------- HEADER: logo + títulos -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 if os.path.exists(logo_path):
@@ -413,4 +414,3 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
-
