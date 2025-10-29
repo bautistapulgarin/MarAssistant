@@ -121,25 +121,38 @@ st.markdown(f"""
 
 ...
 
-# -------------------- BLOQUE DE FANTASMAS HALLOWEEN --------------------
+# -------------------- BLOQUE DE FANTASMAS HALLOWEEN REVISADO --------------------
 import random
+
 ghosts_html = ""
 for i in range(10):
-    size = random.randint(25,50)
-    top = random.randint(5,90)
-    duration = round(random.uniform(6,8),2)
-    opacity = round(random.uniform(0.4,0.8),2)
-    ghosts_html += f'<div style="position:fixed; top:{top}%; left:-10%; font-size:{size}px; opacity:{opacity}; animation:floatX {duration}s linear infinite; z-index:0;">👻</div>'
+    size = random.randint(15,25)  # Fantasmas pequeños
+    right = random.randint(90,95)  # Cerca del borde derecho
+    duration = round(random.uniform(6,10),2)  # Velocidad moderada
+    opacity = round(random.uniform(0.3,0.6),2)  # Menos visibles
+    top_start = random.randint(-10,0)  # Comienzan fuera de la pantalla
+    ghosts_html += f'''
+    <div style="
+        position:fixed; 
+        top:{top_start}%; 
+        right:{right}%; 
+        font-size:{size}px; 
+        opacity:{opacity}; 
+        animation:floatY {duration}s linear infinite;
+        z-index:0;">👻</div>
+    '''
+
 st.markdown(f"""
 <style>
-@keyframes floatX {{
-    0% {{ left: -10%; }}
-    100% {{ left: 110%; }}
+@keyframes floatY {{
+    0% {{ top: -10%; }}
+    100% {{ top: 110%; }}
 }}
 </style>
 {ghosts_html}
 """, unsafe_allow_html=True)
 # -----------------------------------------------------------------------
+
 
 # ----------------------------- HEADER: logo + títulos -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
@@ -400,3 +413,4 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
+
