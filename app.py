@@ -851,10 +851,11 @@ elif st.session_state.current_view == 'chat':
             with col_filtro:
                 st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-top:15px; margin-bottom:10px;">Detalle de Restricciones ({len(df_filtrado)} encontradas)</p>', unsafe_allow_html=True)
                 
-                # 🎯 CAMBIO CLAVE: Agregamos 'Actividad' y 'Restriccion' (y mantenemos 'Descripción' por si acaso)
+                # 🎯 CAMBIO CLAVE: Agregamos 'numeroReprogramacionesCompromiso'
                 columns_to_show = [
-                    'Actividad', # Nueva columna solicitada
-                    'Restriccion', # Nueva columna solicitada
+                    'Actividad', 
+                    'Restriccion', 
+                    'numeroReprogramacionesCompromiso', # Nueva columna solicitada
                     'Descripción', 
                     'tipoRestriccion', 
                     'FechaCompromisoInicial', 
@@ -868,10 +869,15 @@ elif st.session_state.current_view == 'chat':
                 # Usamos filter(items=...) para seleccionar solo las columnas que realmente existen
                 df_display = df_filtrado.filter(items=columns_to_show)
                 
-                # Renombramos la columna calculada para la visualización (si existe)
+                # Renombramos las columnas calculadas/nuevas para la visualización (si existen)
+                rename_map = {}
                 if 'DiasDiferencia' in df_display.columns:
-                     df_display = df_display.rename(columns={'DiasDiferencia': 'Diferencia (Días)'})
-                
+                     rename_map['DiasDiferencia'] = 'Diferencia (Días)'
+                if 'numeroReprogramacionesCompromiso' in df_display.columns:
+                     rename_map['numeroReprogramacionesCompromiso'] = 'Núm. Reprog.'
+                     
+                df_display = df_display.rename(columns=rename_map)
+
                 st.dataframe(df_display, use_container_width=True)
                 
             # Gráfico de Restricciones (si aplica, en la parte inferior para no competir con el DF de días)
