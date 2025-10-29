@@ -810,8 +810,6 @@ def mostrar_chat():
                 '<p style="margin:0 0 0 0;">Ingresa tu pregunta para consultar los datos cargados.</p></div>', 
                 unsafe_allow_html=True)
                 
-    col1, col2, col3 = st.columns([6, 1.5, 1.5])
-    
     # Inicializa el estado auxiliar para la búsqueda si no existe
     if '_execute_search' not in st.session_state:
         st.session_state._execute_search = False
@@ -819,31 +817,35 @@ def mostrar_chat():
     # Definición de la función de callback
     def set_search_state():
         st.session_state._execute_search = True
-        
-    with col1:
-        # Usamos el input de texto del chat
-        user_input = st.text_input("Ingresa tu pregunta sobre los datos:", key="user_input_chat", 
-                                   placeholder="Ej: avance de obra en Proyecto Ejemplo 1...",
-                                   label_visibility="collapsed")
     
-    with col2:
-        # Botón de Buscar: usa el callback para establecer el estado auxiliar.
-        st.button("🔍 Buscar", key="btn_buscar", type="primary", use_container_width=True, on_click=set_search_state)
+    # 🎯 CORRECCIÓN: Usamos un st.form para capturar el evento "Enter" en el input
+    with st.form(key='search_form'):
+        col1, col2, col3 = st.columns([6, 1.5, 1.5])
         
-    with col3:
-        # Botón para Voz (Dummy, solo estético)
-        st.button("🎙️ Voz", key="voz", type="secondary", use_container_width=True)
+        with col1:
+            # Usamos el input de texto del chat
+            user_input = st.text_input("Ingresa tu pregunta sobre los datos:", key="user_input_chat", 
+                                    placeholder="Ej: avance de obra en Proyecto Ejemplo 1...",
+                                    label_visibility="collapsed")
+        
+        with col2:
+            # Botón de Buscar: usa el callback para establecer el estado auxiliar.
+            # 🚨 Corrección de estilo: quitamos type="primary" y confiamos en el CSS.
+            search_button = st.form_submit_button("🔍 Buscar", key="btn_buscar", use_container_width=True, on_click=set_search_state)
+            
+        with col3:
+            # Botón para Voz (Dummy, solo estético)
+            st.button("🎙️ Voz", key="voz", type="secondary", use_container_width=True)
 
-    # El botón st.button("Buscar") ya fuerza un rerun y pone st.session_state.btn_buscar en True.
-    # Usaremos el estado auxiliar `_execute_search` o la clave del botón como disparador.
-    is_search_triggered = st.session_state._execute_search or st.session_state.get('btn_buscar', False)
+
+    # El botón st.form_submit_button() y el evento 'Enter' establecen el estado de `search_button` como True
+    # El callback `set_search_state` también lo establece.
+    is_search_triggered = st.session_state._execute_search or search_button
 
     if user_input and is_search_triggered:
         
-        # 🚨 Limpiar el estado auxiliar INMEDIATAMENTE después de entrar al bloque,
-        # para que no se repita el procesamiento en el siguiente rerun.
+        # 🚨 Limpiar el estado auxiliar INMEDIATAMENTE después de entrar al bloque.
         st.session_state._execute_search = False
-        # Nota: no tocamos st.session_state.btn_buscar directamente aquí, lo dejamos a Streamlit.
 
         with st.spinner('Procesando consulta...'):
             st.markdown("---")
