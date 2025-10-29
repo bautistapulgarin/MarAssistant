@@ -818,24 +818,28 @@ def mostrar_chat():
     def set_search_state():
         st.session_state._execute_search = True
     
-    # 🎯 CORRECCIÓN: Usamos un st.form para capturar el evento "Enter" en el input
+    # Pre-define las columnas FUERA del formulario para que el botón de Voz funcione
+    col1, col2, col3 = st.columns([6, 1.5, 1.5])
+    
+    # 🎯 CORRECCIÓN: Usamos st.form para capturar el evento "Enter" en el input
     with st.form(key='search_form'):
-        col1, col2, col3 = st.columns([6, 1.5, 1.5])
+        # Reutilizamos las columnas (solo para organizar la disposición, no el contexto de ejecución)
+        col_form_input, col_form_button, _ = st.columns([6, 1.5, 1.5]) 
         
-        with col1:
+        with col_form_input:
             # Usamos el input de texto del chat
             user_input = st.text_input("Ingresa tu pregunta sobre los datos:", key="user_input_chat", 
                                     placeholder="Ej: avance de obra en Proyecto Ejemplo 1...",
                                     label_visibility="collapsed")
         
-        with col2:
-            # Botón de Buscar: usa el callback para establecer el estado auxiliar.
-            # 🚨 Corrección de estilo: quitamos type="primary" y confiamos en el CSS.
+        with col_form_button:
+            # st.form_submit_button: ÚNICO botón permitido en el form.
             search_button = st.form_submit_button("🔍 Buscar", key="btn_buscar", use_container_width=True, on_click=set_search_state)
-            
-        with col3:
-            # Botón para Voz (Dummy, solo estético)
-            st.button("🎙️ Voz", key="voz", type="secondary", use_container_width=True)
+    
+    # 🎯 CORRECCIÓN: Mover el botón "Voz" FUERA del formulario
+    with col3:
+        # st.button: DEBE estar fuera del form.
+        st.button("🎙️ Voz", key="voz", type="secondary", use_container_width=True)
 
 
     # El botón st.form_submit_button() y el evento 'Enter' establecen el estado de `search_button` como True
