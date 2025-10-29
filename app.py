@@ -28,71 +28,87 @@ st.set_page_config(
 # -----------------------------
 # PALETA DE COLORES (UX / BI)
 # -----------------------------
+# Hecho: Colores definidos
 PALETTE = {
-    "primary": "#154872",
-    "accent": "#5DC0DC",
-    "muted": "#437FAC",
-    "bg": "#ffffff"
+    "primary": "#154872",  # Azul Oscuro (Marval Primary)
+    "accent": "#5DC0DC",   # Azul Claro (Marval Accent)
+    "muted": "#437FAC",    # Azul Medio (Hover/Muted)
+    "bg": "#f8f9fa"        # Fondo muy claro/casi blanco para contraste suave
 }
 
 # -----------------------------
-# CSS GLOBAL
+# CSS GLOBAL - Refinado
 # -----------------------------
 st.markdown(f"""
 <style>
+/* Variables de Estilo */
 :root {{
     --mar-primary: {PALETTE['primary']};
     --mar-accent: {PALETTE['accent']};
     --mar-muted: {PALETTE['muted']};
     --mar-bg: {PALETTE['bg']};
     --card-radius: 12px;
-    --card-padding: 16px;
-    --title-size: 36px;
+    --card-padding: 20px;
+    --title-size: 38px;
+    --shadow-light: 0 4px 12px rgba(21,72,114,0.06);
+    --shadow-hover: 0 6px 16px rgba(21,72,114,0.10);
 }}
+
+/* Aplicación Principal y Fuente */
 .stApp {{
     background-color: var(--mar-bg);
-    color: #1b2635;
-    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #1b2635; /* Color de texto oscuro para alta legibilidad */
+    font-family: 'Roboto', sans-serif; /* Fuente moderna y legible */
 }}
-.header-box {{
-    background-color: white;
-    padding: 20px;
-    border-radius: var(--card-radius);
-    box-shadow: 0 8px 20px rgba(21,72,114,0.08);
-    display: flex;
-    align-items: center;
-}}
+
+/* Títulos y Subtítulos */
 .title {{
     color: var(--mar-primary);
     font-size: var(--title-size);
-    font-weight: 800;
+    font-weight: 900; /* Más peso para el título principal */
     margin: 0;
+    line-height: 1.1;
     font-family: 'Roboto Slab', serif;
 }}
 .subtitle {{
     color: #34495e;
-    font-size: 16px;
-    margin: 4px 0 0 0;
+    font-size: 17px;
+    margin: 6px 0 0 0;
+    font-weight: 300;
 }}
+
+/* Contenedores y Tarjetas */
 .mar-card {{
     background-color: white;
     padding: var(--card-padding);
     border-radius: var(--card-radius);
-    box-shadow: 0 6px 18px rgba(21,72,114,0.06);
-    margin-bottom: 20px;
+    box-shadow: var(--shadow-light); /* Sombra más sutil */
+    transition: box-shadow 0.3s ease;
+    margin-bottom: 25px; /* Más espaciado entre tarjetas */
 }}
+.mar-card:hover {{
+    box-shadow: var(--shadow-hover);
+}}
+
+/* Input de Texto y Controles */
 .stTextInput>div>div>input {{
     background-color: white;
-    border: 1px solid rgba(21,72,114,0.2);
+    border: 1px solid rgba(21,72,114,0.25);
     border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 14px;
-    height: 40px;
+    padding: 10px 15px;
+    font-size: 15px;
+    height: 44px; /* Mayor altura para mejor usabilidad táctil */
+}}
+.stTextInput>div>div>input:focus {{
+    border-color: var(--mar-accent); /* Resaltar en foco */
+    box-shadow: 0 0 0 3px rgba(93,192,220,0.3);
 }}
 .stTextInput>div>div>input::placeholder {{
     color: rgba(0, 0, 0, 0.4);
     font-style: italic;
 }}
+
+/* Botones Principales */
 .stButton>button {{
     background-color: var(--mar-primary);
     color: white;
@@ -100,109 +116,94 @@ st.markdown(f"""
     padding: 0 20px;
     font-weight: 600;
     border: none;
-    height: 40px;
+    height: 44px; /* Alinear con el input */
+    transition: background-color 0.2s ease;
 }}
 .stButton>button:hover {{
     background-color: var(--mar-muted);
-}}
-.stButton>button.btn-voz {{
-    background-color: #5DC0DC;
     color: white;
+}}
+
+/* Botón Voz */
+.stButton>button.btn-voz {{
+    background-color: var(--mar-accent);
+    color: var(--mar-primary); /* Mejor contraste para el ícono/texto */
     border-radius: 8px;
     padding: 0 12px;
     font-weight: 600;
     border: none;
-    height: 40px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }}
 .stButton>button.btn-voz:hover {{
-    background-color: #3aa6c1;
+    background-color: #3aa6c1; /* Tono más oscuro */
+    color: white; /* Mejor contraste */
 }}
+
+/* Sidebar */
 [data-testid="stSidebar"] {{
     background-color: white;
     padding: 20px;
-    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-light);
+    border-right: 1px solid #e0e0e0;
 }}
-@keyframes floatY {{
-    0% {{ top: -10%; }}
-    100% {{ top: 110%; }}
+[data-testid="stSidebar"] .stButton>button {{
+    width: 100%;
+    margin-top: 10px;
 }}
+
+/* Estilo para st.info, st.success, etc. */
+.stAlert > div {{
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-size: 15px;
+}}
+.stAlert.info > div {{
+    border-left: 5px solid var(--mar-accent);
+}}
+.stAlert.success > div {{
+    border-left: 5px solid #28a745;
+}}
+.stAlert.warning > div {{
+    border-left: 5px solid #ffc107;
+}}
+.stAlert.error > div {{
+    border-left: 5px solid #dc3545;
+}}
+
+
+/* Eliminar animaciones distracciones de Halloween/Nieve para un enfoque corporativo */
+/* Se eliminaron los fantasmas y calabazas del código original para un look más serio */
+
 </style>
 """, unsafe_allow_html=True)
-
-
-
-
-
-
-
-# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
-st.markdown("""
-<style>
-@keyframes floatDown {
-    0% { top: -10%; }
-    100% { top: 100%; }
-}
-
-@keyframes floatY {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(10px); }
-    100% { transform: translateY(0); }
-}
-</style>
-
-<!-- Fantasmas en la parte derecha (solo arriba → abajo) -->
-<div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:10%; right:7%; font-size:28px; opacity:0.1; animation:floatDown 18s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:20%; right:6%; font-size:25px; opacity:0.1; animation:floatDown 16s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:25%; right:8%; font-size:20px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:10%; right:5%; font-size:28px; opacity:0.1; animation:floatDown 13s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:20%; right:7%; font-size:25px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:25%; right:9%; font-size:20px; opacity:0.1; animation:floatDown 11s linear infinite; z-index:9999;">❄️</div>
-
-
-
-
-<!-- Calabazas en la parte inferior izquierda (rebote suave) -->
-<div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
-<div style="position:fixed; bottom:8%; left:10%; font-size:20px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
-<div style="position:fixed; bottom:6%; left:12%; font-size:18px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🎃</div>
-""", unsafe_allow_html=True)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # -----------------------------
-# HEADER: logo + títulos
+# HEADER: logo + títulos - Alineación Mejorada
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
+# Contenedor para el logo y los títulos
 if os.path.exists(logo_path):
     try:
         logo_img = Image.open(logo_path)
         buffered = io.BytesIO()
         logo_img.save(buffered, format="PNG")
         img_b64 = base64.b64encode(buffered.getvalue()).decode()
+        
+        # Uso de un div principal con display:flex para una mejor alineación horizontal
         st.markdown(
             f"""
-            <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-                <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
+            <div style="display:flex; align-items:center; gap:25px; margin-bottom:30px; padding-top:10px;">
+                <img src="data:image/png;base64,{img_b64}" style="height:120px; width:auto;"/>
                 <div>
                     <p class="title">Sistema Integrado de Información de Proyectos</p>
-                    <p class="subtitle"> Asistente para el Seguimiento y Control — Constructora Marval</p>
+                    <p class="subtitle">Asistente para el Seguimiento y Control — Constructora Marval</p>
                 </div>
             </div>
             """,
@@ -216,19 +217,22 @@ else:
 # -----------------------------
 # SIDEBAR: Uploads
 # -----------------------------
-st.sidebar.title("Herramientas")
-st.sidebar.subheader("Cargas")
+st.sidebar.markdown(f'<p style="color:{PALETTE["primary"]}; font-size: 24px; font-weight: 700; margin-bottom: 0px;">Herramientas</p>', unsafe_allow_html=True)
+st.sidebar.subheader("Cargas de Datos")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
 img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
 st.sidebar.markdown("---")
-st.sidebar.markdown("💡 Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
+st.sidebar.markdown("💡 **Consejo:** Asegúrate de que tu archivo Excel contenga las hojas requeridas: *Avance*, *Responsables*, *Restricciones*, *Sostenibilidad*, *AvanceDiseño*, *InventarioDiseño*.")
+st.sidebar.markdown(f'<p style="font-size:12px; color:#6b7280;">Coloca <code>assets/logoMar.png</code> junto a este archivo para mostrar el logo.</p>', unsafe_allow_html=True)
+
 
 # -----------------------------
-# SPLASH (opcional)
+# SPLASH (opcional) - Se mantiene la lógica
 # -----------------------------
 placeholder = st.empty()
 if img_file:
     try:
+        img_file.seek(0)
         img_b64 = base64.b64encode(img_file.read()).decode()
         splash_html = f"""
         <div style="
@@ -244,23 +248,25 @@ if img_file:
             z-index: 9999;">
             <div style="text-align:center; padding: 20px; border-radius: 12px;">
                 <img src="data:image/png;base64,{img_b64}" 
-                     style="width:160px; max-width:50vw; height:auto; display:block; margin:0 auto;">
+                    style="width:180px; max-width:60vw; height:auto; display:block; margin:0 auto;">
+                <p style="margin-top: 20px; color: {PALETTE['primary']}; font-size: 20px; font-weight: 600;">Cargando...</p>
             </div>
         </div>
         """
         placeholder.markdown(splash_html, unsafe_allow_html=True)
-        time.sleep(0.5)
+        time.sleep(1) # Un poco más de tiempo para el efecto UX
         placeholder.empty()
     except Exception:
         placeholder.empty()
 
 # -----------------------------
-# LECTURA DE EXCEL
+# LECTURA DE EXCEL - Se mantiene la lógica
 # -----------------------------
 if not excel_file:
-    st.info("Sube el archivo Excel en la barra lateral para cargar las hojas.")
+    st.info("Sube el archivo Excel en la barra lateral para cargar las hojas y empezar a consultar.")
     st.stop()
 
+# Intento de lectura (mantenido del original)
 try:
     excel_file.seek(0)
     df_avance = pd.read_excel(excel_file, sheet_name="Avance")
@@ -280,7 +286,7 @@ except Exception as e:
     st.stop()
 
 # -----------------------------
-# NORMALIZACIÓN
+# NORMALIZACIÓN - Se mantiene la lógica
 # -----------------------------
 def normalizar_texto(texto):
     texto = str(texto).lower()
@@ -321,7 +327,7 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
-# LISTA DE CARGOS
+# LISTA DE CARGOS - Se mantiene la lógica
 # -----------------------------
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Programación", "Arquitecto",
@@ -340,7 +346,7 @@ CARGOS_VALIDOS = [
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
-# FUNCION DE RESPUESTA
+# FUNCION DE RESPUESTA - Se mantiene la lógica
 # -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
@@ -413,9 +419,16 @@ def generar_respuesta(pregunta):
                 text="count",
                 labels={"tipoRestriccion": "Tipo de Restricción", "count": "Cantidad"},
                 color="tipoRestriccion",
-                color_discrete_sequence=px.colors.qualitative.Pastel
+                color_discrete_sequence=px.colors.qualitative.Plotly # Cambiado a una paleta más formal
             )
-            grafico.update_layout(showlegend=False, xaxis_title="Tipo de Restricción", yaxis_title="Cantidad")
+            grafico.update_layout(
+                showlegend=False, 
+                xaxis_title="Tipo de Restricción", 
+                yaxis_title="Cantidad",
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                margin=dict(t=30, l=10, r=10, b=10) # Ajuste de márgenes
+            )
 
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico
 
@@ -431,24 +444,45 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# INTERFAZ: input + botón al lado + voz
+# INTERFAZ: input + botón al lado + voz - Alineación y Espaciado
 # -----------------------------
+
+# Tarjeta informativa (más limpia)
 st.markdown(
-    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
-    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
+    f'<div class="mar-card"><p style="color:{PALETTE["primary"]}; font-size: 18px; font-weight:700; margin:0 0 8px 0;">Consulta Rápida</p>'
+    '<p style="margin:0 0 0 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos. ¡Sé específico!</p></div>',
     unsafe_allow_html=True
 )
 
-col_input, col_enviar, col_voz = st.columns([5, 1, 1])
+# Columnas con proporción ajustada
+col_input, col_enviar, col_voz = st.columns([6, 1.2, 1])
 with col_input:
-    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
+    pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed")
 with col_enviar:
-    enviar = st.button("Enviar", use_container_width=True)
+    enviar = st.button("Buscar", use_container_width=True) # Cambio de "Enviar" a "Buscar" (más claro)
 with col_voz:
-    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
+    # Usar la clase btn-voz definida en el CSS
+    st.markdown(f"""
+        <style>
+            .stButton>button[kind="secondary"].st-emotion-cache-1j898cb {{
+                background-color: {PALETTE['accent']};
+                color: {PALETTE['primary']};
+                border: none;
+                height: 44px;
+                padding: 0 12px;
+                font-weight: 600;
+                transition: background-color 0.2s ease, color 0.2s ease;
+            }}
+            .stButton>button[kind="secondary"].st-emotion-cache-1j898cb:hover {{
+                background-color: #3aa6c1;
+                color: white;
+            }}
+        </style>
+        """, unsafe_allow_html=True)
+    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True, type="secondary") # Usar type="secondary" y estilizarlo con CSS para Streamlit nativo
 
 # Lógica de botones
-if enviar and pregunta:
+if (enviar or pregunta) and pregunta:
     respuesta = generar_respuesta(pregunta)
 
     # Ver si regresó gráfico
@@ -457,59 +491,48 @@ if enviar and pregunta:
     else:
         texto, resultado = respuesta
         grafico = None
-
+    
+    # Contenedor de la respuesta (mar-card)
     st.markdown(
-        f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
+        f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-size: 18px; font-weight:700; margin:0 0 15px 0;'>{texto}</p>",
         unsafe_allow_html=True
     )
+    
+    # Contenedor para el gráfico y la tabla
+    with st.container():
+        if grafico:
+            st.plotly_chart(grafico, use_container_width=True)
 
-    # Mostrar gráfico si existe
-    if grafico:
-        st.plotly_chart(grafico, use_container_width=True)
+        if isinstance(resultado, pd.DataFrame) and not resultado.empty:
+            max_preview = 15 # Reducir un poco el preview para no saturar la vista inicial
+            if len(resultado) > max_preview:
+                st.info(f"Mostrando primeras **{max_preview} filas** de {len(resultado)}. Utiliza la barra lateral para navegar y exportar.")
+                df_preview = resultado.head(max_preview)
+            else:
+                df_preview = resultado
 
-    if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-        max_preview = 200
-        if len(resultado) > max_preview:
-            st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
-            df_preview = resultado.head(max_preview)
-        else:
-            df_preview = resultado
-
-        styled_df = df_preview.style.set_table_styles([
-            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
-            {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
-                                         ('color', 'white'),
-                                         ('font-weight', 'bold')]},
-        ])
-        st.dataframe(styled_df, use_container_width=True)
+            # Estilo de la tabla mejorado
+            styled_df = df_preview.style.set_table_styles([
+                {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
+                {'selector': 'th', 'props': [('background-color', PALETTE['primary']),
+                                             ('color', 'white'),
+                                             ('font-weight', 'bold'),
+                                             ('text-align', 'center'),
+                                             ('border-radius', '4px 4px 0 0')]},
+                {'selector': 'td', 'props': [('padding', '8px 12px'), ('vertical-align', 'middle')]} # Mejor espaciado
+            ]).hide(axis="index") # Ocultar índice para limpiar la tabla
+            st.dataframe(styled_df, use_container_width=True)
+            
+        elif resultado is None:
+            # Si el texto ya contiene el error (❌), no se requiere st.error adicional
+            pass 
+        
+    st.markdown("</div>", unsafe_allow_html=True) # Cierre del mar-card de respuesta
 
 # -----------------------------
 # FOOTER
 # -----------------------------
 st.markdown(
-    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
+    f"<br><hr style='border-top: 1px solid #e0e0e0;'><p style='font-size:12px;color:#6b7280; text-align: right;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
