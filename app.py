@@ -36,7 +36,7 @@ PALETTE = {
 }
 
 # -----------------------------
-# CSS GLOBAL - Refinado (Ajuste en el botón 'primary' para asegurar el color azul)
+# CSS GLOBAL - Refinado (SOLUCIÓN DEFINITIVA PARA EL BOTÓN AZUL)
 # -----------------------------
 st.markdown(f"""
 <style>
@@ -107,38 +107,40 @@ st.markdown(f"""
     font-style: italic;
 }}
 
-/* Estilo para el botón PRIMARIO (BUSCAR) - ¡CORRECCIÓN AQUÍ! */
-.stButton>button[kind="primary"] {{
-    /* Color base: #154872 (Azul) */
+/* Estilo para el botón PRIMARIO (BUSCAR) - SOLUCIÓN DEFINITIVA */
+/* Selector que apunta a todos los botones para sobreescribir el color primario */
+div.stButton button {{ 
     background-color: var(--mar-primary) !important; 
-    color: white;
+    color: white !important;
+    border: 1px solid var(--mar-primary) !important; /* Forzar color de borde */
     border-radius: 8px;
     padding: 0 20px;
     font-weight: 600;
-    border: none;
-    height: 44px; /* ALTURA CLAVE (Igual al Input) */
+    height: 44px; /* ALTURA CLAVE */
     transition: background-color 0.2s ease;
-    margin-top: 0px; /* ALINEACIÓN VERTICAL */
-}}
-.stButton>button[kind="primary"]:hover {{
-    /* Color hover: #437FAC */
-    background-color: var(--mar-muted) !important;
-    color: white;
+    margin-top: 0px; 
 }}
 
-/* Estilo para el botón SECUNDARIO (VOZ) */
-.stButton>button[kind="secondary"] {{
+/* Selector para el hover general */
+.stButton>button:hover {{
+    background-color: var(--mar-muted) !important;
+    color: white !important;
+    border: 1px solid var(--mar-muted) !important;
+}}
+
+/* Estilo para el botón SECUNDARIO (VOZ) - Reajustado para que sea diferente al Primary */
+.stButton>button[key="voz"] {{
     background-color: var(--mar-accent) !important;
     color: var(--mar-primary) !important;
+    border: 1px solid var(--mar-accent) !important;
     border-radius: 8px !important;
     padding: 0 12px !important;
     font-weight: 600 !important;
-    border: none !important;
-    height: 44px !important; /* ALTURA CLAVE (Igual al Input) */
+    height: 44px !important; 
     transition: background-color 0.2s ease, color 0.2s ease;
-    margin-top: 0px; /* ALINEACIÓN VERTICAL */
+    margin-top: 0px; 
 }}
-.stButton>button[kind="secondary"]:hover {{
+.stButton>button[key="voz"]:hover {{
     background-color: #3aa6c1 !important;
     color: white !important;
 }}
