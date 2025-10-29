@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 from PIL import Image
 import pandas as pd
@@ -12,32 +13,13 @@ import io
 try:
     import plotly.express as px
     PLOTLY_AVAILABLE = True
-except ImportError:
+except Exception:
     PLOTLY_AVAILABLE = False
 
-# -----------------------------
-# CONFIGURACIÓN GENERAL
-# -----------------------------
-st.set_page_config(
-    page_title="Mar Assistant",
-    page_icon="🌊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Mar Assistant", page_icon="🌊", layout="wide", initial_sidebar_state="expanded")
 
-# -----------------------------
-# PALETA DE COLORES (UX / BI)
-# -----------------------------
-PALETTE = {
-    "primary": "#154872",
-    "accent": "#5DC0DC",
-    "muted": "#437FAC",
-    "bg": "#ffffff"
-}
+PALETTE = {"primary": "#154872", "accent": "#5DC0DC", "muted": "#437FAC", "bg": "#ffffff"}
 
-# -----------------------------
-# CSS GLOBAL
-# -----------------------------
 st.markdown(f"""
 <style>
 :root {{
@@ -126,78 +108,37 @@ st.markdown(f"""
     padding: 20px;
     border-radius: var(--card-radius);
 }}
-@keyframes floatY {{
-    0% {{ top: -10%; }}
-    100% {{ top: 110%; }}
+.suggestion-chip {{
+    display:inline-block;
+    padding:6px 10px;
+    margin:4px 6px 4px 0;
+    border-radius:999px;
+    background-color: rgba(21,72,114,0.07);
+    border: 1px solid rgba(21,72,114,0.08);
+    cursor: pointer;
+    font-size:14px;
+}}
+.suggestion-chip:hover {{
+    background-color: rgba(21,72,114,0.12);
 }}
 </style>
 """, unsafe_allow_html=True)
 
-
-
-
-
-
-
-# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
+# Optional: Halloween decorations (pure CSS/HTML, harmless)
 st.markdown("""
-<style>
-@keyframes floatDown {
-    0% { top: -10%; }
-    100% { top: 100%; }
-}
-
-@keyframes floatY {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(10px); }
-    100% { transform: translateY(0); }
-}
-</style>
-
-<!-- Fantasmas en la parte derecha (solo arriba → abajo) -->
-<div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:10%; right:7%; font-size:28px; opacity:0.1; animation:floatDown 18s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:20%; right:6%; font-size:25px; opacity:0.1; animation:floatDown 16s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:25%; right:8%; font-size:20px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:10%; right:5%; font-size:28px; opacity:0.1; animation:floatDown 13s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:20%; right:7%; font-size:25px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
-<div style="position:fixed; top:25%; right:9%; font-size:20px; opacity:0.1; animation:floatDown 11s linear infinite; z-index:9999;">❄️</div>
-
-
-
-
-<!-- Calabazas en la parte inferior izquierda (rebote suave) -->
-<div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
-<div style="position:fixed; bottom:8%; left:10%; font-size:20px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
-<div style="position:fixed; bottom:6%; left:12%; font-size:18px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🎃</div>
+<div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.06; z-index:9999;">❄️</div>
+<div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:0.12; z-index:9999;">🎃</div>
 """, unsafe_allow_html=True)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# -----------------------------
-# HEADER: logo + títulos
-# -----------------------------
+# HEADER
 logo_path = os.path.join("assets", "logoMar.png")
-
 if os.path.exists(logo_path):
     try:
         logo_img = Image.open(logo_path)
         buffered = io.BytesIO()
         logo_img.save(buffered, format="PNG")
         img_b64 = base64.b64encode(buffered.getvalue()).decode()
-        st.markdown(
-            f"""
+        st.markdown(f"""
             <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
                 <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
                 <div>
@@ -205,17 +146,13 @@ if os.path.exists(logo_path):
                     <p class="subtitle"> Asistente para el Seguimiento y Control — Constructora Marval</p>
                 </div>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+            """, unsafe_allow_html=True)
     except Exception:
         st.image(logo_path, width=80)
 else:
     st.warning("Logo no encontrado en assets/logoMar.png")
 
-# -----------------------------
-# SIDEBAR: Uploads
-# -----------------------------
+# SIDEBAR uploads
 st.sidebar.title("Herramientas")
 st.sidebar.subheader("Cargas")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
@@ -223,9 +160,7 @@ img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png"
 st.sidebar.markdown("---")
 st.sidebar.markdown("💡 Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
-# -----------------------------
-# SPLASH (opcional)
-# -----------------------------
+# Optional splash
 placeholder = st.empty()
 if img_file:
     try:
@@ -254,13 +189,11 @@ if img_file:
     except Exception:
         placeholder.empty()
 
-# -----------------------------
-# LECTURA DE EXCEL
-# -----------------------------
 if not excel_file:
     st.info("Sube el archivo Excel en la barra lateral para cargar las hojas.")
     st.stop()
 
+# LECTURA DE EXCEL
 try:
     excel_file.seek(0)
     df_avance = pd.read_excel(excel_file, sheet_name="Avance")
@@ -279,34 +212,31 @@ except Exception as e:
     st.sidebar.error(f"Error al leer una o varias hojas: {e}")
     st.stop()
 
-# -----------------------------
-# NORMALIZACIÓN
-# -----------------------------
+# NORMALIZACIÓN helpers
 def normalizar_texto(texto):
     texto = str(texto).lower()
-    texto = re.sub(r"[.,;:%]", "", texto)
+    texto = re.sub(r"[.,;:%\"()\/\\\\]", " ", texto)
     texto = re.sub(r"\s+", " ", texto)
     return texto.strip()
 
 def quitar_tildes(texto):
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
 
+# Check Proyecto column presence
 for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
                     ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
     if "Proyecto" not in df.columns:
         st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
         st.stop()
 
+# Añadir proyecto normalizado
 for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
     df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
 
-all_projects = pd.concat([
-    df_avance["Proyecto"].astype(str),
-    df_responsables["Proyecto"].astype(str),
-    df_restricciones["Proyecto"].astype(str),
-    df_sostenibilidad["Proyecto"].astype(str)
-]).dropna().unique()
-
+all_projects = pd.concat([df_avance["Proyecto"].astype(str),
+                          df_responsables["Proyecto"].astype(str),
+                          df_restricciones["Proyecto"].astype(str),
+                          df_sostenibilidad["Proyecto"].astype(str)]).dropna().unique()
 projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
 
 def extraer_proyecto(texto):
@@ -320,9 +250,7 @@ def extraer_proyecto(texto):
             return projects_map[norm], norm
     return None, None
 
-# -----------------------------
-# LISTA DE CARGOS
-# -----------------------------
+# LISTA DE CARGOS (mantener)
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Programación", "Arquitecto",
     "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
@@ -339,16 +267,13 @@ CARGOS_VALIDOS = [
 ]
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
-# -----------------------------
 # FUNCION DE RESPUESTA
-# -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
 
     estado_diseno_keywords = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
-    diseño_keywords = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
-                       "avance de diseno", "avance de diseño", "diseno", "diseño"]
+    diseño_keywords = ["avance en diseño", "avance diseño", "diseno", "diseño"]
     obra_keywords = ["avance de obra", "avance obra", "avance en obra"]
 
     if any(k in pregunta_norm for k in estado_diseno_keywords):
@@ -403,17 +328,13 @@ def generar_respuesta(pregunta):
         if df.empty:
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
 
-        # Generar gráfico si plotly disponible
         grafico = None
         if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
             grafico = px.bar(
                 df.groupby("tipoRestriccion").size().reset_index(name="count"),
-                x="tipoRestriccion",
-                y="count",
-                text="count",
+                x="tipoRestriccion", y="count", text="count",
                 labels={"tipoRestriccion": "Tipo de Restricción", "count": "Cantidad"},
-                color="tipoRestriccion",
-                color_discrete_sequence=px.colors.qualitative.Pastel
+                color="tipoRestriccion"
             )
             grafico.update_layout(showlegend=False, xaxis_title="Tipo de Restricción", yaxis_title="Cantidad")
 
@@ -430,40 +351,126 @@ def generar_respuesta(pregunta):
     return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
+# ------------------------------
+# Construcción automática de palabras clave
+# ------------------------------
+def construir_palabras_clave():
+    keywords = set([
+        "avance de obra", "avance diseño", "estado diseño", "inventario diseño",
+        "responsable", "restricciones", "sostenibilidad", "avance", "proyecto",
+        "quién", "quien", "tipo restriccion", "tipoRestriccion"
+    ])
+    # Añadir proyectos
+    for p in all_projects:
+        if pd.notna(p) and str(p).strip():
+            keywords.add(str(p).strip())
+    # Añadir cargos si existe la columna Cargo
+    if "Cargo" in df_responsables.columns:
+        for c in df_responsables["Cargo"].dropna().unique():
+            keywords.add(str(c).strip())
+    # Añadir tipoRestriccion si existe
+    if "tipoRestriccion" in df_restricciones.columns:
+        for t in df_restricciones["tipoRestriccion"].dropna().unique():
+            keywords.add(str(t).strip())
+    # Extraer palabras frecuentes de columnas de texto (limitar)
+    text_columns = []
+    for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
+        for col in df.columns:
+            if df[col].dtype == object:
+                text_columns.append((df, col))
+    token_counts = {}
+    for df, col in text_columns:
+        for val in df[col].dropna().astype(str).head(500):
+            for token in re.findall(r"\b[^\d\W]{3,}\b", normalizar_texto(quitar_tildes(val))):
+                token_counts[token] = token_counts.get(token, 0) + 1
+    # Añadir tokens más frecuentes
+    for t, _ in sorted(token_counts.items(), key=lambda x: x[1], reverse=True)[:60]:
+        keywords.add(t)
+    # Normalizar y devolver lista ordenada
+    cleaned = []
+    for k in keywords:
+        kk = " ".join(str(k).split())
+        if kk:
+            cleaned.append(kk)
+    cleaned = sorted(set(cleaned), key=lambda x: (len(x), x))
+    return cleaned
+
+KEYWORDS = construir_palabras_clave()
+
 # -----------------------------
-# INTERFAZ: input + botón al lado + voz
+# INTERFAZ: input + sugerencias sin JS (Streamlit puro)
 # -----------------------------
-st.markdown(
-    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
-    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
-    unsafe_allow_html=True
-)
+st.markdown(f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
+            '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
+            unsafe_allow_html=True)
+
+# Inicializar estado
+if "pregunta" not in st.session_state:
+    st.session_state["pregunta"] = ""
+
+def set_pregunta(val):
+    st.session_state["pregunta"] = val
 
 col_input, col_enviar, col_voz = st.columns([5, 1, 1])
 with col_input:
-    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
+    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí", key="pregunta")
 with col_enviar:
     enviar = st.button("Enviar", use_container_width=True)
 with col_voz:
     voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
 
-# Lógica de botones
-if enviar and pregunta:
-    respuesta = generar_respuesta(pregunta)
+# Mostrar sugerencias dinámicas (sin JS) - filtrado por contenido
+def mostrar_sugerencias(p_text, max_items=12):
+    if not p_text:
+        # mostrar sugerencias populares (primeras)
+        suggestions = KEYWORDS[:16]
+    else:
+        q = quitar_tildes(normalizar_texto(p_text))
+        suggestions = [k for k in KEYWORDS if q in quitar_tildes(normalizar_texto(k))]
+        if not suggestions:
+            # intentar fragmentos
+            parts = q.split()
+            suggestions = []
+            for p in parts:
+                suggestions.extend([k for k in KEYWORDS if p in quitar_tildes(normalizar_texto(k))])
+        # mantener orden y unicidad
+        seen = set()
+        new = []
+        for s in suggestions:
+            if s not in seen:
+                seen.add(s)
+                new.append(s)
+        suggestions = new
+    suggestions = suggestions[:max_items]
+    if suggestions:
+        st.markdown("<div style='margin-top:6px; margin-bottom:8px;'>", unsafe_allow_html=True)
+        cols = st.columns(4)
+        for idx, s in enumerate(suggestions):
+            c = cols[idx % 4]
+            # Cada sugerencia es un botón que completa el campo
+            with c:
+                if st.button(s, key=f"sugg_{idx}"):
+                    set_pregunta(s)
+                    # pequeño rerun para ver el cambio inmediato
+                    st.experimental_rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # Ver si regresó gráfico
-    if len(respuesta) == 3:
+# Mostrar sugerencias bajo el input
+mostrar_sugerencias(st.session_state.get("pregunta", ""))
+
+# Lógica de botones
+if enviar and st.session_state.get("pregunta", "").strip():
+    respuesta = generar_respuesta(st.session_state["pregunta"].strip())
+
+    if isinstance(respuesta, tuple) and len(respuesta) == 3:
         texto, resultado, grafico = respuesta
     else:
         texto, resultado = respuesta
         grafico = None
 
-    st.markdown(
-        f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
-        unsafe_allow_html=True
-    )
+    st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
+                unsafe_allow_html=True)
 
-    # Mostrar gráfico si existe
     if grafico:
         st.plotly_chart(grafico, use_container_width=True)
 
@@ -475,41 +482,11 @@ if enviar and pregunta:
         else:
             df_preview = resultado
 
-        styled_df = df_preview.style.set_table_styles([
-            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
-            {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
-                                         ('color', 'white'),
-                                         ('font-weight', 'bold')]},
-        ])
-        st.dataframe(styled_df, use_container_width=True)
+        # Mostrar DataFrame simple
+        st.dataframe(df_preview, use_container_width=True)
+    elif isinstance(resultado, str):
+        st.write(resultado)
 
-# -----------------------------
 # FOOTER
-# -----------------------------
-st.markdown(
-    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
-    unsafe_allow_html=True
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+st.markdown(f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
+            unsafe_allow_html=True)
