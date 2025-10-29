@@ -64,7 +64,7 @@ st.markdown(f"""
 .title {{
     color: var(--mar-primary);
     font-size: var(--title-size);
-    font-weight: 900; /* Más peso para el título principal */
+    font-weight: 900;
     margin: 0;
     line-height: 1.1;
     font-family: 'Roboto Slab', serif;
@@ -81,9 +81,9 @@ st.markdown(f"""
     background-color: white;
     padding: var(--card-padding);
     border-radius: var(--card-radius);
-    box-shadow: var(--shadow-light); /* Sombra más sutil */
+    box-shadow: var(--shadow-light);
     transition: box-shadow 0.3s ease;
-    margin-bottom: 25px; /* Más espaciado entre tarjetas */
+    margin-bottom: 25px;
 }}
 .mar-card:hover {{
     box-shadow: var(--shadow-hover);
@@ -96,10 +96,10 @@ st.markdown(f"""
     border-radius: 8px;
     padding: 10px 15px;
     font-size: 15px;
-    height: 44px; /* Mayor altura para mejor usabilidad táctil */
+    height: 44px; /* ALTURA CLAVE */
 }}
 .stTextInput>div>div>input:focus {{
-    border-color: var(--mar-accent); /* Resaltar en foco */
+    border-color: var(--mar-accent);
     box-shadow: 0 0 0 3px rgba(93,192,220,0.3);
 }}
 .stTextInput>div>div>input::placeholder {{
@@ -107,41 +107,40 @@ st.markdown(f"""
     font-style: italic;
 }}
 
-/* Botones Principales */
-.stButton>button {{
+/* Estilo para los botones (Primario: Buscar) */
+.stButton>button[kind="primary"] {{
     background-color: var(--mar-primary);
     color: white;
     border-radius: 8px;
     padding: 0 20px;
     font-weight: 600;
     border: none;
-    height: 44px; /* Alinear con el input */
+    height: 44px; /* ALTURA CLAVE (Igual al Input) */
     transition: background-color 0.2s ease;
+    margin-top: 0px; /* ALINEACIÓN VERTICAL */
 }}
-.stButton>button:hover {{
+.stButton>button[kind="primary"]:hover {{
     background-color: var(--mar-muted);
     color: white;
 }}
 
-/* Botón Voz */
-.stButton>button.btn-voz {{
-    background-color: var(--mar-accent);
-    color: var(--mar-primary); /* Mejor contraste para el ícono/texto */
-    border-radius: 8px;
-    padding: 0 12px;
-    font-weight: 600;
-    border: none;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+/* Estilo para el botón secundario (Voz) */
+.stButton>button[kind="secondary"] {{
+    background-color: var(--mar-accent) !important;
+    color: var(--mar-primary) !important;
+    border-radius: 8px !important;
+    padding: 0 12px !important;
+    font-weight: 600 !important;
+    border: none !important;
+    height: 44px !important; /* ALTURA CLAVE (Igual al Input) */
     transition: background-color 0.2s ease, color 0.2s ease;
+    margin-top: 0px; /* ALINEACIÓN VERTICAL */
 }}
-.stButton>button.btn-voz:hover {{
-    background-color: #3aa6c1; /* Tono más oscuro */
-    color: white; /* Mejor contraste */
+.stButton>button[kind="secondary"]:hover {{
+    background-color: #3aa6c1 !important;
+    color: white !important;
 }}
+
 
 /* Sidebar */
 [data-testid="stSidebar"] {{
@@ -179,11 +178,10 @@ st.markdown(f"""
 
 
 # -----------------------------
-# HEADER: logo + títulos - Alineación Mejorada
+# HEADER: logo + títulos
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
-# Contenedor para el logo y los títulos
 if os.path.exists(logo_path):
     try:
         logo_img = Image.open(logo_path)
@@ -191,7 +189,6 @@ if os.path.exists(logo_path):
         logo_img.save(buffered, format="PNG")
         img_b64 = base64.b64encode(buffered.getvalue()).decode()
         
-        # Uso de un div principal con display:flex para una mejor alineación horizontal
         st.markdown(
             f"""
             <div style="display:flex; align-items:center; gap:25px; margin-bottom:30px; padding-top:10px;">
@@ -222,7 +219,7 @@ st.sidebar.markdown(f'<p style="font-size:12px; color:#6b7280;">Coloca <code>ass
 
 
 # -----------------------------
-# SPLASH (opcional) - Se mantiene la lógica
+# SPLASH (opcional)
 # -----------------------------
 placeholder = st.empty()
 if img_file:
@@ -249,13 +246,13 @@ if img_file:
         </div>
         """
         placeholder.markdown(splash_html, unsafe_allow_html=True)
-        time.sleep(1) # Un poco más de tiempo para el efecto UX
+        time.sleep(1)
         placeholder.empty()
     except Exception:
         placeholder.empty()
 
 # -----------------------------
-# LECTURA DE EXCEL - Se mantiene la lógica
+# LECTURA DE EXCEL
 # -----------------------------
 if not excel_file:
     st.info("Sube el archivo Excel en la barra lateral para cargar las hojas y empezar a consultar.")
@@ -281,7 +278,7 @@ except Exception as e:
     st.stop()
 
 # -----------------------------
-# NORMALIZACIÓN - Se mantiene la lógica
+# NORMALIZACIÓN
 # -----------------------------
 def normalizar_texto(texto):
     texto = str(texto).lower()
@@ -322,7 +319,7 @@ def extraer_proyecto(texto):
     return None, None
 
 # -----------------------------
-# LISTA DE CARGOS - Se mantiene la lógica
+# LISTA DE CARGOS
 # -----------------------------
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Programación", "Arquitecto",
@@ -341,7 +338,7 @@ CARGOS_VALIDOS = [
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
-# FUNCION DE RESPUESTA - Se mantiene la lógica
+# FUNCION DE RESPUESTA
 # -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
@@ -414,7 +411,7 @@ def generar_respuesta(pregunta):
                 text="count",
                 labels={"tipoRestriccion": "Tipo de Restricción", "count": "Cantidad"},
                 color="tipoRestriccion",
-                color_discrete_sequence=px.colors.qualitative.Plotly # Cambiado a una paleta más formal
+                color_discrete_sequence=px.colors.qualitative.Plotly
             )
             grafico.update_layout(
                 showlegend=False, 
@@ -422,7 +419,7 @@ def generar_respuesta(pregunta):
                 yaxis_title="Cantidad",
                 plot_bgcolor='white',
                 paper_bgcolor='white',
-                margin=dict(t=30, l=10, r=10, b=10) # Ajuste de márgenes
+                margin=dict(t=30, l=10, r=10, b=10)
             )
 
         return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico
@@ -439,7 +436,7 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# INTERFAZ: input + botón al lado + voz - Alineación y Espaciado
+# INTERFAZ: input + botón al lado + voz - ALINEACIÓN CORREGIDA
 # -----------------------------
 
 # Tarjeta informativa (más limpia)
@@ -449,35 +446,25 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Columnas con proporción ajustada
-col_input, col_enviar, col_voz = st.columns([6, 1.2, 1])
-with col_input:
-    pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed")
-with col_enviar:
-    enviar = st.button("Buscar", use_container_width=True) # Cambio de "Enviar" a "Buscar" (más claro)
-with col_voz:
-    # Estiliza el botón secundario de Streamlit para que se vea como el de voz
-    st.markdown(f"""
-        <style>
-            .stButton>button[kind="secondary"] {{
-                background-color: {PALETTE['accent']} !important;
-                color: {PALETTE['primary']} !important;
-                border: none !important;
-                height: 44px;
-                padding: 0 12px;
-                font-weight: 600;
-                transition: background-color 0.2s ease, color 0.2s ease;
-            }}
-            .stButton>button[kind="secondary"]:hover {{
-                background-color: #3aa6c1 !important;
-                color: white !important;
-            }}
-        </style>
-        """, unsafe_allow_html=True)
-    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True, type="secondary")
+# Creamos un contenedor (Formulario) para agrupar los elementos y forzar la alineación
+with st.form("query_form", clear_on_submit=False):
+    col_input, col_enviar, col_voz = st.columns([6, 1.2, 1])
+    
+    with col_input:
+        pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed")
+    
+    # IMPORTANTE: Los botones se definen *dentro* del contexto del formulario 
+    # y en las columnas correctas para que Streamlit los alinee automáticamente 
+    # si tienen la misma altura CSS.
+    with col_enviar:
+        enviar = st.form_submit_button("Buscar", type="primary", use_container_width=True) 
+    
+    with col_voz:
+        voz = st.form_submit_button("🎤 Voz", key="voz", help="Activar entrada por voz", type="secondary", use_container_width=True)
 
-# Lógica de botones
-if (enviar or pregunta) and pregunta:
+
+# Lógica de botones (ahora usa `enviar` o `voz` del formulario)
+if enviar and pregunta:
     respuesta = generar_respuesta(pregunta)
 
     # Ver si regresó gráfico
@@ -499,7 +486,7 @@ if (enviar or pregunta) and pregunta:
             st.plotly_chart(grafico, use_container_width=True)
 
         if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-            max_preview = 15 # Reducir un poco el preview para no saturar la vista inicial
+            max_preview = 15
             if len(resultado) > max_preview:
                 st.info(f"Mostrando primeras **{max_preview} filas** de {len(resultado)}. Utiliza la barra lateral para navegar y exportar.")
                 df_preview = resultado.head(max_preview)
@@ -514,15 +501,17 @@ if (enviar or pregunta) and pregunta:
                                              ('font-weight', 'bold'),
                                              ('text-align', 'center'),
                                              ('border-radius', '4px 4px 0 0')]},
-                {'selector': 'td', 'props': [('padding', '8px 12px'), ('vertical-align', 'middle')]} # Mejor espaciado
-            ]).hide(axis="index") # Ocultar índice para limpiar la tabla
+                {'selector': 'td', 'props': [('padding', '8px 12px'), ('vertical-align', 'middle')]}
+            ]).hide(axis="index")
             st.dataframe(styled_df, use_container_width=True)
             
         elif resultado is None:
-            # Si el texto ya contiene el error (❌), no se requiere st.error adicional
             pass 
         
     st.markdown("</div>", unsafe_allow_html=True) # Cierre del mar-card de respuesta
+elif voz:
+    st.info("Función de voz activada. La implementación real de la voz requiere librerías adicionales no estándar en un script básico de Streamlit, pero el botón está alineado. ¡Habla claro!")
+
 
 # -----------------------------
 # FOOTER
