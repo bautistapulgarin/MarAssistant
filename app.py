@@ -8,16 +8,12 @@ import base64
 import os
 import io
 
-# Intentamos importar plotly
 try:
     import plotly.express as px
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
 
-# -----------------------------
-# CONFIGURACIÓN GENERAL
-# -----------------------------
 st.set_page_config(
     page_title="Mar Assistant",
     page_icon="🌊",
@@ -25,9 +21,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# -----------------------------
-# PALETA DE COLORES (UX / BI)
-# -----------------------------
 PALETTE = {
     "primary": "#154872",
     "accent": "#5DC0DC",
@@ -35,9 +28,6 @@ PALETTE = {
     "bg": "#ffffff"
 }
 
-# -----------------------------
-# CSS GLOBAL
-# -----------------------------
 st.markdown(f"""
 <style>
 :root {{
@@ -133,13 +123,6 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-
-
-
-
-
-
-# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
 st.markdown("""
 <style>
 @keyframes floatDown {
@@ -154,7 +137,6 @@ st.markdown("""
 }
 </style>
 
-<!-- Fantasmas en la parte derecha (solo arriba → abajo) -->
 <div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
 <div style="position:fixed; top:10%; right:7%; font-size:28px; opacity:0.1; animation:floatDown 18s linear infinite; z-index:9999;">❄️</div>
 <div style="position:fixed; top:20%; right:6%; font-size:25px; opacity:0.1; animation:floatDown 16s linear infinite; z-index:9999;">❄️</div>
@@ -163,33 +145,12 @@ st.markdown("""
 <div style="position:fixed; top:20%; right:7%; font-size:25px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
 <div style="position:fixed; top:25%; right:9%; font-size:20px; opacity:0.1; animation:floatDown 11s linear infinite; z-index:9999;">❄️</div>
 
-
-
-
-<!-- Calabazas en la parte inferior izquierda (rebote suave) -->
 <div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
 <div style="position:fixed; bottom:8%; left:10%; font-size:20px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
 <div style="position:fixed; bottom:6%; left:12%; font-size:18px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🎃</div>
 """, unsafe_allow_html=True)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# -----------------------------
-# HEADER: logo + títulos
-# -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
-
 if os.path.exists(logo_path):
     try:
         logo_img = Image.open(logo_path)
@@ -213,9 +174,6 @@ if os.path.exists(logo_path):
 else:
     st.warning("Logo no encontrado en assets/logoMar.png")
 
-# -----------------------------
-# SIDEBAR: Uploads
-# -----------------------------
 st.sidebar.title("Herramientas")
 st.sidebar.subheader("Cargas")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
@@ -223,9 +181,6 @@ img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png"
 st.sidebar.markdown("---")
 st.sidebar.markdown("💡 Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
-# -----------------------------
-# SPLASH (opcional)
-# -----------------------------
 placeholder = st.empty()
 if img_file:
     try:
@@ -254,9 +209,6 @@ if img_file:
     except Exception:
         placeholder.empty()
 
-# -----------------------------
-# LECTURA DE EXCEL
-# -----------------------------
 if not excel_file:
     st.info("Sube el archivo Excel en la barra lateral para cargar las hojas.")
     st.stop()
@@ -279,9 +231,6 @@ except Exception as e:
     st.sidebar.error(f"Error al leer una o varias hojas: {e}")
     st.stop()
 
-# -----------------------------
-# NORMALIZACIÓN
-# -----------------------------
 def normalizar_texto(texto):
     texto = str(texto).lower()
     texto = re.sub(r"[.,;:%]", "", texto)
@@ -320,9 +269,6 @@ def extraer_proyecto(texto):
             return projects_map[norm], norm
     return None, None
 
-# -----------------------------
-# LISTA DE CARGOS
-# -----------------------------
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Programación", "Arquitecto",
     "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
@@ -340,8 +286,38 @@ CARGOS_VALIDOS = [
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
 # -----------------------------
-# FUNCION DE RESPUESTA
+# AUTOCOMPLETE PARA PREGUNTAS
 # -----------------------------
+AUTOCOMPLETE_TERMS = list(all_projects) + CARGOS_VALIDOS
+if "pregunta_text" not in st.session_state:
+    st.session_state.pregunta_text = ""
+
+st.markdown(
+    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
+    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
+    unsafe_allow_html=True
+)
+
+col_input, col_enviar, col_voz = st.columns([5, 1, 1])
+with col_input:
+    st.session_state.pregunta_text = st.text_input(
+        label="",
+        placeholder="Escribe tu pregunta aquí",
+        value=st.session_state.pregunta_text,
+        key="input_autocomplete"
+    )
+    if st.session_state.pregunta_text:
+        sugerencias = [t for t in AUTOCOMPLETE_TERMS if st.session_state.pregunta_text.lower() in t.lower()]
+        if sugerencias:
+            selected = st.selectbox("Sugerencias (clic para autocompletar):", sugerencias)
+            if st.button("Usar sugerencia"):
+                st.session_state.pregunta_text = selected
+
+with col_enviar:
+    enviar = st.button("Enviar", use_container_width=True)
+with col_voz:
+    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
+
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
@@ -403,112 +379,23 @@ def generar_respuesta(pregunta):
         if df.empty:
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
 
-        # Generar gráfico si plotly disponible
         grafico = None
-        if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
-            grafico = px.bar(
-                df.groupby("tipoRestriccion").size().reset_index(name="count"),
-                x="tipoRestriccion",
-                y="count",
-                text="count",
-                labels={"tipoRestriccion": "Tipo de Restricción", "count": "Cantidad"},
-                color="tipoRestriccion",
-                color_discrete_sequence=px.colors.qualitative.Pastel
-            )
-            grafico.update_layout(showlegend=False, xaxis_title="Tipo de Restricción", yaxis_title="Cantidad")
+        if PLOTLY_AVAILABLE:
+            if "Sucursal" in df.columns:
+                df_agg = df.groupby("Sucursal").size().reset_index(name="Cantidad")
+                grafico = px.bar(df_agg, x="Sucursal", y="Cantidad", color="Sucursal",
+                                 title=f"Restricciones por Sucursal - {proyecto or 'Todos'}")
+        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df if not grafico else (df, grafico)
 
-        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico
+    return "❌ No encontré información relevante para tu pregunta.", None
 
-    if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
-        df = df_sostenibilidad.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        if df.empty:
-            return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None
-        return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
-
-    return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
-            "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
-
-# -----------------------------
-# INTERFAZ: input + botón al lado + voz
-# -----------------------------
-st.markdown(
-    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
-    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
-    unsafe_allow_html=True
-)
-
-col_input, col_enviar, col_voz = st.columns([5, 1, 1])
-with col_input:
-    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
-with col_enviar:
-    enviar = st.button("Enviar", use_container_width=True)
-with col_voz:
-    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
-
-# Lógica de botones
-if enviar and pregunta:
-    respuesta = generar_respuesta(pregunta)
-
-    # Ver si regresó gráfico
-    if len(respuesta) == 3:
-        texto, resultado, grafico = respuesta
-    else:
-        texto, resultado = respuesta
-        grafico = None
-
-    st.markdown(
-        f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
-        unsafe_allow_html=True
-    )
-
-    # Mostrar gráfico si existe
-    if grafico:
-        st.plotly_chart(grafico, use_container_width=True)
-
-    if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-        max_preview = 200
-        if len(resultado) > max_preview:
-            st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
-            df_preview = resultado.head(max_preview)
-        else:
-            df_preview = resultado
-
-        styled_df = df_preview.style.set_table_styles([
-            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
-            {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
-                                         ('color', 'white'),
-                                         ('font-weight', 'bold')]},
-        ])
-        st.dataframe(styled_df, use_container_width=True)
-
-# -----------------------------
-# FOOTER
-# -----------------------------
-st.markdown(
-    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
-    unsafe_allow_html=True
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+if enviar and st.session_state.pregunta_text:
+    texto_respuesta, df_resultado = generar_respuesta(st.session_state.pregunta_text)
+    st.markdown(f'<div class="mar-card">{texto_respuesta}</div>', unsafe_allow_html=True)
+    if isinstance(df_resultado, tuple):
+        df_resultado, grafico = df_resultado
+        if grafico:
+            st.plotly_chart(grafico, use_container_width=True)
+        st.dataframe(df_resultado)
+    elif df_resultado is not None:
+        st.dataframe(df_resultado)
