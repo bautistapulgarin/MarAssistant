@@ -532,11 +532,15 @@ if excel_file:
         pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
         proyecto, proyecto_norm = extraer_proyecto(pregunta)
         
-        # 🎯 Bloque de Avance de Obra
+        # 🎯 Bloque de Avance de Obra (CORREGIDO EL FILTRADO)
         if "avance de obra" in pregunta_norm or "avance obra" in pregunta_norm:
             df = df_avance.copy()
-            if proyecto_norm:
+            
+            # 1. Aplicar filtro por Proyecto_norm si se encuentra
+            if proyecto_norm and "Proyecto_norm" in df.columns:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
+            
+            # 2. Manejo de resultados
             if df.empty:
                 return f"❌ No hay registros de avance de obra en {proyecto or 'todos'}", None, None, 'general', None
             
@@ -565,12 +569,6 @@ if excel_file:
         # 🎯 Bloque de Avance en Diseño y Estado Diseño (combinadas)
         if "avance en diseno" in pregunta_norm or "avance diseno" in pregunta_norm or "estado diseno" in pregunta_norm or "inventario diseno" in pregunta_norm:
             
-            # Aseguramos que la columna 'Proyecto_norm' existe en ambas
-            if "Proyecto_norm" not in df_inventario_diseno.columns:
-                df_inventario_diseno["Proyecto_norm"] = ""
-            if "Proyecto_norm" not in df_avance_diseno.columns:
-                df_avance_diseno["Proyecto_norm"] = ""
-            
             # Buscar si se pide inventario específico
             if "inventario" in pregunta_norm:
                 df = df_inventario_diseno.copy()
@@ -579,7 +577,8 @@ if excel_file:
                 df = df_avance_diseno.copy()
                 titulo_prefijo = "📐 Avance de Diseño"
             
-            if proyecto_norm:
+            # Aplicar filtro por Proyecto_norm
+            if proyecto_norm and "Proyecto_norm" in df.columns:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
             
             if df.empty:
@@ -592,7 +591,7 @@ if excel_file:
             df = df_responsables.copy()
             
             # 1. Filtrar por Proyecto si se encuentra
-            if proyecto_norm:
+            if proyecto_norm and "Proyecto_norm" in df.columns:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
             
             # 2. Filtrar por Cargo si se encuentra en la pregunta
@@ -619,7 +618,7 @@ if excel_file:
             df = df_restricciones.copy()
             
             # 1. Filtrar por Proyecto si se encuentra
-            if proyecto_norm:
+            if proyecto_norm and "Proyecto_norm" in df.columns:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
             
             # 2. Identificar tipo de restricción en el texto de la pregunta
@@ -665,7 +664,7 @@ if excel_file:
         if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
             # Lógica de Sostenibilidad (se mantiene)
             df = df_sostenibilidad.copy()
-            if proyecto_norm:
+            if proyecto_norm and "Proyecto_norm" in df.columns:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
             if df.empty:
                 return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None, None, 'general', None
