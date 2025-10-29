@@ -350,11 +350,6 @@ excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xl
 img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
 st.sidebar.markdown("---")
 
-# Botón para volver al chat si estamos en el predictor (Mantenemos este por consistencia)
-if 'current_view' in st.session_state and st.session_state.current_view == 'predictor':
-    # Eliminamos el botón de aquí para evitar duplicidad y usar el principal
-    pass
-
 st.sidebar.markdown("💡 **Consejo:** Asegúrate de que tu archivo Excel contenga las hojas requeridas: *Avance*, *Responsables*, *Restricciones*, *Sostenibilidad*, *AvanceDiseño*, *InventarioDiseño*.")
 st.sidebar.markdown(f'<p style="font-size:12px; color:#6b7280;">Coloca <code>assets/logoMar.png</code> y los archivos <code>*.joblib</code> junto a este archivo.</p>', unsafe_allow_html=True)
 
@@ -586,7 +581,7 @@ def mostrar_predictor_mlp():
     
     with col_pred_back:
         st.markdown("<div style='height:42px;'></div>", unsafe_allow_html=True) # Espacio para alinear
-        # 🟢 CORRECCIÓN: Botón de devolver en la vista principal de Predicción
+        # Botón de devolver en la vista principal de Predicción
         if st.button("⬅️ Devolver", key="btn_devolver", type="secondary", use_container_width=True):
             switch_to_chat()
             
@@ -729,7 +724,8 @@ elif st.session_state.current_view == 'chat':
                     st.plotly_chart(grafico, use_container_width=True)
 
                 if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-                    max_preview = 15
+                    # 🟢 CORRECCIÓN: Cambiamos el límite de 15 a 70
+                    max_preview = 70 
                     if len(resultado) > max_preview:
                         st.info(f"Mostrando primeras **{max_preview} filas** de {len(resultado)}. Utiliza la barra lateral para navegar y exportar.")
                         df_preview = resultado.head(max_preview)
