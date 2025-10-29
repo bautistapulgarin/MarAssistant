@@ -6,3 +6,5 @@ scipy
 whisper
 openpyxl
 plotly
+joblib
+scikit-learn
