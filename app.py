@@ -108,8 +108,8 @@ st.markdown(f"""
 }}
 
 /* Estilo para el botón BUSCAR (Ahora usa key="btn_buscar") */
+/* Fondo Azul Oscuro, Letra Blanca */
 .stButton>button[key="btn_buscar"] {{
-    /* Color base: #154872 (Azul) */
     background-color: var(--mar-primary) !important; 
     color: white !important;
     border: 1px solid var(--mar-primary) !important;
@@ -122,7 +122,6 @@ st.markdown(f"""
 }}
 
 .stButton>button[key="btn_buscar"]:hover {{
-    /* Color hover: #437FAC */
     background-color: var(--mar-muted) !important;
     color: white !important;
     border: 1px solid var(--mar-muted) !important;
@@ -460,7 +459,7 @@ with st.form("query_form", clear_on_submit=False):
         pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed")
     
     with col_enviar:
-        # Botón Buscar (Cambiado a 'secondary' para aplicar el color azul por CSS usando la key)
+        # El botón de Buscar es 'secondary' con key para forzar el color azul oscuro por CSS.
         enviar = st.form_submit_button("Buscar", key="btn_buscar", type="secondary", use_container_width=True) 
     
     with col_voz:
