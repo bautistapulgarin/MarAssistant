@@ -213,7 +213,6 @@ st.markdown("""
 }
 </style>
 
-<!-- Fantasmas en la parte derecha (solo arriba → abajo) -->
 <div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
 <div style="position:fixed; top:10%; right:7%; font-size:28px; opacity:0.1; animation:floatDown 18s linear infinite; z-index:9999;">❄️</div>
 <div style="position:fixed; top:20%; right:6%; font-size:25px; opacity:0.1; animation:floatDown 16s linear infinite; z-index:9999;">❄️</div>
@@ -225,7 +224,6 @@ st.markdown("""
 
 
 
-<!-- Calabazas en la parte inferior izquierda (rebote suave) -->
 <div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
 <div style="position:fixed; bottom:8%; left:10%; font-size:20px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
 <div style="position:fixed; bottom:6%; left:12%; font-size:18px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🎃</div>
@@ -300,8 +298,10 @@ with col_header_title:
 
 # LÓGICA DEL BOTÓN DE PREDICCIÓN
 def switch_to_predictor():
-    """Cambia el estado de sesión para mostrar la vista del predictor."""
+    """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
     st.session_state.current_view = 'predictor'
+    # 💥 CORRECCIÓN 1: Reseteamos el resultado de predicción al cambiar la vista
+    st.session_state.prediction_result = None
 
 with col_header_button:
     st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
@@ -311,6 +311,14 @@ with col_header_button:
     else:
         st.warning("MLP no disponible.")
         
+# Inicializar el estado de sesión para la vista
+if 'current_view' not in st.session_state:
+    st.session_state.current_view = 'chat'
+
+# 💥 CORRECCIÓN 2: Inicializar el estado de la predicción
+if 'prediction_result' not in st.session_state:
+    st.session_state.prediction_result = None
+
 # -----------------------------
 # SIDEBAR: Uploads
 # -----------------------------
@@ -324,15 +332,12 @@ st.sidebar.markdown("---")
 if 'current_view' in st.session_state and st.session_state.current_view == 'predictor':
     if st.sidebar.button("⬅️ Volver al Asistente (Chat)"):
         st.session_state.current_view = 'chat'
+        st.session_state.prediction_result = None # También limpiamos al volver
         st.rerun()
 
 st.sidebar.markdown("💡 **Consejo:** Asegúrate de que tu archivo Excel contenga las hojas requeridas: *Avance*, *Responsables*, *Restricciones*, *Sostenibilidad*, *AvanceDiseño*, *InventarioDiseño*.")
 st.sidebar.markdown(f'<p style="font-size:12px; color:#6b7280;">Coloca <code>assets/logoMar.png</code> y los archivos <code>*.joblib</code> junto a este archivo.</p>', unsafe_allow_html=True)
 
-
-# Inicializar el estado de sesión para la vista
-if 'current_view' not in st.session_state:
-    st.session_state.current_view = 'chat'
 
 # -----------------------------
 # SPLASH (opcional) - Se mantiene
@@ -556,6 +561,7 @@ def mostrar_predictor_mlp():
                 unsafe_allow_html=True)
     
     # Nuevo formulario exclusivo para la predicción
+    # clear_on_submit=False: Mantiene los inputs después de predecir, lo cual es deseable.
     with st.form("mlp_predictor_form_body", clear_on_submit=False):
         st.subheader("Datos de Entrada del Contrato")
         col_dias, col_reprog = st.columns(2)
@@ -572,7 +578,10 @@ def mostrar_predictor_mlp():
         with col_cnc:
             cnc_input = st.selectbox("Causa de retraso (CNCCompromiso)", options=['Aprobación interna', 'Proveedor', 'Legalización interna', 'Financiera'], key='cnc_input_nn')
 
-        predict_button = st.form_submit_button("🚀 Predecir", type="primary")
+        # Usamos on_click para limpiar el resultado ANTES de la nueva predicción.
+        predict_button = st.form_submit_button("🚀 Predecir", type="primary", 
+                                               on_click=lambda: setattr(st.session_state, 'prediction_result', None))
+
 
     if predict_button:
         try:
@@ -602,19 +611,32 @@ def mostrar_predictor_mlp():
             prob_cumplimiento = MODELO_NN.predict_proba(nuevo_df)[0][1]
             prediccion = MODELO_NN.predict(nuevo_df)[0]
             
-            # Mostrar resultado en un bloque de tarjeta
-            st.markdown("<div class='mar-card' style='margin-top:20px;'>", unsafe_allow_html=True)
-            if prediccion == 1:
-                st.success(f"### Predicción: ✅ Cumplido a tiempo")
-                st.markdown(f"La probabilidad de **cumplimiento** es del **`{prob_cumplimiento*100:.2f}%`**. ¡Parece que este contrato va bien!")
-            else:
-                st.warning(f"### Predicción: ⚠️ Probable reprogramación")
-                st.markdown(f"La probabilidad de **incumplimiento/reprogramación** es alta (Cumplimiento: `{prob_cumplimiento*100:.2f}%`). Se requiere seguimiento.")
-            st.markdown("</div>", unsafe_allow_html=True)
-            
+            # 💥 CORRECCIÓN 3a: Guardar el resultado en el estado de sesión
+            st.session_state.prediction_result = {
+                'prediccion': prediccion,
+                'prob_cumplimiento': prob_cumplimiento
+            }
+            # st.rerun() # Descomentar si la visualización del resultado no es inmediata
+
         except Exception as e:
             st.error(f"Error al procesar la predicción: {e}")
             st.info("Revisa si el formato de los datos es compatible con el modelo MLP cargado.")
+            st.session_state.prediction_result = None # Limpiar el resultado si hay error
+
+    # 💥 CORRECCIÓN 3b: Mostrar el resultado fuera del if predict_button, controlado por el estado
+    if st.session_state.prediction_result is not None:
+        prediccion = st.session_state.prediction_result['prediccion']
+        prob_cumplimiento = st.session_state.prediction_result['prob_cumplimiento']
+
+        # Mostrar resultado en un bloque de tarjeta
+        st.markdown("<div class='mar-card' style='margin-top:20px;'>", unsafe_allow_html=True)
+        if prediccion == 1:
+            st.success(f"### Predicción: ✅ Cumplido a tiempo")
+            st.markdown(f"La probabilidad de **cumplimiento** es del **`{prob_cumplimiento*100:.2f}%`**. ¡Parece que este contrato va bien!")
+        else:
+            st.warning(f"### Predicción: ⚠️ Probable reprogramación")
+            st.markdown(f"La probabilidad de **incumplimiento/reprogramación** es alta (Cumplimiento: `{prob_cumplimiento*100:.2f}%`). Se requiere seguimiento.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # -----------------------------
@@ -686,10 +708,10 @@ elif st.session_state.current_view == 'chat':
                     styled_df = df_preview.style.set_table_styles([
                         {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
                         {'selector': 'th', 'props': [('background-color', PALETTE['primary']),
-                                                    ('color', 'white'),
-                                                    ('font-weight', 'bold'),
-                                                    ('text-align', 'center'),
-                                                    ('border-radius', '4px 4px 0 0')]},
+                                                     ('color', 'white'),
+                                                     ('font-weight', 'bold'),
+                                                     ('text-align', 'center'),
+                                                     ('border-radius', '4px 4px 0 0')]},
                         {'selector': 'td', 'props': [('padding', '8px 12px'), ('vertical-align', 'middle')]}
                     ]).hide(axis="index")
                     st.dataframe(styled_df, use_container_width=True)
@@ -708,4 +730,3 @@ st.markdown(
     f"<br><hr style='border-top: 1px solid #e0e0e0;'><p style='font-size:12px;color:#6b7280; text-align: right;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.1</p>",
     unsafe_allow_html=True
 )
-
