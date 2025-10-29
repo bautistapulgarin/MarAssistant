@@ -28,12 +28,11 @@ st.set_page_config(
 # -----------------------------
 # PALETA DE COLORES (UX / BI)
 # -----------------------------
-# Hecho: Colores definidos
 PALETTE = {
     "primary": "#154872",  # Azul Oscuro (Marval Primary)
     "accent": "#5DC0DC",   # Azul Claro (Marval Accent)
     "muted": "#437FAC",    # Azul Medio (Hover/Muted)
-    "bg": "#f8f9fa"        # Fondo muy claro/casi blanco para contraste suave
+    "bg": "#ffffff"        # MODIFICADO: Fondo blanco puro
 }
 
 # -----------------------------
@@ -174,10 +173,6 @@ st.markdown(f"""
 .stAlert.error > div {{
     border-left: 5px solid #dc3545;
 }}
-
-
-/* Eliminar animaciones distracciones de Halloween/Nieve para un enfoque corporativo */
-/* Se eliminaron los fantasmas y calabazas del código original para un look más serio */
 
 </style>
 """, unsafe_allow_html=True)
@@ -461,25 +456,25 @@ with col_input:
 with col_enviar:
     enviar = st.button("Buscar", use_container_width=True) # Cambio de "Enviar" a "Buscar" (más claro)
 with col_voz:
-    # Usar la clase btn-voz definida en el CSS
+    # Estiliza el botón secundario de Streamlit para que se vea como el de voz
     st.markdown(f"""
         <style>
-            .stButton>button[kind="secondary"].st-emotion-cache-1j898cb {{
-                background-color: {PALETTE['accent']};
-                color: {PALETTE['primary']};
-                border: none;
+            .stButton>button[kind="secondary"] {{
+                background-color: {PALETTE['accent']} !important;
+                color: {PALETTE['primary']} !important;
+                border: none !important;
                 height: 44px;
                 padding: 0 12px;
                 font-weight: 600;
                 transition: background-color 0.2s ease, color 0.2s ease;
             }}
-            .stButton>button[kind="secondary"].st-emotion-cache-1j898cb:hover {{
-                background-color: #3aa6c1;
-                color: white;
+            .stButton>button[kind="secondary"]:hover {{
+                background-color: #3aa6c1 !important;
+                color: white !important;
             }}
         </style>
         """, unsafe_allow_html=True)
-    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True, type="secondary") # Usar type="secondary" y estilizarlo con CSS para Streamlit nativo
+    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True, type="secondary")
 
 # Lógica de botones
 if (enviar or pregunta) and pregunta:
