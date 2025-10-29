@@ -36,7 +36,7 @@ PALETTE = {
 }
 
 # -----------------------------
-# CSS GLOBAL - Refinado (SOLUCIÓN DEFINITIVA PARA EL BOTÓN AZUL)
+# CSS GLOBAL - Refinado (¡CON LA CORRECCIÓN FINAL DEL BOTÓN!)
 # -----------------------------
 st.markdown(f"""
 <style>
@@ -107,28 +107,29 @@ st.markdown(f"""
     font-style: italic;
 }}
 
-/* Estilo para el botón PRIMARIO (BUSCAR) - SOLUCIÓN DEFINITIVA */
-/* Selector que apunta a todos los botones para sobreescribir el color primario */
-div.stButton button {{ 
+/* Estilo para el botón BUSCAR (Ahora usa key="btn_buscar") */
+.stButton>button[key="btn_buscar"] {{
+    /* Color base: #154872 (Azul) */
     background-color: var(--mar-primary) !important; 
     color: white !important;
-    border: 1px solid var(--mar-primary) !important; /* Forzar color de borde */
+    border: 1px solid var(--mar-primary) !important;
     border-radius: 8px;
     padding: 0 20px;
     font-weight: 600;
     height: 44px; /* ALTURA CLAVE */
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
     margin-top: 0px; 
 }}
 
-/* Selector para el hover general */
-.stButton>button:hover {{
+.stButton>button[key="btn_buscar"]:hover {{
+    /* Color hover: #437FAC */
     background-color: var(--mar-muted) !important;
     color: white !important;
     border: 1px solid var(--mar-muted) !important;
 }}
 
-/* Estilo para el botón SECUNDARIO (VOZ) - Reajustado para que sea diferente al Primary */
+
+/* Estilo para el botón SECUNDARIO (VOZ) - Mantenido con su key */
 .stButton>button[key="voz"] {{
     background-color: var(--mar-accent) !important;
     color: var(--mar-primary) !important;
@@ -136,13 +137,14 @@ div.stButton button {{
     border-radius: 8px !important;
     padding: 0 12px !important;
     font-weight: 600 !important;
-    height: 44px !important; 
+    height: 44px !important;
     transition: background-color 0.2s ease, color 0.2s ease;
     margin-top: 0px; 
 }}
 .stButton>button[key="voz"]:hover {{
     background-color: #3aa6c1 !important;
     color: white !important;
+    border: 1px solid #3aa6c1 !important;
 }}
 
 
@@ -458,8 +460,8 @@ with st.form("query_form", clear_on_submit=False):
         pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed")
     
     with col_enviar:
-        # Botón Buscar (Primary)
-        enviar = st.form_submit_button("Buscar", type="primary", use_container_width=True) 
+        # Botón Buscar (Cambiado a 'secondary' para aplicar el color azul por CSS)
+        enviar = st.form_submit_button("Buscar", key="btn_buscar", type="secondary", use_container_width=True) 
     
     with col_voz:
         # Botón Voz (Secondary)
