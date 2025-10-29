@@ -133,9 +133,17 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS --------------------
+# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda) --------------------
 st.markdown("""
-<!-- Fantasmas -->
+<style>
+@keyframes floatY {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(20px); }
+    100% { transform: translateY(0); }
+}
+</style>
+
+<!-- Fantasmas en la parte derecha -->
 <div style="position:fixed; top:-10%; right:5%; font-size:20px; opacity:1; animation:floatY 7s linear infinite; z-index:0;">👻</div>
 <div style="position:fixed; top:-5%; right:8%; font-size:18px; opacity:1; animation:floatY 8s linear infinite; z-index:0;">👻</div>
 <div style="position:fixed; top:-8%; right:6%; font-size:22px; opacity:1; animation:floatY 6.5s linear infinite; z-index:0;">👻</div>
@@ -147,10 +155,11 @@ st.markdown("""
 <div style="position:fixed; top:-7%; right:9%; font-size:16px; opacity:0.9; animation:floatY 8.0s linear infinite; z-index:0;">👻</div>
 <div style="position:fixed; top:-3%; right:5%; font-size:15px; opacity:0.85; animation:floatY 7.7s linear infinite; z-index:0;">👻</div>
 
-# Calabazas en la parte inferior izquierda
-<div style="position:fixed; bottom:5%; left:5%; font-size:22px; opacity:0.9; z-index:0;">🎃</div>
-<div style="position:fixed; bottom:8%; left:7%; font-size:20px; opacity:0.85; z-index:0;">🎃</div>
-<div style="position:fixed; bottom:6%; left:9%; font-size:18px; opacity:0.9; z-index:0;">🎃</div>
+<!-- Calabazas en la parte inferior izquierda -->
+<div style="position:fixed; bottom:5%; left:5%; font-size:22px; opacity:0.9; animation:floatY 6.5s linear infinite; z-index:0;">🎃</div>
+<div style="position:fixed; bottom:8%; left:7%; font-size:20px; opacity:0.85; animation:floatY 7s linear infinite; z-index:0;">🎃</div>
+<div style="position:fixed; bottom:6%; left:9%; font-size:18px; opacity:0.9; animation:floatY 7.5s linear infinite; z-index:0;">🎃</div>
+""", unsafe_allow_html=True)
 
 
 # -----------------------------
@@ -458,6 +467,7 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
+
 
 
 
