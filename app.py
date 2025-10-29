@@ -36,7 +36,7 @@ PALETTE = {
 }
 
 # -----------------------------
-# CSS GLOBAL - Refinado (¡CON LA CORRECCIÓN FINAL DEL BOTÓN!)
+# CSS GLOBAL - ¡SOLUCIÓN FINAL DEL BOTÓN AZUL APLICADA!
 # -----------------------------
 st.markdown(f"""
 <style>
@@ -460,7 +460,7 @@ with st.form("query_form", clear_on_submit=False):
         pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed")
     
     with col_enviar:
-        # Botón Buscar (Cambiado a 'secondary' para aplicar el color azul por CSS)
+        # Botón Buscar (Cambiado a 'secondary' para aplicar el color azul por CSS usando la key)
         enviar = st.form_submit_button("Buscar", key="btn_buscar", type="secondary", use_container_width=True) 
     
     with col_voz:
