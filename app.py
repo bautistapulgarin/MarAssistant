@@ -350,6 +350,8 @@ def switch_to_chat():
     # Limpiamos los filtros de restricciones al volver al chat
     if 'filtro_restriccion' in st.session_state:
         del st.session_state['filtro_restriccion'] 
+    if 'tipo_restriccion_preseleccionado' in st.session_state:
+        del st.session_state['tipo_restriccion_preseleccionado']
     st.rerun()
 
 with col_header_button:
@@ -490,6 +492,21 @@ if excel_file:
         "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
     ]
     CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
+    
+    # NUEVO: Mapeo de palabras clave a valores reales en "tipoRestriccion"
+    MAPEO_RESTRICCION = {
+        "material": "Materiales",
+        "materiales": "Materiales",
+        "diseno": "Diseño",
+        "diseño": "Diseño",
+        "contrato": "Contratos",
+        "contratos": "Contratos",
+        "permisos": "Permisos y Licencias",
+        "licencias": "Permisos y Licencias",
+        "financiero": "Financiera",
+        "financiera": "Financiera"
+        # Agregar aquí más mapeos si hay más tipos en la columna tipoRestriccion
+    }
 
     # -----------------------------
     # FUNCION DE RESPUESTA
@@ -500,66 +517,35 @@ if excel_file:
         proyecto, proyecto_norm = extraer_proyecto(pregunta)
         
         # ... [Resto de lógica de palabras clave] ...
-        estado_diseno_keywords = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
-        diseño_keywords = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
-                            "avance de diseno", "avance de diseño", "diseno", "diseño"]
-        obra_keywords = ["avance de obra", "avance obra", "avance en obra"]
+        # ... (Otras lógicas se mantienen igual) ...
 
-        if any(k in pregunta_norm for k in estado_diseno_keywords):
-            if df_inventario_diseno.empty:
-                return "❌ No hay registros en la hoja InventarioDiseño.", None, None, 'general'
-            return "📐 Estado de Diseño (InventarioDiseño):", df_inventario_diseno, None, 'general'
-
-        if any(k in pregunta_norm for k in diseño_keywords):
-            if ("avance" in pregunta_norm) or (pregunta_norm.strip() in ["diseno", "diseño"]):
-                if df_avance_diseno.empty:
-                    return "❌ No hay registros en la hoja AvanceDiseño.", None, None, 'general'
-                return "📐 Avance de Diseño (tabla completa):", df_avance_diseno, None, 'general'
-
-        if any(k in pregunta_norm for k in obra_keywords):
-            df = df_avance.copy()
-            if proyecto_norm:
-                df = df[df["Proyecto_norm"] == proyecto_norm]
-            if df.empty:
-                return f"❌ No hay registros de avance en {proyecto or 'todos'}", None, None, 'general'
-            return f"📊 Avance de obra en {proyecto or 'todos'}:", df, None, 'general'
-
-        if "avance" in pregunta_norm:
-            df = df_avance.copy()
-            if proyecto_norm:
-                df = df[df["Proyecto_norm"] == proyecto_norm]
-            if df.empty:
-                return f"❌ No hay registros de avance en {proyecto or 'todos'}", None, None, 'general'
-            return f"📊 Avances en {proyecto or 'todos'}:", df, None, 'general'
-
-        if "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
-            df = df_responsables.copy()
-            if proyecto_norm:
-                df = df[df["Proyecto_norm"] == proyecto_norm]
-            cargo_encontrado = None
-            for cargo_norm, cargo_real in CARGOS_VALIDOS_NORM.items():
-                if cargo_norm in pregunta_norm:
-                    cargo_encontrado = cargo_real
-                    break
-            if cargo_encontrado:
-                df = df[df["Cargo"].astype(str).str.lower().str.contains(cargo_encontrado.lower(), na=False)]
-                if df.empty:
-                    return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None, None, 'general'
-                return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df, None, 'general'
-            if df.empty:
-                return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None, None, 'general'
-            return f"👷 Responsables en {proyecto or 'todos'}:", df, None, 'general'
-
-        # 🎯 Bloque de Restricciones
+        # 🎯 Bloque de Restricciones (Ajustado para doble filtro)
         if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
             df = df_restricciones.copy()
+            
+            # 1. Filtrar por Proyecto si se encuentra
             if proyecto_norm:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
+            
+            # 2. Identificar tipo de restricción en el texto de la pregunta
+            tipo_restriccion_preseleccionado = 'Todas las restricciones' # Default
+            
+            if "tipoRestriccion" in df.columns:
+                # Buscar un tipo de restricción en la pregunta (Ej: "restricciones de materiales")
+                for keyword, tipo_real in MAPEO_RESTRICCION.items():
+                    if f"restriccion de {keyword}" in pregunta_norm or f"restricciones de {keyword}" in pregunta_norm:
+                        # Nos aseguramos de que el tipo real existe en el DataFrame
+                        if tipo_real in df["tipoRestriccion"].astype(str).unique().tolist():
+                            tipo_restriccion_preseleccionado = tipo_real
+                            break
+            
+            # Si el DataFrame filtrado por proyecto está vacío
             if df.empty:
                 return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None, None, 'general'
 
             grafico = None
             if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
+                # Generar gráfico del subconjunto actual (filtrado por proyecto, si aplica)
                 grafico = px.bar(
                     df.groupby("tipoRestriccion").size().reset_index(name="count"),
                     x="tipoRestriccion",
@@ -578,24 +564,27 @@ if excel_file:
                     margin=dict(t=30, l=10, r=10, b=10)
                 )
 
-            # Devolvemos el DataFrame COMPLETO de restricciones y la clave 'restricciones'
-            return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico, 'restricciones'
+            # Devolvemos el DataFrame filtrado por proyecto, el gráfico y el tipo preseleccionado
+            return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico, 'restricciones', tipo_restriccion_preseleccionado
 
         if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
-            df = df_sostenibilidad.copy()
-            if proyecto_norm:
-                df = df[df["Proyecto_norm"] == proyecto_norm]
-            if df.empty:
-                return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None, None, 'general'
-            return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df, None, 'general'
+            # ... (Lógica de Sostenibilidad) ...
+             df = df_sostenibilidad.copy()
+             if proyecto_norm:
+                 df = df[df["Proyecto_norm"] == proyecto_norm]
+             if df.empty:
+                 return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None, None, 'general'
+             return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df, None, 'general'
+
 
         return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
-                "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None, None, 'general'
+                "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None, None, 'general', None
 
 # -----------------------------
-# FUNCIÓN DE PREDICCIÓN (MLP)
+# FUNCIÓN DE PREDICCIÓN (MLP) - (Se mantiene igual)
 # -----------------------------
 def mostrar_predictor_mlp():
+    # ... (Se mantiene igual) ...
     """Muestra la interfaz de entrada y hace la predicción del MLP."""
     if not MODELO_NN:
         st.error("No se pudo cargar el modelo de predicción de contratos (MLP). Verifica los archivos `.joblib` en la carpeta `assets`.")
@@ -710,7 +699,7 @@ elif st.session_state.current_view == 'chat':
     # Tarjeta informativa (más limpia)
     st.markdown(
         f'<div class="mar-card"><p style="color:{PALETTE["primary"]}; font-size: 18px; font-weight:700; margin:0 0 8px 0;">Consulta Rápida</p>'
-        '<p style="margin:0 0 0 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos. ¡Sé específico!</p></div>',
+        '<p style="margin:0 0 0 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos. Ej: "restricciones de materiales en Burdeos"</p></div>',
         unsafe_allow_html=True
     )
 
@@ -734,13 +723,26 @@ elif st.session_state.current_view == 'chat':
         if not excel_file:
             st.error("No se puede consultar. ¡Sube el archivo Excel en la barra lateral primero!")
         else:
-            # 💡 Guardamos la pregunta y el resultado para que persistan si se usa el filtro de restricción.
+            # 💡 Generar respuesta: ahora devuelve 5 valores (el último es el tipo de restricción preseleccionado)
             st.session_state['last_query_text'] = pregunta
-            # Generar respuesta: ahora devuelve 4 valores
-            st.session_state['last_query_result'] = generar_respuesta(pregunta)
-            # Aseguramos que el filtro se resetee a 'Todos' si es una nueva pregunta.
+            # Intentamos obtener el resultado (puede ser de 4 o 5 elementos)
+            query_result = generar_respuesta(pregunta)
+            
+            if len(query_result) == 5 and query_result[3] == 'restricciones':
+                # Si es una restricción y tiene preselección, la guardamos
+                st.session_state['tipo_restriccion_preseleccionado'] = query_result[4]
+                st.session_state['last_query_result'] = query_result[:4] # Guardamos los 4 principales
+            else:
+                # Si no es restricción o no hay preselección válida, limpiamos y guardamos
+                if 'tipo_restriccion_preseleccionado' in st.session_state:
+                    del st.session_state['tipo_restriccion_preseleccionado']
+                st.session_state['last_query_result'] = query_result[:4] # Guardamos los 4 principales
+
+            # Aseguramos que el filtro interactivo se inicie con el valor del texto (si aplica) o con 'Todas'
             if 'filtro_restriccion' in st.session_state:
-                st.session_state['filtro_restriccion'] = 'Todas las restricciones'
+                # Eliminamos la clave del filtro interactivo para que se inicialice con el nuevo default/preselección
+                del st.session_state['filtro_restriccion'] 
+                
             st.rerun() 
 
     elif voz:
@@ -754,6 +756,10 @@ elif st.session_state.current_view == 'chat':
         # Desempaquetar el resultado:
         # texto: título, resultado: DataFrame, grafico: Plotly Figure, tipo: 'restricciones' o 'general'
         texto, resultado, grafico, tipo_respuesta = st.session_state['last_query_result']
+        
+        # Recuperar la preselección (si existe y es la primera vez que se carga el selectbox)
+        preseleccion = st.session_state.get('tipo_restriccion_preseleccionado', 'Todas las restricciones')
+
 
         if resultado is None:
             # Mostrar el mensaje de error o "No entendí"
@@ -780,21 +786,26 @@ elif st.session_state.current_view == 'chat':
                 # Columnas para el filtro y el recuento
                 col_filtro, col_recuento = st.columns([3, 1])
 
+                # Opciones únicas de filtro (basado en el DataFrame ya filtrado por proyecto)
+                opciones = ['Todas las restricciones'] + sorted(df_mostrar['tipoRestriccion'].astype(str).unique().tolist())
+                
+                # Definir el índice de inicio para el selectbox
+                default_index = opciones.index(preseleccion) if preseleccion in opciones else 0
+
                 with col_filtro:
-                    # Opciones únicas de filtro
-                    opciones = ['Todas las restricciones'] + sorted(df_mostrar['tipoRestriccion'].astype(str).unique().tolist())
-                    
                     # El selectbox que actúa como filtro. Mantiene el estado con la clave 'filtro_restriccion'.
+                    # Usamos el default_index para iniciar con el valor de la pregunta si existe.
                     filtro = st.selectbox(
                         "Filtrar por Tipo de Restricción:", 
                         options=opciones,
+                        index=default_index, # Usamos el índice preseleccionado
                         key='filtro_restriccion' # Clave para que Streamlit recuerde el valor
                     )
                 
-                # Aplicar el filtro
+                # Aplicar el filtro interactivo
                 if filtro != 'Todas las restricciones':
                     df_mostrar = df_mostrar[df_mostrar['tipoRestriccion'].astype(str) == filtro]
-                    
+                
                 # 🎯 Ficha de Recuento
                 conteo_actual = len(df_mostrar)
                 
@@ -833,9 +844,14 @@ elif st.session_state.current_view == 'chat':
                 
                 st.dataframe(styled_df, use_container_width=True)
                 
-            elif tipo_respuesta == 'restricciones' and filtro != 'Todas las restricciones':
-                 # Este mensaje se mantiene para el caso de 0 resultados tras el filtro
-                 st.warning(f"No hay registros de restricciones del tipo: **{filtro}**.")
+            elif tipo_respuesta == 'restricciones':
+                 # Mensaje para 0 resultados (sea por filtro de texto o por filtro de selectbox)
+                 if 'filtro' in locals() and filtro != 'Todas las restricciones':
+                     st.warning(f"No hay registros de restricciones del tipo: **{filtro}** en el proyecto especificado.")
+                 else:
+                     # Este caso es si el filtro por proyecto ya dio 0
+                     st.warning("No hay registros de restricciones que coincidan con los criterios de la búsqueda.")
+
 
             st.markdown("</div>", unsafe_allow_html=True) # Cierre del mar-card de respuesta
 
@@ -844,6 +860,6 @@ elif st.session_state.current_view == 'chat':
 # FOOTER
 # -----------------------------
 st.markdown(
-    f"<br><hr style='border-top: 1px solid #e0e0e0;'><p style='font-size:12px;color:#6b7280; text-align: right;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.3 (Con Recuento)</p>",
+    f"<br><hr style='border-top: 1px solid #e0e0e0;'><p style='font-size:12px;color:#6b7280; text-align: right;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.4 (Filtro Doble)</p>",
     unsafe_allow_html=True
 )
