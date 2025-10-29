@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 from PIL import Image
 import pandas as pd
@@ -24,7 +25,9 @@ PALETTE = {
     "bg": "#ffffff"
 }
 
-# ---------- CSS ----------
+# -------------------------
+# CSS y animaciones
+# -------------------------
 st.markdown(f"""
 <style>
 :root {{
@@ -45,6 +48,26 @@ st.markdown(f"""
 .stButton>button {{ background-color: var(--mar-primary); color: white; border-radius: 8px; padding: 0 20px; font-weight: 600; border: none; height: 40px; }}
 .stButton>button:hover {{ background-color: var(--mar-muted); }}
 .stButton>button.btn-voz {{ background-color: #5DC0DC; color: white; border-radius: 8px; padding: 0 12px; font-weight: 600; border: none; height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; }}
+.suggestions-box {{
+    margin-top: 6px;
+    background: white;
+    border: 1px solid rgba(21,72,114,0.12);
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 6px 18px rgba(21,72,114,0.04);
+}}
+.suggestion-btn {{
+    display:block;
+    width:100%;
+    text-align:left;
+    padding:8px 10px;
+    margin-bottom:6px;
+    border-radius:8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}}
+.suggestion-btn:hover {{ background: rgba(21,72,114,0.05); }}
 [data-testid="stSidebar"] {{ background-color: white; padding: 20px; border-radius: var(--card-radius); }}
 </style>
 """, unsafe_allow_html=True)
@@ -55,7 +78,7 @@ st.markdown("""
 @keyframes floatY { 0% { transform: translateY(0); } 50% { transform: translateY(10px); } 100% { transform: translateY(0); } }
 </style>
 
-<!-- Fantasmas a la derecha (solo van de arriba a abajo) -->
+<!-- Fantasmas derecha, solo arriba=>abajo -->
 <div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.08; animation:floatDown 15s linear infinite; z-index:9999;">👻</div>
 <div style="position:fixed; top:12%; right:7%; font-size:28px; opacity:0.07; animation:floatDown 18s linear infinite; z-index:9999;">👻</div>
 <div style="position:fixed; top:25%; right:6%; font-size:25px; opacity:0.06; animation:floatDown 16s linear infinite; z-index:9999;">👻</div>
@@ -65,7 +88,9 @@ st.markdown("""
 <div style="position:fixed; bottom:8%; left:10%; font-size:20px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
 """, unsafe_allow_html=True)
 
-# ---------- Header ----------
+# -------------------------
+# Header (logo y titulos)
+# -------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 if os.path.exists(logo_path):
     try:
@@ -89,7 +114,9 @@ if os.path.exists(logo_path):
 else:
     st.warning("Logo no encontrado en assets/logoMar.png")
 
-# ---------- Sidebar ----------
+# -------------------------
+# Sidebar (cargas)
+# -------------------------
 st.sidebar.title("Herramientas")
 st.sidebar.subheader("Cargas")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
@@ -97,7 +124,7 @@ img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png"
 st.sidebar.markdown("---")
 st.sidebar.markdown("💡 Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
-# optional splash
+# splash opcional
 placeholder = st.empty()
 if img_file:
     try:
@@ -115,12 +142,16 @@ if img_file:
     except Exception:
         placeholder.empty()
 
-# ---------- Require Excel ----------
+# -------------------------
+# Requerir Excel
+# -------------------------
 if not excel_file:
     st.info("Sube el archivo Excel en la barra lateral para cargar las hojas.")
     st.stop()
 
-# ---------- Read Excel ----------
+# -------------------------
+# Leer Excel
+# -------------------------
 try:
     excel_file.seek(0)
     df_avance = pd.read_excel(excel_file, sheet_name="Avance")
@@ -131,7 +162,7 @@ try:
     excel_file.seek(0)
     df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
     excel_file.seek(0)
-    # manejar hoja con distintas denominaciones posibles
+    # manejo variantes nombres hojas diseño
     try:
         df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
     except Exception:
@@ -151,7 +182,9 @@ except Exception as e:
     st.sidebar.error(f"Error al leer una o varias hojas: {e}")
     st.stop()
 
-# ---------- Normalización ----------
+# -------------------------
+# Normalización y utilidades
+# -------------------------
 def normalizar_texto(texto):
     texto = str(texto).lower()
     texto = re.sub(r"[.,;:%]", "", texto)
@@ -190,7 +223,9 @@ def extraer_proyecto(texto):
             return projects_map[norm], norm
     return None, None
 
-# ---------- Cargos ----------
+# -------------------------
+# Cargos y keywords
+# -------------------------
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Programación", "Arquitecto",
     "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
@@ -204,7 +239,6 @@ CARGOS_VALIDOS = [
 ]
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
-# ---------- Keywords (para autocompletado) ----------
 ESTADO_DISENO_KEYWORDS = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
 DISENO_KEYWORDS = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño", "avance de diseno", "avance de diseño", "diseno", "diseño"]
 OBRA_KEYWORDS = ["avance de obra", "avance obra", "avance en obra"]
@@ -213,57 +247,26 @@ AVANCE_KEYWORDS = ["avance"]
 RESPONSABLES_KEYWORDS = ["responsable", "quien", "quién", "cargo", "quién es"]
 SOSTENIBILIDAD_KEYWORDS = ["sostenibilidad", "sostenible", "ambiental", "edge"]
 
-# Construir lista única de sugerencias (prioridad natural: keywords primero)
+# Lista única de sugerencias (keywords primero, luego proyectos y cargos)
 AUTOCOMPLETE_TERMS = list(dict.fromkeys(
     ESTADO_DISENO_KEYWORDS + DISENO_KEYWORDS + OBRA_KEYWORDS + RESTRICCION_KEYWORDS +
     AVANCE_KEYWORDS + RESPONSABLES_KEYWORDS + SOSTENIBILIDAD_KEYWORDS +
     list(all_projects) + CARGOS_VALIDOS
 ))
 
-# ---------- Session state init ----------
+# -------------------------
+# Session state init
+# -------------------------
 if "input_autocomplete" not in st.session_state:
     st.session_state["input_autocomplete"] = ""
-if "sugerencia_selected" not in st.session_state:
-    st.session_state["sugerencia_selected"] = None
+if "trigger_search" not in st.session_state:
+    st.session_state["trigger_search"] = False
+if "last_suggestion" not in st.session_state:
+    st.session_state["last_suggestion"] = ""
 
-# callback para aplicar sugerencia (se dispara al cambiar selectbox)
-def aplicar_sugerencia():
-    val = st.session_state.get("sugerencia_selected", None)
-    if val:
-        # Asignamos la sugerencia al input controlado por key 'input_autocomplete'
-        st.session_state["input_autocomplete"] = val
-        # opcional: limpiar seleccion para evitar que se quede fija
-        st.session_state["sugerencia_selected"] = None
-
-# ---------- Interfaz principal: input + botones ----------
-st.markdown(
-    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
-    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos</p></div>',
-    unsafe_allow_html=True
-)
-
-col_input, col_enviar, col_voz = st.columns([5, 1, 1])
-with col_input:
-    # El text_input usa key="input_autocomplete" y su valor queda en st.session_state automáticamente
-    user_input = st.text_input("", placeholder="Escribe tu pregunta aquí", key="input_autocomplete")
-
-    # Generar sugerencias en tiempo real (coincidencia parcial, case-insensitive)
-    sugerencias = []
-    if user_input and len(user_input.strip()) > 0:
-        typed_low = user_input.strip().lower()
-        sugerencias = [t for t in AUTOCOMPLETE_TERMS if typed_low in str(t).lower()]
-
-    # Mostrar selectbox solo si hay sugerencias
-    if sugerencias:
-        # selectbox ligado a session_state["sugerencia_selected"] y con callback aplicar_sugerencia
-        st.selectbox("Sugerencias (haz clic para autocompletar):", options=sugerencias, key="sugerencia_selected", on_change=aplicar_sugerencia)
-
-with col_enviar:
-    enviar = st.button("Enviar", use_container_width=True)
-with col_voz:
-    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
-
-# ---------- Lógica de respuesta ----------
+# -------------------------
+# Función que genera respuesta principal
+# -------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
@@ -339,41 +342,99 @@ def generar_respuesta(pregunta):
 
     return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', 'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
-# ---------- Manejo del envío ----------
-if enviar and st.session_state.get("input_autocomplete", "").strip():
-    pregunta_final = st.session_state["input_autocomplete"].strip()
-    respuesta = generar_respuesta(pregunta_final)
+# -------------------------
+# Interfaz principal: input + sugerencias + botones
+# -------------------------
+st.markdown(
+    f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
+    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos</p></div>',
+    unsafe_allow_html=True
+)
 
-    # normalizar forma de respuesta
-    texto = None
-    resultado = None
-    grafico = None
-    if isinstance(respuesta, tuple) and len(respuesta) == 2:
-        texto, resultado = respuesta
-        # si resultado es (df, grafico)
-        if isinstance(resultado, tuple) and len(resultado) == 2:
-            resultado, grafico = resultado
-    else:
-        texto, resultado = respuesta, None
+col_input, col_enviar, col_voz = st.columns([5, 1, 1])
+with col_input:
+    # Text input controlado: su valor queda en st.session_state["input_autocomplete"]
+    user_input = st.text_input("", placeholder="Escribe tu pregunta aquí", key="input_autocomplete", label_visibility="collapsed")
 
-    st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p></div>", unsafe_allow_html=True)
+    # Generar sugerencias en tiempo real (coincidencia parcial)
+    suggestions = []
+    typed = str(user_input or "").strip()
+    if typed:
+        typed_low = typed.lower()
+        # priorizar keywords exactas, luego proyectos y cargos
+        candidates = AUTOCOMPLETE_TERMS
+        # limitar a top 8 para no saturar
+        suggestions = [t for t in candidates if typed_low in str(t).lower()][:8]
 
-    if grafico:
-        st.plotly_chart(grafico, use_container_width=True)
+    # Mostrar "dropdown" simulado (botones) justo debajo del input
+    if suggestions:
+        # contenedor con estilo para parecer dropdown
+        st.markdown('<div class="suggestions-box">', unsafe_allow_html=True)
+        for i, s in enumerate(suggestions):
+            # cada botón escrito con st.button para que Streamlit capture la acción
+            # genero keys únicas para evitar colisiones
+            key_btn = f"sugg_btn_{i}_{hash(s)}"
+            if st.button(s, key=key_btn):
+                # cuando clican en sugerencia: autocompleta y dispara búsqueda automática
+                st.session_state["input_autocomplete"] = s
+                st.session_state["trigger_search"] = True
+                st.session_state["last_suggestion"] = s
+                # forzamos rerun al terminar el if (Streamlit rerun automático)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-        max_preview = 200
-        if len(resultado) > max_preview:
-            st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
-            df_preview = resultado.head(max_preview)
+with col_enviar:
+    enviar = st.button("Enviar", use_container_width=True)
+with col_voz:
+    voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
+
+# -------------------------
+# Ejecutar búsqueda si el usuario dio Enviar o si seleccionó una sugerencia
+# -------------------------
+should_search = False
+if enviar and str(st.session_state.get("input_autocomplete", "")).strip():
+    should_search = True
+
+if st.session_state.get("trigger_search", False):
+    # se activó por selección de sugerencia
+    should_search = True
+    # resetear el trigger para próximas interacciones
+    st.session_state["trigger_search"] = False
+
+if should_search:
+    pregunta_final = st.session_state.get("input_autocomplete", "").strip()
+    if pregunta_final:
+        respuesta = generar_respuesta(pregunta_final)
+
+        # normalizar la forma de la respuesta
+        texto = None
+        resultado = None
+        grafico = None
+        if isinstance(respuesta, tuple) and len(respuesta) == 2:
+            texto, resultado = respuesta
+            if isinstance(resultado, tuple) and len(resultado) == 2:
+                resultado, grafico = resultado
         else:
-            df_preview = resultado
-        st.dataframe(df_preview, use_container_width=True)
-    elif resultado is None:
-        # nada que mostrar (mensaje ya mostrado)
-        pass
-    else:
-        st.write(resultado)
+            texto, resultado = respuesta, None
 
-# ---------- Footer ----------
+        st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p></div>", unsafe_allow_html=True)
+
+        if grafico:
+            st.plotly_chart(grafico, use_container_width=True)
+
+        if isinstance(resultado, pd.DataFrame) and not resultado.empty:
+            max_preview = 200
+            if len(resultado) > max_preview:
+                st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
+                df_preview = resultado.head(max_preview)
+            else:
+                df_preview = resultado
+            st.dataframe(df_preview, use_container_width=True)
+        elif resultado is None:
+            pass
+        else:
+            st.write(resultado)
+
+# -------------------------
+# Footer
+# -------------------------
 st.markdown(f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>", unsafe_allow_html=True)
