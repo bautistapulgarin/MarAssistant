@@ -144,8 +144,7 @@ st.markdown("""
 <style>
 @keyframes floatDown {
     0% { top: -10%; }
-    50% { top: 90%; }
-    100% { top: -10%; }
+    100% { top: 100%; }
 }
 
 @keyframes floatY {
@@ -155,10 +154,10 @@ st.markdown("""
 }
 </style>
 
-<!-- Fantasmas en la parte derecha (arriba → abajo) -->
+<!-- Fantasmas en la parte derecha (solo arriba → abajo) -->
 <div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:1; animation:floatDown 15s linear infinite; z-index:9999;">👻</div>
-<div style="position:fixed; top:20%; right:7%; font-size:28px; opacity:0.9; animation:floatDown 18s linear infinite; z-index:9999;">👻</div>
-<div style="position:fixed; top:10%; right:6%; font-size:25px; opacity:0.85; animation:floatDown 16s linear infinite; z-index:9999;">👻</div>
+<div style="position:fixed; top:10%; right:7%; font-size:28px; opacity:0.9; animation:floatDown 18s linear infinite; z-index:9999;">👻</div>
+<div style="position:fixed; top:20%; right:6%; font-size:25px; opacity:0.85; animation:floatDown 16s linear infinite; z-index:9999;">👻</div>
 
 <!-- Calabazas en la parte inferior izquierda (rebote suave) -->
 <div style="position:fixed; bottom:5%; left:5%; font-size:22px; opacity:0.9; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
@@ -484,6 +483,7 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
+
 
 
 
