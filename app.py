@@ -36,7 +36,7 @@ PALETTE = {
 }
 
 # -----------------------------
-# CSS GLOBAL - Refinado
+# CSS GLOBAL - Refinado (Ajuste en el botón 'primary' para asegurar el color azul)
 # -----------------------------
 st.markdown(f"""
 <style>
@@ -56,7 +56,7 @@ st.markdown(f"""
 /* Aplicación Principal y Fuente */
 .stApp {{
     background-color: var(--mar-bg);
-    color: #1b2635; 
+    color: #1b2635;
     font-family: 'Roboto', sans-serif;
 }}
 
@@ -107,10 +107,10 @@ st.markdown(f"""
     font-style: italic;
 }}
 
-/* Estilo para el botón PRIMARIO (BUSCAR) */
+/* Estilo para el botón PRIMARIO (BUSCAR) - ¡CORRECCIÓN AQUÍ! */
 .stButton>button[kind="primary"] {{
-    /* Color base: #154872 */
-    background-color: var(--mar-primary); 
+    /* Color base: #154872 (Azul) */
+    background-color: var(--mar-primary) !important; 
     color: white;
     border-radius: 8px;
     padding: 0 20px;
@@ -122,7 +122,7 @@ st.markdown(f"""
 }}
 .stButton>button[kind="primary"]:hover {{
     /* Color hover: #437FAC */
-    background-color: var(--mar-muted);
+    background-color: var(--mar-muted) !important;
     color: white;
 }}
 
@@ -416,8 +416,8 @@ def generar_respuesta(pregunta):
                 color_discrete_sequence=px.colors.qualitative.Plotly
             )
             grafico.update_layout(
-                showlegend=False, 
-                xaxis_title="Tipo de Restricción", 
+                showlegend=False,
+                xaxis_title="Tipo de Restricción",
                 yaxis_title="Cantidad",
                 plot_bgcolor='white',
                 paper_bgcolor='white',
