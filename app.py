@@ -228,8 +228,7 @@ st.markdown(f"""
     font-size: 15px;
 }}
 /* Estilo para Selectbox - Opcional */
-[data-testid="stForm"] label,
-[data-testid="stForm"] p {{
+[data-testid="stForm"] label, [data-testid="stForm"] p {{
     font-weight: 500;
     color: #34495e;
 }}
@@ -261,6 +260,8 @@ st.markdown("""
 <div style="position:fixed; top:10%; right:5%; font-size:28px; opacity:0.1; animation:floatDown 13s linear infinite; z-index:9999;">❄️</div>
 <div style="position:fixed; top:20%; right:7%; font-size:25px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
 <div style="position:fixed; top:25%; right:9%; font-size:20px; opacity:0.1; animation:floatDown 11s linear infinite; z-index:9999;">❄️</div>
+
+
 
 
 <div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
@@ -394,7 +395,7 @@ if img_file:
         splash_html = f"""
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: white; display: flex; justify-content: center; align-items: center; z-index: 9999;">
             <div style="text-align:center; padding: 20px; border-radius: 12px;">
-               <img src="data:image/png;base64,{img_b64}" style="width:180px; max-width:60vw; height:auto; display:block; margin:0 auto;">
+                <img src="data:image/png;base64,{img_b64}" style="width:180px; max-width:60vw; height:auto; display:block; margin:0 auto;">
                 <p style="margin-top: 20px; color: {PALETTE['primary']}; font-size: 20px; font-weight: 600;">Cargando...</p>
             </div>
         </div>
@@ -448,7 +449,7 @@ if excel_file:
 
     # Lógica de normalización y extracción de proyectos... (completa)
     for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
-                         ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
+                        ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
         if "Proyecto" not in df.columns:
             st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
             st.stop()
@@ -518,7 +519,7 @@ if excel_file:
         # ... [Resto de lógica de palabras clave] ...
         # ... (Otras lógicas se mantienen igual) ...
 
-        # 🎯 Bloque de Restricciones (Ajustado para doble filtro y generación de gráfico)
+        # 🎯 Bloque de Restricciones (Ajustado para doble filtro)
         if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
             df = df_restricciones.copy()
             
@@ -540,7 +541,7 @@ if excel_file:
             
             # Si el DataFrame filtrado por proyecto está vacío
             if df.empty:
-                return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None, None, 'general', None
+                return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None, None, 'general'
 
             grafico = None
             if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
@@ -572,17 +573,18 @@ if excel_file:
              if proyecto_norm:
                  df = df[df["Proyecto_norm"] == proyecto_norm]
              if df.empty:
-                return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None, None, 'general', None
-             return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df, None, 'general', None
+                 return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None, None, 'general'
+             return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df, None, 'general'
 
 
         return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
-              "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None, None, 'general', None
+                "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None, None, 'general', None
 
 # -----------------------------
 # FUNCIÓN DE PREDICCIÓN (MLP) - (Se mantiene igual)
 # -----------------------------
 def mostrar_predictor_mlp():
+    # ... (Se mantiene igual) ...
     """Muestra la interfaz de entrada y hace la predicción del MLP."""
     if not MODELO_NN:
         st.error("No se pudo cargar el modelo de predicción de contratos (MLP). Verifica los archivos `.joblib` en la carpeta `assets`.")
@@ -593,8 +595,8 @@ def mostrar_predictor_mlp():
     
     with col_pred_title:
         st.markdown(f'<div class="mar-card" style="margin-bottom: 0px;"><p style="color:{PALETTE["primary"]}; font-size: 22px; font-weight:700; margin:0 0 8px 0;">🔮 Predictor de Cumplimiento de Contratos</p>'
-                      '<p style="margin:0 0 0 0;">Ingresa los parámetros del contrato para predecir la probabilidad de cumplimiento a tiempo.</p></div>',
-                      unsafe_allow_html=True)
+                    '<p style="margin:0 0 0 0;">Ingresa los parámetros del contrato para predecir la probabilidad de cumplimiento a tiempo.</p></div>',
+                    unsafe_allow_html=True)
     
     with col_pred_back:
         st.markdown("<div style='height:42px;'></div>", unsafe_allow_html=True) # Espacio para alinear
@@ -625,7 +627,7 @@ def mostrar_predictor_mlp():
 
         # Usamos on_click para limpiar el resultado ANTES de la nueva predicción.
         predict_button = st.form_submit_button("🚀 Predecir", type="primary", 
-                                                 on_click=lambda: setattr(st.session_state, 'prediction_result', None))
+                                               on_click=lambda: setattr(st.session_state, 'prediction_result', None))
 
     if predict_button:
         try:
@@ -707,16 +709,14 @@ elif st.session_state.current_view == 'chat':
         
         with col_input:
             # Usamos la misma clave para que el texto persista si se presiona el botón de voz
-            pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'",
-                                     label_visibility="collapsed", key='chat_query')
+            pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed", key='chat_query')
         
         with col_enviar:
             # Le decimos a Streamlit que, si se presiona "Buscar", debe ejecutar el callback
             enviar = st.form_submit_button("Buscar", key="btn_buscar", type="secondary", use_container_width=True) 
         
         with col_voz:
-            voz = st.form_submit_button("🎤 Voz", key="voz", help="Activar entrada por voz",
-                                        type="secondary", use_container_width=True)
+            voz = st.form_submit_button("🎤 Voz", key="voz", help="Activar entrada por voz", type="secondary", use_container_width=True)
 
     # Lógica de procesamiento de la pregunta
     if enviar and pregunta:
@@ -743,85 +743,124 @@ elif st.session_state.current_view == 'chat':
                 # Eliminamos la clave del filtro interactivo para que se inicialice con el nuevo default/preselección
                 del st.session_state['filtro_restriccion'] 
                 
-            st.rerun()
+            st.rerun() 
 
     elif voz:
         st.info("Función de voz activada (Requiere integración de STT)")
 
     
-    # -----------------------------------
-    # MOSTRAR RESULTADO DE LA ÚLTIMA CONSULTA
-    # -----------------------------------
+    # ----------------------------------------------------
+    # 🎯 BLOQUE DE RESULTADOS
+    # ----------------------------------------------------
     if 'last_query_result' in st.session_state:
-        # Desempaquetamos los 4 valores principales
-        titulo, df_resultado, grafico, tipo_resultado = st.session_state['last_query_result']
+        # Desempaquetar el resultado:
+        # texto: título, resultado: DataFrame, grafico: Plotly Figure, tipo: 'restricciones' o 'general'
+        texto, resultado, grafico, tipo_respuesta = st.session_state['last_query_result']
         
-        st.markdown("<div style='height:20px;'></div>", unsafe_allow_html=True)
-        st.markdown(f'<div class="mar-card">', unsafe_allow_html=True)
+        # Recuperar la preselección (si existe y es la primera vez que se carga el selectbox)
+        preseleccion = st.session_state.get('tipo_restriccion_preseleccionado', 'Todas las restricciones')
 
-        # 🎯 CASO DE RESTRICCIONES (Ajuste principal: tabla ANTES del gráfico y corrección de la excepción)
-        if tipo_resultado == 'restricciones':
-            
-            # --- 1. Control de Filtro (Selector) ---
-            tipos_restriccion = ['Todas las restricciones'] + df_resultado["tipoRestriccion"].astype(str).unique().tolist()
-            
-            # Usar el valor preseleccionado del análisis de la pregunta, si existe
-            default_index = 0
-            if 'tipo_restriccion_preseleccionado' in st.session_state:
-                preselect = st.session_state['tipo_restriccion_preseleccionado']
-                if preselect in tipos_restriccion:
-                    default_index = tipos_restriccion.index(preselect)
 
-            # EL WIDGET SELECTBOX CORREGIDO: SE ELIMINA LA ASIGNACIÓN MANUAL PARA EVITAR LA APIEXCEPTION
-            st.selectbox( 
-                f"🔎 Filtro por Tipo de Restricción ({titulo.split(' en ')[-1].replace(':', '').strip()})",
-                options=tipos_restriccion,
-                index=default_index,
-                key='filtro_restriccion', # El widget se auto-asigna a st.session_state['filtro_restriccion']
-                help="Selecciona un tipo para ver solo las restricciones de ese grupo."
+        if resultado is None:
+            # Mostrar el mensaje de error o "No entendí"
+            st.markdown(
+                f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-size: 18px; font-weight:700; margin:0 0 15px 0;'>{texto}</p></div>",
+                unsafe_allow_html=True
+            )
+        else:
+            # --- Renderizar la Tarjeta de Respuesta ---
+            st.markdown(
+                f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-size: 18px; font-weight:700; margin:0 0 15px 0;'>{texto}</p>",
+                unsafe_allow_html=True
             )
             
-            # Ahora leemos el valor automáticamente guardado por el widget
-            filtro_seleccionado = st.session_state['filtro_restriccion']
-
-            # --- 2. Preparar la Tabla (Aplicar Filtro) ---
-            df_mostrar = df_resultado.copy()
-            if filtro_seleccionado != 'Todas las restricciones':
-                df_mostrar = df_mostrar[df_mostrar["tipoRestriccion"] == filtro_seleccionado]
-            
-            # Columnas a mostrar en la tabla de contexto
-            cols_restriccion = ["tipoRestriccion", "Restricción", "Responsable", "FechaCompromiso", "Estado"]
-            df_contexto = df_mostrar[cols_restriccion].rename(columns={
-                "tipoRestriccion": "Tipo",
-                "FechaCompromiso": "Fecha Comp.",
-            })
-            
-            st.markdown("---")
-            st.markdown(f'### 📑 {filtro_seleccionado} ({len(df_mostrar)} casos)')
-            
-            # --- 3. Mostrar la Tabla (Contexto) ---
-            st.dataframe(df_contexto, use_container_width=True, hide_index=True)
-            
-            # --- 4. Mostrar el Gráfico (DEBAJO DE LA TABLA, como se solicitó) ---
-            if grafico:
-                st.markdown("---")
-                st.markdown(f'### 📊 Distribución General de Tipos')
-                st.plotly_chart(grafico, use_container_width=True)
-
-            # Mensaje resumen
-            st.info(f"Mostrando {len(df_mostrar)} de {len(df_resultado)} restricciones. Usa el selector superior para cambiar el filtro.")
-
-
-        # 🎯 OTROS CASOS (Se mantienen igual)
-        elif df_resultado is not None:
-            st.markdown(f'### {titulo}')
+            # Contenedor para el gráfico
             if grafico:
                 st.plotly_chart(grafico, use_container_width=True)
-            st.dataframe(df_resultado, use_container_width=True, hide_index=True)
             
-        else: # Solo texto
-            st.markdown(f'<p style="font-size: 18px; color: #1b2635; margin:0;">{titulo}</p>', unsafe_allow_html=True)
+            # --- Lógica de Filtro y Recuento para Restricciones ---
+            df_mostrar = resultado.copy()
 
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+            if tipo_respuesta == 'restricciones' and 'tipoRestriccion' in resultado.columns:
+                
+                # Columnas para el filtro y el recuento
+                col_filtro, col_recuento = st.columns([3, 1])
+
+                # Opciones únicas de filtro (basado en el DataFrame ya filtrado por proyecto)
+                opciones = ['Todas las restricciones'] + sorted(df_mostrar['tipoRestriccion'].astype(str).unique().tolist())
+                
+                # Definir el índice de inicio para el selectbox
+                default_index = opciones.index(preseleccion) if preseleccion in opciones else 0
+
+                with col_filtro:
+                    # El selectbox que actúa como filtro. Mantiene el estado con la clave 'filtro_restriccion'.
+                    # Usamos el default_index para iniciar con el valor de la pregunta si existe.
+                    filtro = st.selectbox(
+                        "Filtrar por Tipo de Restricción:", 
+                        options=opciones,
+                        index=default_index, # Usamos el índice preseleccionado
+                        key='filtro_restriccion' # Clave para que Streamlit recuerde el valor
+                    )
+                
+                # Aplicar el filtro interactivo
+                if filtro != 'Todas las restricciones':
+                    df_mostrar = df_mostrar[df_mostrar['tipoRestriccion'].astype(str) == filtro]
+                
+                # 🎯 Ficha de Recuento
+                conteo_actual = len(df_mostrar)
+                
+                with col_recuento:
+                    # Usamos un div custom para el estilo de la ficha
+                    st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True) # Alineación
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <div class="metric-value">{conteo_actual}</div>
+                            <div class="metric-label">Restricciones</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True) # Pequeño separador visual antes de la tabla
+
+            # --- Mostrar la Tabla (filtrada o completa) ---
+            if not df_mostrar.empty:
+                max_preview = 70 
+                
+                if len(df_mostrar) > max_preview:
+                    st.info(f"Mostrando primeras **{max_preview} filas** de {len(df_mostrar)}.")
+                    df_preview = df_mostrar.head(max_preview)
+                else:
+                    df_preview = df_mostrar
+
+                # Estilo de la tabla mejorado
+                styled_df = df_preview.style.set_table_styles([
+                    {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
+                    {'selector': 'th', 'props': [('background-color', PALETTE['primary']),
+                                                 ('color', 'white'),
+                                                 ('font-weight', 'bold'),
+                                                 ('text-align', 'center'),
+                                                 ('border-radius', '4px 4px 0 0')]},
+                    {'selector': 'td', 'props': [('padding', '8px 12px'), ('vertical-align', 'middle')]}
+                ]).hide(axis="index")
+                
+                st.dataframe(styled_df, use_container_width=True)
+                
+            elif tipo_respuesta == 'restricciones':
+                 # Mensaje para 0 resultados (sea por filtro de texto o por filtro de selectbox)
+                 if 'filtro' in locals() and filtro != 'Todas las restricciones':
+                     st.warning(f"No hay registros de restricciones del tipo: **{filtro}** en el proyecto especificado.")
+                 else:
+                     # Este caso es si el filtro por proyecto ya dio 0
+                     st.warning("No hay registros de restricciones que coincidan con los criterios de la búsqueda.")
+
+
+            st.markdown("</div>", unsafe_allow_html=True) # Cierre del mar-card de respuesta
+
+
+# -----------------------------
+# FOOTER
+# -----------------------------
+st.markdown(
+    f"<br><hr style='border-top: 1px solid #e0e0e0;'><p style='font-size:12px;color:#6b7280; text-align: right;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.4 (Filtro Doble)</p>",
+    unsafe_allow_html=True
+)
+
