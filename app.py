@@ -1,8 +1,5 @@
-# app_autocomplete_mar_assistant.py
-# Versión corregida del Mar Assistant con autocompletado estilo "Google"
-# Implementación: campo de búsqueda hecho en HTML/JS (st.components.v1.html) con sugerencias
-# Al seleccionar una sugerencia o pulsar Enter se recarga la app con ?q=<consulta>
-
+# app.py
+# Mar Assistant - versión con autocompletado estilo "Google" (componente HTML/JS integrado)
 import streamlit as st
 from PIL import Image
 import pandas as pd
@@ -45,13 +42,11 @@ PALETTE = {
 # -----------------------------
 # FUNCIONES DE NORMALIZACIÓN
 # -----------------------------
-
 def normalizar_texto(texto):
     texto = str(texto).lower()
     texto = re.sub(r"[.,;:%]", "", texto)
     texto = re.sub(r"\s+", " ", texto)
     return texto.strip()
-
 
 def quitar_tildes(texto):
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
@@ -131,9 +126,25 @@ if excel_file:
         excel_file.seek(0)
         df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
         excel_file.seek(0)
-        df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
+        # Algunos nombres de hojas pueden tener acento; intentamos alternativas
+        try:
+            df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
+        except Exception:
+            excel_file.seek(0)
+            try:
+                df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseno")
+            except Exception:
+                df_avance_diseno = pd.DataFrame()
         excel_file.seek(0)
-        df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")
+        try:
+            df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")
+        except Exception:
+            excel_file.seek(0)
+            try:
+                df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseno")
+            except Exception:
+                df_inventario_diseno = pd.DataFrame()
+
         st.sidebar.success("✅ Hojas cargadas correctamente")
     except Exception as e:
         st.sidebar.error(f"Error al leer una o varias hojas: {e}")
@@ -175,14 +186,12 @@ projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
 
 # Agregar nombres de proyectos a las sugerencias para ser más amigable
 suggestions_list = PALABRAS_CLAVE.copy()
-# incluir variantes exactas de proyectos (sin tildes y la versión original)
 for p in all_projects:
     if p and str(p).strip():
         suggestions_list.append(str(p))
         suggestions_list.append(quitar_tildes(normalizar_texto(str(p))))
 
 # garantizar unicidad y orden
-# ordenar por longitud descendente para coincidir términos largos primero
 suggestions_list = sorted(list(dict.fromkeys(suggestions_list)), key=lambda x: (-len(x), x))
 
 # -----------------------------
@@ -204,7 +213,6 @@ CARGOS_VALIDOS = [
 ]
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
-
 def extraer_proyecto(texto):
     texto_norm = quitar_tildes(normalizar_texto(texto))
     for norm in sorted(projects_map.keys(), key=len, reverse=True):
@@ -215,7 +223,6 @@ def extraer_proyecto(texto):
         if norm in texto_norm:
             return projects_map[norm], norm
     return None, None
-
 
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
@@ -305,7 +312,7 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# HEADER: logo + títulos (igual que el original)
+# HEADER: logo + títulos
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
@@ -338,13 +345,14 @@ else:
 # Pasamos la lista de sugerencias como JSON al HTML
 suggestions_json = json.dumps(suggestions_list)
 
-html_component = f"""
+# HTML + JS: todo dentro de una cadena triple-quoted para evitar errores de sintaxis en Python
+html_component = f'''
 <div class='mar-card search-box'>
-  <label style='font-weight:700;color:{PALETTE['primary']};display:block;margin-bottom:6px;'>Consulta rápida</label>
+  <label style='font-weight:700;color:{PALETTE["primary"]};display:block;margin-bottom:6px;'>Consulta rápida</label>
   <div style='position:relative;'>
-    <input id='search' type='text' placeholder='Escribe tu pregunta aquí' autocomplete='off' 
+    <input id='search' type='text' placeholder='Escribe tu pregunta aquí' autocomplete='off'
       style='width:100%; padding:12px 14px; border-radius:8px; border:1px solid rgba(21,72,114,0.2); font-size:15px; height:44px;' />
-    <button id='sendBtn' onclick='submitQuery()' style='position:absolute;right:6px;top:6px;height:32px;border-radius:8px;padding:0 12px;border:none;background:{PALETTE['primary']};color:white;font-weight:600;'>Enviar</button>
+    <button id='sendBtn' style='position:absolute;right:6px;top:6px;height:32px;border-radius:8px;padding:0 12px;border:none;background:{PALETTE["primary"]};color:white;font-weight:600;'>Enviar</button>
 
     <div id='suggestions' style='position:absolute; left:0; right:0; top:52px; background:white; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.08); max-height:260px; overflow:auto; display:none; z-index:9999;'>
     </div>
@@ -356,81 +364,104 @@ html_component = f"""
 const suggestions = {suggestions_json};
 const input = document.getElementById('search');
 const sugBox = document.getElementById('suggestions');
+const sendBtn = document.getElementById('sendBtn');
 
-function escapeHtml(text){
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return text.replace(/[&<>\"']/g, function(m) { return map[m]; });
-}
+function escapeHtml(text) {{
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}}
 
-function filterSuggestions(query){
+function filterSuggestions(query) {{
   if(!query) return [];
   const q = query.trim().toLowerCase();
-  const results = suggestions.filter(s => s.toLowerCase().startsWith(q));
-  // si no hay resultados que empiecen, buscar que contengan
-  if(results.length === 0){
-    return suggestions.filter(s => s.toLowerCase().includes(q)).slice(0, 40);
-  }
+  let results = suggestions.filter(s => s.toLowerCase().startsWith(q));
+  if(results.length === 0) {{
+    results = suggestions.filter(s => s.toLowerCase().includes(q));
+  }}
   return results.slice(0, 40);
-}
+}}
 
-function renderSuggestions(items){
-  if(!items || items.length === 0){
+function renderSuggestions(items) {{
+  if(!items || items.length === 0) {{
     sugBox.style.display = 'none';
     sugBox.innerHTML = '';
     return;
-  }
-  sugBox.innerHTML = items.map(it => `<div class='suggestion-item' style='padding:10px 12px;border-bottom:1px solid #f3f4f6;' onclick="selectSuggestion('${escapeHtml(it).replace(/'/g, "\\'")}')">${escapeHtml(it)}</div>`).join('');
+  }}
+  sugBox.innerHTML = items.map(it =>
+    `<div class='suggestion-item' data-value="${{escapeHtml(it)}}" style='padding:10px 12px;border-bottom:1px solid #f3f4f6;'>${{escapeHtml(it)}}</div>`
+  ).join('');
   sugBox.style.display = 'block';
-}
 
-function selectSuggestion(value){
-  input.value = value;
-  // recargar la app con el query param
-  submitQuery(value);
-}
+  // attach click handlers
+  Array.from(sugBox.querySelectorAll('.suggestion-item')).forEach(el => {{
+    el.addEventListener('click', function(e) {{
+      const v = this.getAttribute('data-value');
+      input.value = v;
+      submitQuery(v);
+    }});
+  }});
+}}
 
-function submitQuery(value=null){
+function submitQuery(value=null) {{
   const v = value !== null ? value : input.value;
   const url = window.location.pathname + '?q=' + encodeURIComponent(v);
   window.location.href = url;
-}
+}}
 
-input.addEventListener('input', function(e){
+input.addEventListener('input', function(e) {{
   const q = e.target.value;
-  if(!q || q.trim().length === 0){
+  if(!q || q.trim().length === 0) {{
     renderSuggestions([]);
     return;
-  }
+  }}
   const items = filterSuggestions(q);
   renderSuggestions(items);
-});
+}});
 
-// cerrar sugerencias al hacer click fuera
-document.addEventListener('click', function(e){
-  if(!document.querySelector('.search-box').contains(e.target)){
+// close suggestions when clicking outside the search box
+document.addEventListener('click', function(e) {{
+  const container = document.querySelector('.search-box');
+  if (!container.contains(e.target)) {{
     sugBox.style.display = 'none';
-  }
-});
+  }}
+}});
 
-// si hay q en query params, rellenar el input (esto no se mantiene si se recarga desde Python, pero es util en sesiones)
-(function(){
+// support pressing Enter to submit
+input.addEventListener('keydown', function(e) {{
+  if(e.key === 'Enter') {{
+    e.preventDefault();
+    submitQuery();
+  }}
+}});
+
+// send button action
+sendBtn.addEventListener('click', function() {{
+  submitQuery();
+}});
+
+// if query param ?q= exists, fill input (useful when returning)
+(function(){{
   const params = new URLSearchParams(window.location.search);
   const q = params.get('q');
-  if(q){
+  if(q) {{
     input.value = decodeURIComponent(q);
-  }
-})();
+  }}
+}})();
 </script>
-"""
+'''
 
-# Renderizamos el componente
-components.html(html_component, height=140)
+# Renderizamos el componente (alto suficiente para mostrarse, el HTML controla su propio scroll)
+components.html(html_component, height=160)
 
 # -----------------------------
 # Tomamos la query param ?q= y la usamos
 # -----------------------------
 query_params = st.experimental_get_query_params()
-pregunta = query_params.get('q', [''])[0]
+pregunta = query_params.get('q', [''])[0].strip()
 
 # Mostrar la consulta actual (si existe)
 if pregunta:
