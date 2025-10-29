@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 from PIL import Image
 import pandas as pd
@@ -9,15 +8,26 @@ import base64
 import os
 import io
 
-# plotly opcional
+# Intentamos importar plotly
 try:
     import plotly.express as px
     PLOTLY_AVAILABLE = True
-except Exception:
+except ImportError:
     PLOTLY_AVAILABLE = False
 
-st.set_page_config(page_title="Mar Assistant", page_icon="🌊", layout="wide", initial_sidebar_state="expanded")
+# -----------------------------
+# CONFIGURACIÓN GENERAL
+# -----------------------------
+st.set_page_config(
+    page_title="Mar Assistant",
+    page_icon="🌊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
+# -----------------------------
+# PALETA DE COLORES (UX / BI)
+# -----------------------------
 PALETTE = {
     "primary": "#154872",
     "accent": "#5DC0DC",
@@ -25,9 +35,9 @@ PALETTE = {
     "bg": "#ffffff"
 }
 
-# -------------------------
-# CSS y animaciones
-# -------------------------
+# -----------------------------
+# CSS GLOBAL
+# -----------------------------
 st.markdown(f"""
 <style>
 :root {{
@@ -39,59 +49,147 @@ st.markdown(f"""
     --card-padding: 16px;
     --title-size: 36px;
 }}
-.stApp {{ background-color: var(--mar-bg); color: #1b2635; font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
-.title {{ color: var(--mar-primary); font-size: var(--title-size); font-weight: 800; margin: 0; font-family: 'Roboto Slab', serif; }}
-.subtitle {{ color: #34495e; font-size: 16px; margin: 4px 0 0 0; }}
-.mar-card {{ background-color: white; padding: var(--card-padding); border-radius: var(--card-radius); box-shadow: 0 6px 18px rgba(21,72,114,0.06); margin-bottom: 20px; }}
-.stTextInput>div>div>input {{ background-color: white; border: 1px solid rgba(21,72,114,0.2); border-radius: 8px; padding: 10px 12px; font-size: 14px; height: 40px; }}
-.stTextInput>div>div>input::placeholder {{ color: rgba(0, 0, 0, 0.4); font-style: italic; }}
-.stButton>button {{ background-color: var(--mar-primary); color: white; border-radius: 8px; padding: 0 20px; font-weight: 600; border: none; height: 40px; }}
-.stButton>button:hover {{ background-color: var(--mar-muted); }}
-.stButton>button.btn-voz {{ background-color: #5DC0DC; color: white; border-radius: 8px; padding: 0 12px; font-weight: 600; border: none; height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; }}
-.suggestions-box {{
-    margin-top: 6px;
-    background: white;
-    border: 1px solid rgba(21,72,114,0.12);
+.stApp {{
+    background-color: var(--mar-bg);
+    color: #1b2635;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}}
+.header-box {{
+    background-color: white;
+    padding: 20px;
+    border-radius: var(--card-radius);
+    box-shadow: 0 8px 20px rgba(21,72,114,0.08);
+    display: flex;
+    align-items: center;
+}}
+.title {{
+    color: var(--mar-primary);
+    font-size: var(--title-size);
+    font-weight: 800;
+    margin: 0;
+    font-family: 'Roboto Slab', serif;
+}}
+.subtitle {{
+    color: #34495e;
+    font-size: 16px;
+    margin: 4px 0 0 0;
+}}
+.mar-card {{
+    background-color: white;
+    padding: var(--card-padding);
+    border-radius: var(--card-radius);
+    box-shadow: 0 6px 18px rgba(21,72,114,0.06);
+    margin-bottom: 20px;
+}}
+.stTextInput>div>div>input {{
+    background-color: white;
+    border: 1px solid rgba(21,72,114,0.2);
     border-radius: 8px;
-    padding: 6px;
-    box-shadow: 0 6px 18px rgba(21,72,114,0.04);
+    padding: 10px 12px;
+    font-size: 14px;
+    height: 40px;
 }}
-.suggestion-btn {{
-    display:block;
-    width:100%;
-    text-align:left;
-    padding:8px 10px;
-    margin-bottom:6px;
-    border-radius:8px;
+.stTextInput>div>div>input::placeholder {{
+    color: rgba(0, 0, 0, 0.4);
+    font-style: italic;
+}}
+.stButton>button {{
+    background-color: var(--mar-primary);
+    color: white;
+    border-radius: 8px;
+    padding: 0 20px;
+    font-weight: 600;
     border: none;
-    background: transparent;
-    cursor: pointer;
+    height: 40px;
 }}
-.suggestion-btn:hover {{ background: rgba(21,72,114,0.05); }}
-[data-testid="stSidebar"] {{ background-color: white; padding: 20px; border-radius: var(--card-radius); }}
+.stButton>button:hover {{
+    background-color: var(--mar-muted);
+}}
+.stButton>button.btn-voz {{
+    background-color: #5DC0DC;
+    color: white;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-weight: 600;
+    border: none;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}}
+.stButton>button.btn-voz:hover {{
+    background-color: #3aa6c1;
+}}
+[data-testid="stSidebar"] {{
+    background-color: white;
+    padding: 20px;
+    border-radius: var(--card-radius);
+}}
+@keyframes floatY {{
+    0% {{ top: -10%; }}
+    100% {{ top: 110%; }}
+}}
 </style>
 """, unsafe_allow_html=True)
 
+
+
+
+
+
+
+# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
 st.markdown("""
 <style>
-@keyframes floatDown { 0% { top: -10%; } 100% { top: 100%; } }
-@keyframes floatY { 0% { transform: translateY(0); } 50% { transform: translateY(10px); } 100% { transform: translateY(0); } }
+@keyframes floatDown {
+    0% { top: -10%; }
+    100% { top: 100%; }
+}
+
+@keyframes floatY {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(10px); }
+    100% { transform: translateY(0); }
+}
 </style>
 
-<!-- Fantasmas derecha, solo arriba=>abajo -->
-<div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.08; animation:floatDown 15s linear infinite; z-index:9999;">👻</div>
-<div style="position:fixed; top:12%; right:7%; font-size:28px; opacity:0.07; animation:floatDown 18s linear infinite; z-index:9999;">👻</div>
-<div style="position:fixed; top:25%; right:6%; font-size:25px; opacity:0.06; animation:floatDown 16s linear infinite; z-index:9999;">👻</div>
+<!-- Fantasmas en la parte derecha (solo arriba → abajo) -->
+<div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
+<div style="position:fixed; top:10%; right:7%; font-size:28px; opacity:0.1; animation:floatDown 18s linear infinite; z-index:9999;">❄️</div>
+<div style="position:fixed; top:20%; right:6%; font-size:25px; opacity:0.1; animation:floatDown 16s linear infinite; z-index:9999;">❄️</div>
+<div style="position:fixed; top:25%; right:8%; font-size:20px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
+<div style="position:fixed; top:10%; right:5%; font-size:28px; opacity:0.1; animation:floatDown 13s linear infinite; z-index:9999;">❄️</div>
+<div style="position:fixed; top:20%; right:7%; font-size:25px; opacity:0.1; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
+<div style="position:fixed; top:25%; right:9%; font-size:20px; opacity:0.1; animation:floatDown 11s linear infinite; z-index:9999;">❄️</div>
 
-<!-- Calabazas izquierda (flotando) -->
+
+
+
+<!-- Calabazas en la parte inferior izquierda (rebote suave) -->
 <div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
 <div style="position:fixed; bottom:8%; left:10%; font-size:20px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
+<div style="position:fixed; bottom:6%; left:12%; font-size:18px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🎃</div>
 """, unsafe_allow_html=True)
 
-# -------------------------
-# Header (logo y titulos)
-# -------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+# -----------------------------
+# HEADER: logo + títulos
+# -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
+
 if os.path.exists(logo_path):
     try:
         logo_img = Image.open(logo_path)
@@ -104,19 +202,20 @@ if os.path.exists(logo_path):
                 <img src="data:image/png;base64,{img_b64}" style="height:110px; width:auto;"/>
                 <div>
                     <p class="title">Sistema Integrado de Información de Proyectos</p>
-                    <p class="subtitle">Asistente para el Seguimiento y Control — Constructora Marval</p>
+                    <p class="subtitle"> Asistente para el Seguimiento y Control — Constructora Marval</p>
                 </div>
             </div>
-            """, unsafe_allow_html=True
+            """,
+            unsafe_allow_html=True
         )
     except Exception:
         st.image(logo_path, width=80)
 else:
     st.warning("Logo no encontrado en assets/logoMar.png")
 
-# -------------------------
-# Sidebar (cargas)
-# -------------------------
+# -----------------------------
+# SIDEBAR: Uploads
+# -----------------------------
 st.sidebar.title("Herramientas")
 st.sidebar.subheader("Cargas")
 excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
@@ -124,34 +223,44 @@ img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png"
 st.sidebar.markdown("---")
 st.sidebar.markdown("💡 Consejo: coloca `assets/logoMar.png` junto a este archivo para mostrar el logo correctamente.")
 
-# splash opcional
+# -----------------------------
+# SPLASH (opcional)
+# -----------------------------
 placeholder = st.empty()
 if img_file:
     try:
         img_b64 = base64.b64encode(img_file.read()).decode()
         splash_html = f"""
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: white; display: flex; justify-content: center; align-items: center; z-index: 9999;">
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;">
             <div style="text-align:center; padding: 20px; border-radius: 12px;">
-                <img src="data:image/png;base64,{img_b64}" style="width:160px; max-width:50vw; height:auto; display:block; margin:0 auto;">
+                <img src="data:image/png;base64,{img_b64}" 
+                     style="width:160px; max-width:50vw; height:auto; display:block; margin:0 auto;">
             </div>
         </div>
         """
         placeholder.markdown(splash_html, unsafe_allow_html=True)
-        time.sleep(0.4)
+        time.sleep(0.5)
         placeholder.empty()
     except Exception:
         placeholder.empty()
 
-# -------------------------
-# Requerir Excel
-# -------------------------
+# -----------------------------
+# LECTURA DE EXCEL
+# -----------------------------
 if not excel_file:
     st.info("Sube el archivo Excel en la barra lateral para cargar las hojas.")
     st.stop()
 
-# -------------------------
-# Leer Excel
-# -------------------------
 try:
     excel_file.seek(0)
     df_avance = pd.read_excel(excel_file, sheet_name="Avance")
@@ -162,29 +271,17 @@ try:
     excel_file.seek(0)
     df_sostenibilidad = pd.read_excel(excel_file, sheet_name="Sostenibilidad")
     excel_file.seek(0)
-    # manejo variantes nombres hojas diseño
-    try:
-        df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
-    except Exception:
-        try:
-            df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseno")
-        except Exception:
-            df_avance_diseno = pd.DataFrame()
-    try:
-        df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")
-    except Exception:
-        try:
-            df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseno")
-        except Exception:
-            df_inventario_diseno = pd.DataFrame()
+    df_avance_diseno = pd.read_excel(excel_file, sheet_name="AvanceDiseño")
+    excel_file.seek(0)
+    df_inventario_diseno = pd.read_excel(excel_file, sheet_name="InventarioDiseño")
     st.sidebar.success("✅ Hojas cargadas correctamente")
 except Exception as e:
     st.sidebar.error(f"Error al leer una o varias hojas: {e}")
     st.stop()
 
-# -------------------------
-# Normalización y utilidades
-# -------------------------
+# -----------------------------
+# NORMALIZACIÓN
+# -----------------------------
 def normalizar_texto(texto):
     texto = str(texto).lower()
     texto = re.sub(r"[.,;:%]", "", texto)
@@ -194,8 +291,8 @@ def normalizar_texto(texto):
 def quitar_tildes(texto):
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
 
-required_sheets = [("Avance", df_avance), ("Responsables", df_responsables), ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]
-for df_name, df in required_sheets:
+for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
+                    ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
     if "Proyecto" not in df.columns:
         st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
         st.stop()
@@ -223,9 +320,9 @@ def extraer_proyecto(texto):
             return projects_map[norm], norm
     return None, None
 
-# -------------------------
-# Cargos y keywords
-# -------------------------
+# -----------------------------
+# LISTA DE CARGOS
+# -----------------------------
 CARGOS_VALIDOS = [
     "Analista de compras", "Analista de Programación", "Arquitecto",
     "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
@@ -233,56 +330,39 @@ CARGOS_VALIDOS = [
     "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
     "Diseñador estructural", "Diseñador externo", "Equipo MARVAL", "Gerente de proyectos",
     "Ingeniera Eléctrica", "Ingeniero Ambiental", "Ingeniero de Contratación", "Ingeniero electromecánico",
-    "Ingeniero FCA", "Ingeniero Lean", "Profesional SYST", "Programador de obra", "Practicante Lean",
-    "Residente", "Residente Administrativo de Equipos", "Residente auxiliar", "Residente de acabados",
-    "Residente de control e interventoría", "Residente de Equipos", "Residente logístico", "Técnico de almacén"
+    "Ingeniero FCA", "Ingeniero FCA #2", "Ingeniero Lean", "Ingeniero Lean 3", "Profesional SYST",
+    "Programador de obra", "Programador de obra #2", "Practicante de Interventoría #1",
+    "Practicante Lean", "Residente", "Residente #2", "Residente Administrativo de Equipos",
+    "Residente auxiliar", "Residente Auxiliar #2", "Residente Auxiliar #3", "Residente Auxiliar #4",
+    "Residente de acabados", "Residente de acabados #2", "Residente de control e interventoría",
+    "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
 ]
 CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
 
-ESTADO_DISENO_KEYWORDS = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
-DISENO_KEYWORDS = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño", "avance de diseno", "avance de diseño", "diseno", "diseño"]
-OBRA_KEYWORDS = ["avance de obra", "avance obra", "avance en obra"]
-RESTRICCION_KEYWORDS = ["restriccion", "restricción", "problema", "tipoRestriccion"]
-AVANCE_KEYWORDS = ["avance"]
-RESPONSABLES_KEYWORDS = ["responsable", "quien", "quién", "cargo", "quién es"]
-SOSTENIBILIDAD_KEYWORDS = ["sostenibilidad", "sostenible", "ambiental", "edge"]
-
-# Lista única de sugerencias (keywords primero, luego proyectos y cargos)
-AUTOCOMPLETE_TERMS = list(dict.fromkeys(
-    ESTADO_DISENO_KEYWORDS + DISENO_KEYWORDS + OBRA_KEYWORDS + RESTRICCION_KEYWORDS +
-    AVANCE_KEYWORDS + RESPONSABLES_KEYWORDS + SOSTENIBILIDAD_KEYWORDS +
-    list(all_projects) + CARGOS_VALIDOS
-))
-
-# -------------------------
-# Session state init
-# -------------------------
-if "input_autocomplete" not in st.session_state:
-    st.session_state["input_autocomplete"] = ""
-if "trigger_search" not in st.session_state:
-    st.session_state["trigger_search"] = False
-if "last_suggestion" not in st.session_state:
-    st.session_state["last_suggestion"] = ""
-
-# -------------------------
-# Función que genera respuesta principal
-# -------------------------
+# -----------------------------
+# FUNCION DE RESPUESTA
+# -----------------------------
 def generar_respuesta(pregunta):
     pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
     proyecto, proyecto_norm = extraer_proyecto(pregunta)
 
-    if any(k in pregunta_norm for k in ESTADO_DISENO_KEYWORDS):
+    estado_diseno_keywords = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
+    diseño_keywords = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
+                       "avance de diseno", "avance de diseño", "diseno", "diseño"]
+    obra_keywords = ["avance de obra", "avance obra", "avance en obra"]
+
+    if any(k in pregunta_norm for k in estado_diseno_keywords):
         if df_inventario_diseno.empty:
             return "❌ No hay registros en la hoja InventarioDiseño.", None
         return "📐 Estado de Diseño (InventarioDiseño):", df_inventario_diseno
 
-    if any(k in pregunta_norm for k in DISENO_KEYWORDS):
+    if any(k in pregunta_norm for k in diseño_keywords):
         if ("avance" in pregunta_norm) or (pregunta_norm.strip() in ["diseno", "diseño"]):
             if df_avance_diseno.empty:
                 return "❌ No hay registros en la hoja AvanceDiseño.", None
             return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
 
-    if any(k in pregunta_norm for k in OBRA_KEYWORDS):
+    if any(k in pregunta_norm for k in obra_keywords):
         df = df_avance.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -290,7 +370,7 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
         return f"📊 Avance de obra en {proyecto or 'todos'}:", df
 
-    if any(k in pregunta_norm for k in AVANCE_KEYWORDS):
+    if "avance" in pregunta_norm:
         df = df_avance.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -298,7 +378,7 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
         return f"📊 Avances en {proyecto or 'todos'}:", df
 
-    if any(k in pregunta_norm for k in RESPONSABLES_KEYWORDS):
+    if "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
         df = df_responsables.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -316,23 +396,30 @@ def generar_respuesta(pregunta):
             return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
         return f"👷 Responsables en {proyecto or 'todos'}:", df
 
-    if any(k in pregunta_norm for k in RESTRICCION_KEYWORDS):
+    if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
         df = df_restricciones.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
         if df.empty:
             return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
 
+        # Generar gráfico si plotly disponible
         grafico = None
         if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
-            grafico = px.bar(df.groupby("tipoRestriccion").size().reset_index(name="count"),
-                             x="tipoRestriccion", y="count", text="count")
+            grafico = px.bar(
+                df.groupby("tipoRestriccion").size().reset_index(name="count"),
+                x="tipoRestriccion",
+                y="count",
+                text="count",
+                labels={"tipoRestriccion": "Tipo de Restricción", "count": "Cantidad"},
+                color="tipoRestriccion",
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
             grafico.update_layout(showlegend=False, xaxis_title="Tipo de Restricción", yaxis_title="Cantidad")
-            return f"⚠️ Restricciones en {proyecto or 'todos'}:", (df, grafico)
 
-        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
+        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico
 
-    if any(k in pregunta_norm for k in SOSTENIBILIDAD_KEYWORDS):
+    if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
         df = df_sostenibilidad.copy()
         if proyecto_norm:
             df = df[df["Proyecto_norm"] == proyecto_norm]
@@ -340,101 +427,89 @@ def generar_respuesta(pregunta):
             return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None
         return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
 
-    return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', 'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
+    return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
+            "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
-# -------------------------
-# Interfaz principal: input + sugerencias + botones
-# -------------------------
+# -----------------------------
+# INTERFAZ: input + botón al lado + voz
+# -----------------------------
 st.markdown(
     f'<div class="mar-card"><strong style="color:{PALETTE["primary"]}">Consulta rápida</strong>'
-    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos</p></div>',
+    '<p style="margin:6px 0 10px 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos </p></div>',
     unsafe_allow_html=True
 )
 
 col_input, col_enviar, col_voz = st.columns([5, 1, 1])
 with col_input:
-    # Text input controlado: su valor queda en st.session_state["input_autocomplete"]
-    user_input = st.text_input("", placeholder="Escribe tu pregunta aquí", key="input_autocomplete", label_visibility="collapsed")
-
-    # Generar sugerencias en tiempo real (coincidencia parcial)
-    suggestions = []
-    typed = str(user_input or "").strip()
-    if typed:
-        typed_low = typed.lower()
-        # priorizar keywords exactas, luego proyectos y cargos
-        candidates = AUTOCOMPLETE_TERMS
-        # limitar a top 8 para no saturar
-        suggestions = [t for t in candidates if typed_low in str(t).lower()][:8]
-
-    # Mostrar "dropdown" simulado (botones) justo debajo del input
-    if suggestions:
-        # contenedor con estilo para parecer dropdown
-        st.markdown('<div class="suggestions-box">', unsafe_allow_html=True)
-        for i, s in enumerate(suggestions):
-            # cada botón escrito con st.button para que Streamlit capture la acción
-            # genero keys únicas para evitar colisiones
-            key_btn = f"sugg_btn_{i}_{hash(s)}"
-            if st.button(s, key=key_btn):
-                # cuando clican en sugerencia: autocompleta y dispara búsqueda automática
-                st.session_state["input_autocomplete"] = s
-                st.session_state["trigger_search"] = True
-                st.session_state["last_suggestion"] = s
-                # forzamos rerun al terminar el if (Streamlit rerun automático)
-        st.markdown('</div>', unsafe_allow_html=True)
-
+    pregunta = st.text_input(label="", placeholder="Escribe tu pregunta aquí")
 with col_enviar:
     enviar = st.button("Enviar", use_container_width=True)
 with col_voz:
     voz = st.button("🎤 Voz", key="voz", help="Activar entrada por voz", use_container_width=True)
 
-# -------------------------
-# Ejecutar búsqueda si el usuario dio Enviar o si seleccionó una sugerencia
-# -------------------------
-should_search = False
-if enviar and str(st.session_state.get("input_autocomplete", "")).strip():
-    should_search = True
+# Lógica de botones
+if enviar and pregunta:
+    respuesta = generar_respuesta(pregunta)
 
-if st.session_state.get("trigger_search", False):
-    # se activó por selección de sugerencia
-    should_search = True
-    # resetear el trigger para próximas interacciones
-    st.session_state["trigger_search"] = False
-
-if should_search:
-    pregunta_final = st.session_state.get("input_autocomplete", "").strip()
-    if pregunta_final:
-        respuesta = generar_respuesta(pregunta_final)
-
-        # normalizar la forma de la respuesta
-        texto = None
-        resultado = None
+    # Ver si regresó gráfico
+    if len(respuesta) == 3:
+        texto, resultado, grafico = respuesta
+    else:
+        texto, resultado = respuesta
         grafico = None
-        if isinstance(respuesta, tuple) and len(respuesta) == 2:
-            texto, resultado = respuesta
-            if isinstance(resultado, tuple) and len(resultado) == 2:
-                resultado, grafico = resultado
+
+    st.markdown(
+        f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p>",
+        unsafe_allow_html=True
+    )
+
+    # Mostrar gráfico si existe
+    if grafico:
+        st.plotly_chart(grafico, use_container_width=True)
+
+    if isinstance(resultado, pd.DataFrame) and not resultado.empty:
+        max_preview = 200
+        if len(resultado) > max_preview:
+            st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
+            df_preview = resultado.head(max_preview)
         else:
-            texto, resultado = respuesta, None
+            df_preview = resultado
 
-        st.markdown(f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-weight:700; margin:0 0 8px 0;'>{texto}</p></div>", unsafe_allow_html=True)
+        styled_df = df_preview.style.set_table_styles([
+            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
+            {'selector': 'th', 'props': [('background-color', PALETTE['accent']),
+                                         ('color', 'white'),
+                                         ('font-weight', 'bold')]},
+        ])
+        st.dataframe(styled_df, use_container_width=True)
 
-        if grafico:
-            st.plotly_chart(grafico, use_container_width=True)
+# -----------------------------
+# FOOTER
+# -----------------------------
+st.markdown(
+    f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
+    unsafe_allow_html=True
+)
 
-        if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-            max_preview = 200
-            if len(resultado) > max_preview:
-                st.info(f"Mostrando primeras {max_preview} filas de {len(resultado)}.")
-                df_preview = resultado.head(max_preview)
-            else:
-                df_preview = resultado
-            st.dataframe(df_preview, use_container_width=True)
-        elif resultado is None:
-            pass
-        else:
-            st.write(resultado)
 
-# -------------------------
-# Footer
-# -------------------------
-st.markdown(f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>", unsafe_allow_html=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
