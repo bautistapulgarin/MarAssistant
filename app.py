@@ -7,7 +7,6 @@ import time
 import base64
 import os
 import io
-import random
 
 # Intentamos importar plotly
 try:
@@ -127,7 +126,6 @@ st.markdown(f"""
     padding: 20px;
     border-radius: var(--card-radius);
 }}
-/* Animación fantasmas */
 @keyframes floatY {{
     0% {{ top: -10%; }}
     100% {{ top: 110%; }}
@@ -137,16 +135,16 @@ st.markdown(f"""
 
 # -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) --------------------
 st.markdown("""
-<div style="position:fixed; top:-10%; right:95%; font-size:20px; opacity:0.8; animation:floatY 7s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-5%; right:92%; font-size:18px; opacity:0.85; animation:floatY 8s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-8%; right:94%; font-size:22px; opacity:0.75; animation:floatY 6.5s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-3%; right:91%; font-size:16px; opacity:0.9; animation:floatY 7.5s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-6%; right:93%; font-size:18px; opacity:0.8; animation:floatY 7.2s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-2%; right:90%; font-size:15px; opacity:0.85; animation:floatY 8.3s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-9%; right:92%; font-size:19px; opacity:0.8; animation:floatY 6.8s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-4%; right:94%; font-size:17px; opacity:0.88; animation:floatY 7.1s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-7%; right:91%; font-size:16px; opacity:0.9; animation:floatY 8.0s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-3%; right:95%; font-size:15px; opacity:0.85; animation:floatY 7.7s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-10%; right:5%; font-size:20px; opacity:0.85; animation:floatY 7s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-5%; right:8%; font-size:18px; opacity:0.85; animation:floatY 8s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-8%; right:6%; font-size:22px; opacity:0.8; animation:floatY 6.5s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-3%; right:9%; font-size:16px; opacity:0.9; animation:floatY 7.5s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-6%; right:7%; font-size:18px; opacity:0.85; animation:floatY 7.2s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-2%; right:10%; font-size:15px; opacity:0.88; animation:floatY 8.3s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-9%; right:6%; font-size:19px; opacity:0.8; animation:floatY 6.8s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-4%; right:8%; font-size:17px; opacity:0.88; animation:floatY 7.1s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-7%; right:9%; font-size:16px; opacity:0.9; animation:floatY 8.0s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-3%; right:5%; font-size:15px; opacity:0.85; animation:floatY 7.7s linear infinite; z-index:0;">👻</div>
 """, unsafe_allow_html=True)
 
 # -----------------------------
