@@ -136,7 +136,7 @@ st.markdown(f"""
 
 
 
-# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda) --------------------
+# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
 st.markdown("""
 <style>
 @keyframes floatDown {
@@ -144,17 +144,23 @@ st.markdown("""
     50% { top: 90%; }
     100% { top: -10%; }
 }
+
+@keyframes floatY {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(10px); }
+    100% { transform: translateY(0); }
+}
 </style>
 
-<!-- Fantasmas en la parte derecha (arriba → abajo) -->
-<div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:1; animation:floatDown 8s linear infinite; z-index:9999;">👻</div>
-<div style="position:fixed; top:20%; right:7%; font-size:28px; opacity:0.9; animation:floatDown 9s linear infinite; z-index:9999;">👻</div>
-<div style="position:fixed; top:10%; right:6%; font-size:25px; opacity:0.85; animation:floatDown 7s linear infinite; z-index:9999;">👻</div>
+<!-- Fantasmas en la parte derecha (arriba → abajo, más lentos) -->
+<div style="position:fixed; top:0%; right:5%; font-size:30px; opacity:1; animation:floatDown 15s linear infinite; z-index:9999;">👻</div>
+<div style="position:fixed; top:20%; right:7%; font-size:28px; opacity:0.9; animation:floatDown 18s linear infinite; z-index:9999;">👻</div>
+<div style="position:fixed; top:10%; right:6%; font-size:25px; opacity:0.85; animation:floatDown 14s linear infinite; z-index:9999;">👻</div>
 
-<!-- Calabazas en la parte inferior izquierda -->
-<div style="position:fixed; bottom:5%; left:5%; font-size:22px; opacity:0.9; z-index:9999;">🎃</div>
-<div style="position:fixed; bottom:8%; left:7%; font-size:20px; opacity:0.85; z-index:9999;">🎃</div>
-<div style="position:fixed; bottom:6%; left:9%; font-size:18px; opacity:0.9; z-index:9999;">🎃</div>
+<!-- Calabazas en la parte inferior izquierda (rebote suave) -->
+<div style="position:fixed; bottom:5%; left:5%; font-size:22px; opacity:0.9; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
+<div style="position:fixed; bottom:8%; left:7%; font-size:20px; opacity:0.85; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
+<div style="position:fixed; bottom:6%; left:9%; font-size:18px; opacity:0.9; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🎃</div>
 """, unsafe_allow_html=True)
 
 
@@ -474,6 +480,7 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
+
 
 
 
