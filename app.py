@@ -207,7 +207,11 @@ st.markdown(f"""
     padding: 12px 15px;
     font-size: 15px;
 }}
-/* ... otros estilos de alerta ... */
+/* Estilo para Selectbox - Opcional */
+[data-testid="stForm"] label, [data-testid="stForm"] p {{
+    font-weight: 500;
+    color: #34495e;
+}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -323,6 +327,9 @@ def switch_to_chat():
     """Cambia el estado de sesión para mostrar la vista del chat."""
     st.session_state.current_view = 'chat'
     st.session_state.prediction_result = None # Limpiamos también el resultado
+    # Limpiamos los filtros de restricciones al volver al chat
+    if 'filtro_restriccion' in st.session_state:
+        del st.session_state['filtro_restriccion'] 
     st.rerun()
 
 with col_header_button:
@@ -468,10 +475,11 @@ if excel_file:
     # FUNCION DE RESPUESTA (Se mantiene, solo si Excel está cargado)
     # -----------------------------
     def generar_respuesta(pregunta):
-        # [La lógica de generar_respuesta se mantiene sin cambios, usa df_avance, etc.]
+        # La función ahora devuelve una clave para identificar el tipo de respuesta (e.g., 'restricciones')
         pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
         proyecto, proyecto_norm = extraer_proyecto(pregunta)
-        # ... [El cuerpo de tu función original] ...
+        
+        # ... [Resto de lógica de palabras clave] ...
         estado_diseno_keywords = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
         diseño_keywords = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
                             "avance de diseno", "avance de diseño", "diseno", "diseño"]
@@ -479,30 +487,30 @@ if excel_file:
 
         if any(k in pregunta_norm for k in estado_diseno_keywords):
             if df_inventario_diseno.empty:
-                return "❌ No hay registros en la hoja InventarioDiseño.", None
-            return "📐 Estado de Diseño (InventarioDiseño):", df_inventario_diseno
+                return "❌ No hay registros en la hoja InventarioDiseño.", None, None, 'general'
+            return "📐 Estado de Diseño (InventarioDiseño):", df_inventario_diseno, None, 'general'
 
         if any(k in pregunta_norm for k in diseño_keywords):
             if ("avance" in pregunta_norm) or (pregunta_norm.strip() in ["diseno", "diseño"]):
                 if df_avance_diseno.empty:
-                    return "❌ No hay registros en la hoja AvanceDiseño.", None
-                return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
+                    return "❌ No hay registros en la hoja AvanceDiseño.", None, None, 'general'
+                return "📐 Avance de Diseño (tabla completa):", df_avance_diseno, None, 'general'
 
         if any(k in pregunta_norm for k in obra_keywords):
             df = df_avance.copy()
             if proyecto_norm:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
             if df.empty:
-                return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
-            return f"📊 Avance de obra en {proyecto or 'todos'}:", df
+                return f"❌ No hay registros de avance en {proyecto or 'todos'}", None, None, 'general'
+            return f"📊 Avance de obra en {proyecto or 'todos'}:", df, None, 'general'
 
         if "avance" in pregunta_norm:
             df = df_avance.copy()
             if proyecto_norm:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
             if df.empty:
-                return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
-            return f"📊 Avances en {proyecto or 'todos'}:", df
+                return f"❌ No hay registros de avance en {proyecto or 'todos'}", None, None, 'general'
+            return f"📊 Avances en {proyecto or 'todos'}:", df, None, 'general'
 
         if "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
             df = df_responsables.copy()
@@ -516,18 +524,19 @@ if excel_file:
             if cargo_encontrado:
                 df = df[df["Cargo"].astype(str).str.lower().str.contains(cargo_encontrado.lower(), na=False)]
                 if df.empty:
-                    return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None
-                return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df
+                    return f"❌ No encontré responsables con cargo '{cargo_encontrado}' en {proyecto or 'todos'}", None, None, 'general'
+                return f"👷 Responsables con cargo **{cargo_encontrado}** en {proyecto or 'todos'}:", df, None, 'general'
             if df.empty:
-                return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None
-            return f"👷 Responsables en {proyecto or 'todos'}:", df
+                return f"❌ No hay responsables registrados en {proyecto or 'todos'}", None, None, 'general'
+            return f"👷 Responsables en {proyecto or 'todos'}:", df, None, 'general'
 
+        # 🎯 Bloque de Restricciones (Añadimos la clave 'restricciones')
         if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
             df = df_restricciones.copy()
             if proyecto_norm:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
             if df.empty:
-                return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
+                return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None, None, 'general'
 
             grafico = None
             if PLOTLY_AVAILABLE and "tipoRestriccion" in df.columns:
@@ -549,21 +558,22 @@ if excel_file:
                     margin=dict(t=30, l=10, r=10, b=10)
                 )
 
-            return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico
+            # Devolvemos el DataFrame COMPLETO de restricciones y la clave
+            return f"⚠️ Restricciones en {proyecto or 'todos'}:", df, grafico, 'restricciones'
 
         if any(k in pregunta_norm for k in ["sostenibilidad", "edge", "sostenible", "ambiental"]):
             df = df_sostenibilidad.copy()
             if proyecto_norm:
                 df = df[df["Proyecto_norm"] == proyecto_norm]
             if df.empty:
-                return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None
-            return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df
+                return f"❌ No hay registros de sostenibilidad en {proyecto or 'todos'}", None, None, 'general'
+            return f"🌱 Información de sostenibilidad en {proyecto or 'todos'}:", df, None, 'general'
 
         return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
-                "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
+                "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None, None, 'general'
 
 # -----------------------------
-# FUNCIÓN DE PREDICCIÓN (MLP)
+# FUNCIÓN DE PREDICCIÓN (MLP) - (Se mantiene igual)
 # -----------------------------
 def mostrar_predictor_mlp():
     """Muestra la interfaz de entrada y hace la predicción del MLP."""
@@ -689,72 +699,113 @@ elif st.session_state.current_view == 'chat':
         col_input, col_enviar, col_voz = st.columns([6, 1.2, 1])
         
         with col_input:
-            pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed")
+            # Usamos la misma clave para que el texto persista si se presiona el botón de voz
+            pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed", key='chat_query')
         
         with col_enviar:
+            # Le decimos a Streamlit que, si se presiona "Buscar", debe ejecutar el callback
             enviar = st.form_submit_button("Buscar", key="btn_buscar", type="secondary", use_container_width=True) 
         
         with col_voz:
             voz = st.form_submit_button("🎤 Voz", key="voz", help="Activar entrada por voz", type="secondary", use_container_width=True)
 
-
-    # Lógica de botones del CHAT
+    # Lógica de procesamiento de la pregunta
     if enviar and pregunta:
         if not excel_file:
             st.error("No se puede consultar. ¡Sube el archivo Excel en la barra lateral primero!")
         else:
-            respuesta = generar_respuesta(pregunta)
+            # 💡 Guardamos la pregunta y el resultado para que persistan si se usa el filtro de restricción.
+            st.session_state['last_query_text'] = pregunta
+            # Generar respuesta: ahora devuelve 4 valores
+            st.session_state['last_query_result'] = generar_respuesta(pregunta)
+            # Aseguramos que el filtro se resetee a 'Todos' si es una nueva pregunta.
+            if 'filtro_restriccion' in st.session_state:
+                st.session_state['filtro_restriccion'] = 'Todas las restricciones'
+            st.rerun() 
 
-            # Ver si regresó gráfico
-            if len(respuesta) == 3:
-                texto, resultado, grafico = respuesta
-            else:
-                texto, resultado = respuesta
-                grafico = None
-            
-            # Contenedor de la respuesta (mar-card)
+    elif voz:
+        st.info("Función de voz activada (Requiere integración de STT)")
+
+    
+    # ----------------------------------------------------
+    # 🎯 BLOQUE DE RESULTADOS
+    # ----------------------------------------------------
+    if 'last_query_result' in st.session_state:
+        # Desempaquetar el resultado:
+        # texto: título, resultado: DataFrame, grafico: Plotly Figure, tipo: 'restricciones' o 'general'
+        texto, resultado, grafico, tipo_respuesta = st.session_state['last_query_result']
+
+        if resultado is None:
+            # Mostrar el mensaje de error o "No entendí"
+            st.markdown(
+                f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-size: 18px; font-weight:700; margin:0 0 15px 0;'>{texto}</p></div>",
+                unsafe_allow_html=True
+            )
+        else:
+            # --- Renderizar la Tarjeta de Respuesta ---
             st.markdown(
                 f"<div class='mar-card'><p style='color:{PALETTE['primary']}; font-size: 18px; font-weight:700; margin:0 0 15px 0;'>{texto}</p>",
                 unsafe_allow_html=True
             )
             
-            # Contenedor para el gráfico y la tabla
-            with st.container():
-                if grafico:
-                    st.plotly_chart(grafico, use_container_width=True)
+            # Contenedor para el gráfico
+            if grafico:
+                st.plotly_chart(grafico, use_container_width=True)
+            
+            # --- Lógica de Filtro para Restricciones ---
+            df_mostrar = resultado.copy()
 
-                if isinstance(resultado, pd.DataFrame) and not resultado.empty:
-                    # 🟢 CORRECCIÓN: Cambiamos el límite de 15 a 70
-                    max_preview = 70 
-                    if len(resultado) > max_preview:
-                        st.info(f"Mostrando primeras **{max_preview} filas** de {len(resultado)}. Utiliza la barra lateral para navegar y exportar.")
-                        df_preview = resultado.head(max_preview)
-                    else:
-                        df_preview = resultado
-
-                    # Estilo de la tabla mejorado
-                    styled_df = df_preview.style.set_table_styles([
-                        {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
-                        {'selector': 'th', 'props': [('background-color', PALETTE['primary']),
-                                                     ('color', 'white'),
-                                                     ('font-weight', 'bold'),
-                                                     ('text-align', 'center'),
-                                                     ('border-radius', '4px 4px 0 0')]},
-                        {'selector': 'td', 'props': [('padding', '8px 12px'), ('vertical-align', 'middle')]}
-                    ]).hide(axis="index")
-                    st.dataframe(styled_df, use_container_width=True)
-                    
-                elif resultado is None:
-                    pass 
+            if tipo_respuesta == 'restricciones' and 'tipoRestriccion' in resultado.columns:
                 
+                # Opciones únicas de filtro
+                opciones = ['Todas las restricciones'] + sorted(df_mostrar['tipoRestriccion'].astype(str).unique().tolist())
+                
+                # El selectbox que actúa como filtro. Mantiene el estado con la clave 'filtro_restriccion'.
+                filtro = st.selectbox(
+                    "Filtrar por Tipo de Restricción:", 
+                    options=opciones,
+                    key='filtro_restriccion' # Clave para que Streamlit recuerde el valor
+                )
+                
+                # Aplicar el filtro
+                if filtro != 'Todas las restricciones':
+                    df_mostrar = df_mostrar[df_mostrar['tipoRestriccion'].astype(str) == filtro]
+                    
+                st.markdown("---") # Separador visual
+
+            # --- Mostrar la Tabla (filtrada o completa) ---
+            if not df_mostrar.empty:
+                max_preview = 70 
+                
+                if len(df_mostrar) > max_preview:
+                    st.info(f"Mostrando primeras **{max_preview} filas** de {len(df_mostrar)}. Utiliza la barra lateral para navegar y exportar.")
+                    df_preview = df_mostrar.head(max_preview)
+                else:
+                    df_preview = df_mostrar
+
+                # Estilo de la tabla mejorado
+                styled_df = df_preview.style.set_table_styles([
+                    {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f4f6f8')]},
+                    {'selector': 'th', 'props': [('background-color', PALETTE['primary']),
+                                                 ('color', 'white'),
+                                                 ('font-weight', 'bold'),
+                                                 ('text-align', 'center'),
+                                                 ('border-radius', '4px 4px 0 0')]},
+                    {'selector': 'td', 'props': [('padding', '8px 12px'), ('vertical-align', 'middle')]}
+                ]).hide(axis="index")
+                
+                st.dataframe(styled_df, use_container_width=True)
+                
+            elif tipo_respuesta == 'restricciones' and filtro != 'Todas las restricciones':
+                 st.warning(f"No hay registros de restricciones del tipo: **{filtro}**.")
+
             st.markdown("</div>", unsafe_allow_html=True) # Cierre del mar-card de respuesta
-    elif voz:
-        st.info("Función de voz activada (Requiere integración de STT)")
+
 
 # -----------------------------
 # FOOTER
 # -----------------------------
 st.markdown(
-    f"<br><hr style='border-top: 1px solid #e0e0e0;'><p style='font-size:12px;color:#6b7280; text-align: right;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.1</p>",
+    f"<br><hr style='border-top: 1px solid #e0e0e0;'><p style='font-size:12px;color:#6b7280; text-align: right;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.2 (Con Filtro Interactivo)</p>",
     unsafe_allow_html=True
 )
