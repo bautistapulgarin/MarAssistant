@@ -352,6 +352,11 @@ def switch_to_chat():
         del st.session_state['filtro_restriccion'] 
     if 'tipo_restriccion_preseleccionado' in st.session_state:
         del st.session_state['tipo_restriccion_preseleccionado']
+    if 'last_filter_value' in st.session_state:
+        del st.session_state['last_filter_value']
+    # También limpiamos el estado auxiliar de búsqueda
+    if '_execute_search' in st.session_state:
+        st.session_state._execute_search = False 
     st.rerun()
 
 with col_header_button:
@@ -797,7 +802,7 @@ def mostrar_predictor_mlp():
 
 
 # -----------------------------
-# INTERFAZ DE CHAT
+# INTERFAZ DE CHAT (CORREGIDA)
 # -----------------------------
 def mostrar_chat():
     """Muestra la interfaz de chat y procesamiento de resultados."""
@@ -807,19 +812,39 @@ def mostrar_chat():
                 
     col1, col2, col3 = st.columns([6, 1.5, 1.5])
     
+    # Inicializa el estado auxiliar para la búsqueda si no existe
+    if '_execute_search' not in st.session_state:
+        st.session_state._execute_search = False
+
+    # Definición de la función de callback
+    def set_search_state():
+        st.session_state._execute_search = True
+        
     with col1:
         # Usamos el input de texto del chat
         user_input = st.text_input("Ingresa tu pregunta sobre los datos:", key="user_input_chat", 
                                    placeholder="Ej: avance de obra en Proyecto Ejemplo 1...",
                                    label_visibility="collapsed")
+    
     with col2:
-        # Botón de Buscar
-        st.button("🔍 Buscar", key="btn_buscar", type="primary", use_container_width=True)
+        # Botón de Buscar: usa el callback para establecer el estado auxiliar.
+        st.button("🔍 Buscar", key="btn_buscar", type="primary", use_container_width=True, on_click=set_search_state)
+        
     with col3:
         # Botón para Voz (Dummy, solo estético)
         st.button("🎙️ Voz", key="voz", type="secondary", use_container_width=True)
 
-    if user_input and st.session_state.btn_buscar:
+    # El botón st.button("Buscar") ya fuerza un rerun y pone st.session_state.btn_buscar en True.
+    # Usaremos el estado auxiliar `_execute_search` o la clave del botón como disparador.
+    is_search_triggered = st.session_state._execute_search or st.session_state.get('btn_buscar', False)
+
+    if user_input and is_search_triggered:
+        
+        # 🚨 Limpiar el estado auxiliar INMEDIATAMENTE después de entrar al bloque,
+        # para que no se repita el procesamiento en el siguiente rerun.
+        st.session_state._execute_search = False
+        # Nota: no tocamos st.session_state.btn_buscar directamente aquí, lo dejamos a Streamlit.
+
         with st.spinner('Procesando consulta...'):
             st.markdown("---")
             # Llamar a la función principal de respuesta
@@ -874,20 +899,17 @@ def mostrar_chat():
                 
             st.markdown("---")
         
-        # Limpiamos el estado del botón de buscar para evitar repeticiones
-        st.session_state.btn_buscar = False
     
     # Manejo de la lógica del selectbox de restricciones para que se actualice al cambiar la selección
     if 'filtro_restriccion' in st.session_state and st.session_state.filtro_restriccion:
-        # Solo necesitamos marcar el botón de buscar como True temporalmente para que el if principal se re-ejecute
-        # Si la pregunta no se ha borrado y el filtro de restricción ha cambiado, forzamos un re-run con el botón activo.
+        # Solo necesitamos marcar el estado auxiliar como True temporalmente para que el if principal se re-ejecute
         if 'last_filter_value' not in st.session_state or st.session_state.last_filter_value != st.session_state.filtro_restriccion:
-            st.session_state.btn_buscar = True
+            st.session_state._execute_search = True  # Usamos el estado auxiliar para forzar el re-run
             st.session_state.last_filter_value = st.session_state.filtro_restriccion
             st.rerun()
             
     # Mensaje de ayuda inicial o si no hay entrada
-    elif not user_input:
+    elif not user_input and not is_search_triggered:
         st.info("Ingresa tu consulta para empezar. Recuerda subir el archivo Excel primero.")
 
 
