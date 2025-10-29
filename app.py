@@ -29,10 +29,10 @@ st.set_page_config(
 # PALETA DE COLORES (UX / BI)
 # -----------------------------
 PALETTE = {
-    "primary": "#154872",  # Azul Oscuro (Marval Primary)
-    "accent": "#5DC0DC",   # Azul Claro (Marval Accent)
-    "muted": "#437FAC",    # Azul Medio (Hover/Muted)
-    "bg": "#ffffff"        # MODIFICADO: Fondo blanco puro
+    "primary": "#154872",  # Azul Oscuro (Buscar color base)
+    "accent": "#5DC0DC",   # Azul Claro (Voz color base)
+    "muted": "#437FAC",    # Azul Medio (Buscar color hover)
+    "bg": "#ffffff"        # Fondo blanco puro
 }
 
 # -----------------------------
@@ -56,8 +56,8 @@ st.markdown(f"""
 /* Aplicación Principal y Fuente */
 .stApp {{
     background-color: var(--mar-bg);
-    color: #1b2635; /* Color de texto oscuro para alta legibilidad */
-    font-family: 'Roboto', sans-serif; /* Fuente moderna y legible */
+    color: #1b2635; 
+    font-family: 'Roboto', sans-serif;
 }}
 
 /* Títulos y Subtítulos */
@@ -107,9 +107,10 @@ st.markdown(f"""
     font-style: italic;
 }}
 
-/* Estilo para los botones (Primario: Buscar) */
+/* Estilo para el botón PRIMARIO (BUSCAR) */
 .stButton>button[kind="primary"] {{
-    background-color: var(--mar-primary);
+    /* Color base: #154872 */
+    background-color: var(--mar-primary); 
     color: white;
     border-radius: 8px;
     padding: 0 20px;
@@ -120,11 +121,12 @@ st.markdown(f"""
     margin-top: 0px; /* ALINEACIÓN VERTICAL */
 }}
 .stButton>button[kind="primary"]:hover {{
+    /* Color hover: #437FAC */
     background-color: var(--mar-muted);
     color: white;
 }}
 
-/* Estilo para el botón secundario (Voz) */
+/* Estilo para el botón SECUNDARIO (VOZ) */
 .stButton>button[kind="secondary"] {{
     background-color: var(--mar-accent) !important;
     color: var(--mar-primary) !important;
@@ -436,7 +438,7 @@ def generar_respuesta(pregunta):
             "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None
 
 # -----------------------------
-# INTERFAZ: input + botón al lado + voz - ALINEACIÓN CORREGIDA
+# INTERFAZ: input + botón al lado + voz 
 # -----------------------------
 
 # Tarjeta informativa (más limpia)
@@ -453,17 +455,16 @@ with st.form("query_form", clear_on_submit=False):
     with col_input:
         pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed")
     
-    # IMPORTANTE: Los botones se definen *dentro* del contexto del formulario 
-    # y en las columnas correctas para que Streamlit los alinee automáticamente 
-    # si tienen la misma altura CSS.
     with col_enviar:
+        # Botón Buscar (Primary)
         enviar = st.form_submit_button("Buscar", type="primary", use_container_width=True) 
     
     with col_voz:
+        # Botón Voz (Secondary)
         voz = st.form_submit_button("🎤 Voz", key="voz", help="Activar entrada por voz", type="secondary", use_container_width=True)
 
 
-# Lógica de botones (ahora usa `enviar` o `voz` del formulario)
+# Lógica de botones
 if enviar and pregunta:
     respuesta = generar_respuesta(pregunta)
 
