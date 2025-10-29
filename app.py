@@ -759,7 +759,7 @@ elif st.session_state.current_view == 'chat':
         st.markdown("<div style='height:20px;'></div>", unsafe_allow_html=True)
         st.markdown(f'<div class="mar-card">', unsafe_allow_html=True)
 
-        # 🎯 CASO DE RESTRICCIONES (Ajuste principal aquí: tabla ANTES del gráfico)
+        # 🎯 CASO DE RESTRICCIONES (Ajuste principal: tabla ANTES del gráfico y corrección de la excepción)
         if tipo_resultado == 'restricciones':
             
             # --- 1. Control de Filtro (Selector) ---
@@ -772,15 +772,16 @@ elif st.session_state.current_view == 'chat':
                 if preselect in tipos_restriccion:
                     default_index = tipos_restriccion.index(preselect)
 
-            # El selector interactivo para filtrar la tabla
-            st.session_state['filtro_restriccion'] = st.selectbox(
+            # EL WIDGET SELECTBOX CORREGIDO: SE ELIMINA LA ASIGNACIÓN MANUAL PARA EVITAR LA APIEXCEPTION
+            st.selectbox( 
                 f"🔎 Filtro por Tipo de Restricción ({titulo.split(' en ')[-1].replace(':', '').strip()})",
                 options=tipos_restriccion,
                 index=default_index,
-                key='filtro_restriccion',
+                key='filtro_restriccion', # El widget se auto-asigna a st.session_state['filtro_restriccion']
                 help="Selecciona un tipo para ver solo las restricciones de ese grupo."
             )
             
+            # Ahora leemos el valor automáticamente guardado por el widget
             filtro_seleccionado = st.session_state['filtro_restriccion']
 
             # --- 2. Preparar la Tabla (Aplicar Filtro) ---
@@ -801,7 +802,7 @@ elif st.session_state.current_view == 'chat':
             # --- 3. Mostrar la Tabla (Contexto) ---
             st.dataframe(df_contexto, use_container_width=True, hide_index=True)
             
-            # --- 4. Mostrar el Gráfico (DEBAJO DE LA TABLA) ---
+            # --- 4. Mostrar el Gráfico (DEBAJO DE LA TABLA, como se solicitó) ---
             if grafico:
                 st.markdown("---")
                 st.markdown(f'### 📊 Distribución General de Tipos')
