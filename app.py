@@ -512,14 +512,13 @@ if excel_file:
     # FUNCION DE RESPUESTA
     # -----------------------------
     def generar_respuesta(pregunta):
-        # La función ahora devuelve una clave para identificar el tipo de respuesta (e.g., 'restricciones')
-        # Salida: titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado
+        # La función devuelve: titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado
         pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
         proyecto, proyecto_norm = extraer_proyecto(pregunta)
         
         # ... [Resto de lógica de palabras clave (Avance, Responsables, etc. - se mantiene)] ...
 
-        # 🎯 Bloque de Restricciones (Ajustado: No calcula la diferencia aquí, solo devuelve el DF filtrado por Proyecto)
+        # 🎯 Bloque de Restricciones (Ajustado)
         if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
             df = df_restricciones.copy()
             
@@ -725,7 +724,7 @@ elif st.session_state.current_view == 'chat':
         if not excel_file:
             st.error("No se puede consultar. ¡Sube el archivo Excel en la barra lateral primero!")
         else:
-            # 💡 Generar respuesta: ahora devuelve 5 valores (el nuevo DF de días se calcula después)
+            # Generar respuesta: ahora devuelve 5 valores
             st.session_state['last_query_text'] = pregunta
             
             # Intentamos obtener el resultado (esperamos 5 valores)
@@ -752,7 +751,7 @@ elif st.session_state.current_view == 'chat':
             st.rerun() # Dispara el re-render para mostrar los resultados
 
     # -----------------------------
-    # MOSTRAR RESULTADOS (Ajustado para el recalculo en el filtro)
+    # MOSTRAR RESULTADOS (Ajustado para el recalculo en el filtro y la nueva columna)
     # -----------------------------
     if 'last_query_result' in st.session_state:
         # Recuperamos los 4 elementos
@@ -790,43 +789,47 @@ elif st.session_state.current_view == 'chat':
             # Dividimos la sección de resultados en dos columnas (después de aplicar el filtro)
             col_dias, col_filtro = st.columns([1, 2])
             
-            ## 🎯 CAMBIO CRÍTICO: RECALCULAR LA TARJETA CON df_filtrado
+            # 🎯 CAMBIO CLAVE 1: Cálculo de DiasDiferencia en el df_filtrado para mostrarlo en la tabla
+            if all(col in df_filtrado.columns for col in ["FechaCompromisoActual", "FechaCompromisoInicial"]):
+                # Convertir a datetime (manejando errores)
+                df_filtrado['FechaCompromisoActual'] = pd.to_datetime(df_filtrado['FechaCompromisoActual'], errors='coerce')
+                df_filtrado['FechaCompromisoInicial'] = pd.to_datetime(df_filtrado['FechaCompromisoInicial'], errors='coerce')
+                
+                # Calcular la diferencia en días
+                df_filtrado['DiasDiferencia'] = (df_filtrado['FechaCompromisoActual'] - df_filtrado['FechaCompromisoInicial']).dt.days
+            else:
+                 df_filtrado['DiasDiferencia'] = pd.NA # Si faltan columnas, agregamos NA
+
+            
+            ## 🎯 CAMBIO CLAVE 2: Recalcular la tarjeta de resumen usando df_filtrado (y quitando la suma total)
             with col_dias:
                 dias_diferencia_df = None
-                if all(col in df_filtrado.columns for col in ["FechaCompromisoActual", "FechaCompromisoInicial"]):
-                    # Convertir a datetime (manejando errores)
-                    df_temp = df_filtrado.copy()
-                    df_temp['FechaCompromisoActual'] = pd.to_datetime(df_temp['FechaCompromisoActual'], errors='coerce')
-                    df_temp['FechaCompromisoInicial'] = pd.to_datetime(df_temp['FechaCompromisoInicial'], errors='coerce')
+                
+                # Solo consideramos filas con valores válidos para el cálculo de métricas
+                df_valido = df_filtrado.dropna(subset=['DiasDiferencia']).copy()
+
+                if not df_valido.empty:
+                    # Filtramos solo las que tienen retraso (diferencia > 0)
+                    restricciones_reprogramadas = df_valido[df_valido['DiasDiferencia'] > 0]
+                    total_restricciones = len(df_valido)
+                    total_restricciones_reprogramadas = len(restricciones_reprogramadas)
+                    # total_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].sum() # CAMPO ELIMINADO
+                    promedio_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].mean()
                     
-                    # Calcular la diferencia en días, solo para filas válidas
-                    df_valido = df_temp.dropna(subset=['FechaCompromisoActual', 'FechaCompromisoInicial']).copy()
-                    if not df_valido.empty:
-                        df_valido['DiasDiferencia'] = (df_valido['FechaCompromisoActual'] - df_valido['FechaCompromisoInicial']).dt.days
-                        
-                        # Creamos un DataFrame resumen para la nueva tarjeta
-                        total_restricciones = len(df_valido)
-                        restricciones_reprogramadas = df_valido[df_valido['DiasDiferencia'] > 0]
-                        total_restricciones_reprogramadas = len(restricciones_reprogramadas)
-                        total_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].sum()
-                        promedio_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].mean()
-                        
-                        # Creamos la tabla de resumen
-                        data = {
-                            'Métrica': [
-                                'Total Restricciones con Fechas',
-                                'Restricciones Reprogramadas (Días > 0)', 
-                                'Total Días de Retraso (Suma)', 
-                                'Promedio Días de Retraso (Por Restricción Reprogramada)'
-                            ],
-                            'Valor': [
-                                total_restricciones,
-                                total_restricciones_reprogramadas, 
-                                f"{total_dias_retraso:,.0f}", 
-                                f"{promedio_dias_retraso:,.2f}" if not pd.isna(promedio_dias_retraso) else "0.00"
-                            ]
-                        }
-                        dias_diferencia_df = pd.DataFrame(data)
+                    # Creamos la tabla de resumen (CON LOS CAMPOS CORREGIDOS)
+                    data = {
+                        'Métrica': [
+                            'Total Restricciones (con Fechas)',
+                            'Restricciones Reprogramadas (Días > 0)', 
+                            'Promedio Días de Retraso (Por Reprogramada)'
+                        ],
+                        'Valor': [
+                            total_restricciones,
+                            total_restricciones_reprogramadas, 
+                            f"{promedio_dias_retraso:,.2f}" if not pd.isna(promedio_dias_retraso) else "0.00"
+                        ]
+                    }
+                    dias_diferencia_df = pd.DataFrame(data)
 
                 if dias_diferencia_df is not None:
                     st.markdown('<div class="mar-card" style="background-color:#fff3e0; padding: 15px;">', unsafe_allow_html=True)
@@ -848,7 +851,22 @@ elif st.session_state.current_view == 'chat':
             # Columna principal con la tabla de detalle
             with col_filtro:
                 st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-top:15px; margin-bottom:10px;">Detalle de Restricciones ({len(df_filtrado)} encontradas)</p>', unsafe_allow_html=True)
-                st.dataframe(df_filtrado.drop(columns=["Proyecto_norm"], errors='ignore'), use_container_width=True)
+                
+                # Definimos las columnas a mostrar y reordenamos
+                columns_to_show = [
+                    'Descripción', 
+                    'tipoRestriccion', 
+                    'FechaCompromisoInicial', 
+                    'FechaCompromisoActual', 
+                    'DiasDiferencia', # 🎯 CAMBIO CLAVE 3: Agregamos la nueva columna aquí
+                    'Responsable', 
+                    'Comentarios'
+                ]
+                
+                # Seleccionamos las columnas que existen y mostramos el DataFrame
+                df_display = df_filtrado.filter(items=columns_to_show).rename(columns={'DiasDiferencia': 'Diferencia (Días)'})
+                
+                st.dataframe(df_display, use_container_width=True)
                 
             # Gráfico de Restricciones (si aplica, en la parte inferior para no competir con el DF de días)
             if grafico:
