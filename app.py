@@ -176,6 +176,22 @@ st.markdown(f"""
     border: 1px solid #e69524 !important;
 }}
 
+/* Estilo para el botón de Devolver (en la vista de Predicción) */
+.stButton>button[key="btn_devolver"] {{
+    background-color: #f0f2f6 !important; /* Gris claro */
+    color: #34495e !important;
+    border: 1px solid #dcdfe6 !important;
+    border-radius: 8px !important;
+    padding: 0 15px !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-top: 0px; 
+}}
+.stButton>button[key="btn_devolver"]:hover {{
+    background-color: #e9ecef !important;
+}}
+
 
 /* Sidebar */
 [data-testid="stSidebar"] {{
@@ -253,7 +269,6 @@ if NN_AVAILABLE:
                 return model, scaler, features
             
             MODELO_NN, SCALER_NN, FEATURES_NN = load_mlp_artifacts()
-            # st.sidebar.success("✅ Modelo MLP de Contratos cargado.") # Quitamos el aviso constante del sidebar
         except Exception as e:
             st.sidebar.error(f"Error al cargar el MLP o artefactos: {e}")
             MODELO_NN, SCALER_NN, FEATURES_NN = None, None, None
@@ -300,8 +315,15 @@ with col_header_title:
 def switch_to_predictor():
     """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
     st.session_state.current_view = 'predictor'
-    # 💥 CORRECCIÓN 1: Reseteamos el resultado de predicción al cambiar la vista
+    # Reseteamos el resultado de predicción al cambiar la vista para que inicie limpio
     st.session_state.prediction_result = None
+
+# Función para volver al chat
+def switch_to_chat():
+    """Cambia el estado de sesión para mostrar la vista del chat."""
+    st.session_state.current_view = 'chat'
+    st.session_state.prediction_result = None # Limpiamos también el resultado
+    st.rerun()
 
 with col_header_button:
     st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
@@ -315,7 +337,7 @@ with col_header_button:
 if 'current_view' not in st.session_state:
     st.session_state.current_view = 'chat'
 
-# 💥 CORRECCIÓN 2: Inicializar el estado de la predicción
+# Inicializar el estado de la predicción
 if 'prediction_result' not in st.session_state:
     st.session_state.prediction_result = None
 
@@ -328,12 +350,10 @@ excel_file = st.sidebar.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xl
 img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
 st.sidebar.markdown("---")
 
-# Botón para volver al chat si estamos en el predictor
+# Botón para volver al chat si estamos en el predictor (Mantenemos este por consistencia)
 if 'current_view' in st.session_state and st.session_state.current_view == 'predictor':
-    if st.sidebar.button("⬅️ Volver al Asistente (Chat)"):
-        st.session_state.current_view = 'chat'
-        st.session_state.prediction_result = None # También limpiamos al volver
-        st.rerun()
+    # Eliminamos el botón de aquí para evitar duplicidad y usar el principal
+    pass
 
 st.sidebar.markdown("💡 **Consejo:** Asegúrate de que tu archivo Excel contenga las hojas requeridas: *Avance*, *Responsables*, *Restricciones*, *Sostenibilidad*, *AvanceDiseño*, *InventarioDiseño*.")
 st.sidebar.markdown(f'<p style="font-size:12px; color:#6b7280;">Coloca <code>assets/logoMar.png</code> y los archivos <code>*.joblib</code> junto a este archivo.</p>', unsafe_allow_html=True)
@@ -556,12 +576,25 @@ def mostrar_predictor_mlp():
         st.error("No se pudo cargar el modelo de predicción de contratos (MLP). Verifica los archivos `.joblib` en la carpeta `assets`.")
         return
 
-    st.markdown(f'<div class="mar-card"><p style="color:{PALETTE["primary"]}; font-size: 22px; font-weight:700; margin:0 0 8px 0;">🔮 Predictor de Cumplimiento de Contratos</p>'
-                '<p style="margin:0 0 0 0;">Ingresa los parámetros del contrato para predecir la probabilidad de cumplimiento a tiempo.</p></div>',
-                unsafe_allow_html=True)
+    # Creamos un contenedor para el título y el botón de volver
+    col_pred_title, col_pred_back = st.columns([6, 1.5])
     
+    with col_pred_title:
+        st.markdown(f'<div class="mar-card" style="margin-bottom: 0px;"><p style="color:{PALETTE["primary"]}; font-size: 22px; font-weight:700; margin:0 0 8px 0;">🔮 Predictor de Cumplimiento de Contratos</p>'
+                    '<p style="margin:0 0 0 0;">Ingresa los parámetros del contrato para predecir la probabilidad de cumplimiento a tiempo.</p></div>',
+                    unsafe_allow_html=True)
+    
+    with col_pred_back:
+        st.markdown("<div style='height:42px;'></div>", unsafe_allow_html=True) # Espacio para alinear
+        # 🟢 CORRECCIÓN: Botón de devolver en la vista principal de Predicción
+        if st.button("⬅️ Devolver", key="btn_devolver", type="secondary", use_container_width=True):
+            switch_to_chat()
+            
+    # Separador visual después del título/botón
+    st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+
+
     # Nuevo formulario exclusivo para la predicción
-    # clear_on_submit=False: Mantiene los inputs después de predecir, lo cual es deseable.
     with st.form("mlp_predictor_form_body", clear_on_submit=False):
         st.subheader("Datos de Entrada del Contrato")
         col_dias, col_reprog = st.columns(2)
@@ -581,7 +614,6 @@ def mostrar_predictor_mlp():
         # Usamos on_click para limpiar el resultado ANTES de la nueva predicción.
         predict_button = st.form_submit_button("🚀 Predecir", type="primary", 
                                                on_click=lambda: setattr(st.session_state, 'prediction_result', None))
-
 
     if predict_button:
         try:
@@ -611,7 +643,7 @@ def mostrar_predictor_mlp():
             prob_cumplimiento = MODELO_NN.predict_proba(nuevo_df)[0][1]
             prediccion = MODELO_NN.predict(nuevo_df)[0]
             
-            # 💥 CORRECCIÓN 3a: Guardar el resultado en el estado de sesión
+            # Guardar el resultado en el estado de sesión
             st.session_state.prediction_result = {
                 'prediccion': prediccion,
                 'prob_cumplimiento': prob_cumplimiento
@@ -623,7 +655,7 @@ def mostrar_predictor_mlp():
             st.info("Revisa si el formato de los datos es compatible con el modelo MLP cargado.")
             st.session_state.prediction_result = None # Limpiar el resultado si hay error
 
-    # 💥 CORRECCIÓN 3b: Mostrar el resultado fuera del if predict_button, controlado por el estado
+    # Mostrar el resultado fuera del if predict_button, controlado por el estado
     if st.session_state.prediction_result is not None:
         prediccion = st.session_state.prediction_result['prediccion']
         prob_cumplimiento = st.session_state.prediction_result['prob_cumplimiento']
