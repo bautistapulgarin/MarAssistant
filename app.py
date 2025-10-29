@@ -148,9 +148,9 @@ st.markdown("""
 <div style="position:fixed; top:-3%; right:5%; font-size:15px; opacity:0.85; animation:floatY 7.7s linear infinite; z-index:0;">👻</div>
 
 <!-- Calabazas en la parte inferior derecha -->
-<div style="position:fixed; bottom:5%; right:5%; font-size:22px; opacity:0.9; z-index:0;">🎃</div>
-<div style="position:fixed; bottom:8%; right:7%; font-size:20px; opacity:0.85; z-index:0;">🎃</div>
-<div style="position:fixed; bottom:6%; right:9%; font-size:18px; opacity:0.9; z-index:0;">🎃</div>
+<div style="position:fixed; bottom:5%; right:5%; font-size:22px; opacity:1; z-index:1;">🎃</div>
+<div style="position:fixed; bottom:8%; right:7%; font-size:20px; opacity:1; z-index:1;">🎃</div>
+<div style="position:fixed; bottom:6%; right:9%; font-size:18px; opacity:1; z-index:1;">🎃</div>
 """, unsafe_allow_html=True)
 
 # -----------------------------
@@ -458,6 +458,7 @@ st.markdown(
     f"<br><hr><p style='font-size:12px;color:#6b7280;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
+
 
 
 
