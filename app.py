@@ -435,7 +435,7 @@ else:
         st.stop()
 
 # -----------------------------
-# NORMALIZACIÓN (Se mantiene, solo si Excel está cargado)
+# NORMALIZACIÓN (Corregido el error de KeyError)
 # -----------------------------
 if excel_file:
     def normalizar_texto(texto):
@@ -447,26 +447,38 @@ if excel_file:
     def quitar_tildes(texto):
         return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
 
-    # Lógica de normalización y extracción de proyectos... (completa)
-    for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
-                        ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
-        if "Proyecto" not in df.columns:
-            st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
-            st.stop()
+    # 🎯 CORRECCIÓN CLAVE: Verificar que la columna 'Proyecto' exista en TODAS las hojas
+    hojas_a_verificar = [
+        ("Avance", df_avance), 
+        ("Responsables", df_responsables),
+        ("Restricciones", df_restricciones), 
+        ("Sostenibilidad", df_sostenibilidad),
+        ("AvanceDiseño", df_avance_diseno), 
+        ("InventarioDiseño", df_inventario_diseno)
+    ]
 
+    for df_name, df in hojas_a_verificar:
+        if "Proyecto" not in df.columns:
+            st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'. Esto puede afectar la búsqueda por proyecto.")
+            # Detenemos solo si son las 4 hojas principales (consideradas críticas)
+            if df_name in ["Avance", "Responsables", "Restricciones", "Sostenibilidad"]:
+                 st.stop() 
+
+    # Crear 'Proyecto_norm' y construir la lista de proyectos
+    proyectos_list = []
     for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad, df_avance_diseno, df_inventario_diseno]:
-        # Aseguramos que la columna 'Proyecto' exista antes de intentar normalizarla
         if "Proyecto" in df.columns:
             df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
+            proyectos_list.append(df["Proyecto"].astype(str))
+        else:
+            # Si no existe 'Proyecto', creamos una columna 'Proyecto_norm' vacía para no romper el código posterior
+            df["Proyecto_norm"] = ""
 
-    all_projects = pd.concat([
-        df_avance["Proyecto"].astype(str),
-        df_responsables["Proyecto"].astype(str),
-        df_restricciones["Proyecto"].astype(str),
-        df_sostenibilidad["Proyecto"].astype(str),
-        df_avance_diseno["Proyecto"].astype(str),
-        df_inventario_diseno["Proyecto"].astype(str),
-    ]).dropna().unique()
+    # Concatenar todos los proyectos de las listas válidas
+    if proyectos_list:
+        all_projects = pd.concat(proyectos_list).dropna().unique()
+    else:
+        all_projects = [] # Lista vacía si ninguna hoja tenía la columna Proyecto
 
     projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
 
@@ -520,7 +532,7 @@ if excel_file:
         pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
         proyecto, proyecto_norm = extraer_proyecto(pregunta)
         
-        # 🎯 CAMBIO CLAVE: Lógica para Avance de Obra
+        # 🎯 Bloque de Avance de Obra
         if "avance de obra" in pregunta_norm or "avance obra" in pregunta_norm:
             df = df_avance.copy()
             if proyecto_norm:
@@ -528,10 +540,9 @@ if excel_file:
             if df.empty:
                 return f"❌ No hay registros de avance de obra en {proyecto or 'todos'}", None, None, 'general', None
             
-            # Gráfico de avance (si existe la columna Avance)
+            # Gráfico de avance
             grafico = None
             if PLOTLY_AVAILABLE and "Avance" in df.columns:
-                # Agrupamos por etapa si es posible (asumiendo que hay una columna 'Etapa' o similar)
                 if 'Etapa' in df.columns and len(df['Etapa'].unique()) > 1:
                     df_sum = df.groupby('Etapa')['Avance'].mean().reset_index()
                     grafico = px.bar(
@@ -548,14 +559,17 @@ if excel_file:
                         paper_bgcolor='white',
                         margin=dict(t=50, l=10, r=10, b=10)
                     )
-                else:
-                    # Alternativa simple si no hay Etapas o solo hay una
-                    grafico = None # Opcional: mostrar un indicador de avance general. Por ahora, None.
 
             return f"🚧 Avance de obra en {proyecto or 'todos'}:", df, grafico, 'general', None
 
-        # 🎯 CAMBIO CLAVE: Lógica para Avance en Diseño y Estado Diseño (combinadas)
+        # 🎯 Bloque de Avance en Diseño y Estado Diseño (combinadas)
         if "avance en diseno" in pregunta_norm or "avance diseno" in pregunta_norm or "estado diseno" in pregunta_norm or "inventario diseno" in pregunta_norm:
+            
+            # Aseguramos que la columna 'Proyecto_norm' existe en ambas
+            if "Proyecto_norm" not in df_inventario_diseno.columns:
+                df_inventario_diseno["Proyecto_norm"] = ""
+            if "Proyecto_norm" not in df_avance_diseno.columns:
+                df_avance_diseno["Proyecto_norm"] = ""
             
             # Buscar si se pide inventario específico
             if "inventario" in pregunta_norm:
@@ -571,10 +585,9 @@ if excel_file:
             if df.empty:
                 return f"❌ No hay registros de diseño en {proyecto or 'todos'}", None, None, 'general', None
             
-            # No se implementa gráfico complejo por ahora para diseño.
             return f"{titulo_prefijo} en {proyecto or 'todos'}:", df, None, 'general', None
             
-        # 🎯 CAMBIO CLAVE: Lógica para Responsables
+        # 🎯 Bloque de Responsables
         if "responsable" in pregunta_norm or "cargo" in pregunta_norm or any(c_norm in pregunta_norm for c_norm in CARGOS_VALIDOS_NORM.keys()):
             df = df_responsables.copy()
             
@@ -590,7 +603,6 @@ if excel_file:
                     break
             
             if cargo_encontrado:
-                # Asumiendo que la columna de cargos en df_responsables se llama 'Cargo'
                 if 'Cargo' in df.columns:
                     df = df[df['Cargo'] == cargo_encontrado]
                 else:
@@ -600,6 +612,7 @@ if excel_file:
                 return f"❌ No se encontró responsable ({cargo_encontrado or 'cualquiera'}) en {proyecto or 'todos'}", None, None, 'general', None
             
             return f"👤 Responsables ({cargo_encontrado or 'todos'}) en {proyecto or 'todos'}:", df, None, 'general', None
+
 
         # 🎯 Bloque de Restricciones (Se mantiene corregido)
         if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
@@ -623,7 +636,6 @@ if excel_file:
             
             # Si el DataFrame filtrado por proyecto está vacío
             if df.empty:
-                # Se devuelven 5 valores, el último es None para el tipo de restricción preseleccionado
                 return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None, None, 'general', None
 
             grafico = None
