@@ -571,7 +571,7 @@ if enviar and pregunta:
         
     st.markdown("</div>", unsafe_allow_html=True) # Cierre del mar-card de respuesta
 elif voz:
-    st.info("Función de voz activada. La implementación real de la voz requiere librerías adicionales no estándar en un script básico de Streamlit, pero el botón está alineado. ¡Habla claro!")
+    st.info("Función de voz activada")
 
 
 # -----------------------------
@@ -581,4 +581,5 @@ st.markdown(
     f"<br><hr style='border-top: 1px solid #e0e0e0;'><p style='font-size:12px;color:#6b7280; text-align: right;'>Mar Assistant • CONSTRUCTORA MARVAL • Versión: 1.0</p>",
     unsafe_allow_html=True
 )
+
 
