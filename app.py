@@ -127,28 +127,26 @@ st.markdown(f"""
     padding: 20px;
     border-radius: var(--card-radius);
 }}
+/* Animación fantasmas */
+@keyframes floatY {{
+    0% {{ top: -10%; }}
+    100% {{ top: 110%; }}
+}}
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) --------------------
 st.markdown("""
-<style>
-@keyframes floatY {
-    0% { top: -10%; }
-    100% { top: 110%; }
-}
-</style>
-
-<div style="position:fixed; top:-9%; right:95%; font-size:25px; opacity:0.52; animation:floatY 7.55s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-1%; right:90%; font-size:24px; opacity:0.56; animation:floatY 8.57s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-4%; right:93%; font-size:20px; opacity:0.47; animation:floatY 6.68s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-5%; right:94%; font-size:18px; opacity:0.37; animation:floatY 7.06s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-4%; right:94%; font-size:21px; opacity:0.39; animation:floatY 7.42s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-1%; right:93%; font-size:21px; opacity:0.54; animation:floatY 8.81s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-10%; right:91%; font-size:25px; opacity:0.54; animation:floatY 6.32s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-6%; right:92%; font-size:23px; opacity:0.55; animation:floatY 7.21s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-1%; right:95%; font-size:15px; opacity:0.43; animation:floatY 9.68s linear infinite; z-index:0;">👻</div>
-<div style="position:fixed; top:-6%; right:90%; font-size:21px; opacity:0.59; animation:floatY 7.7s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-10%; right:95%; font-size:20px; opacity:0.8; animation:floatY 7s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-5%; right:92%; font-size:18px; opacity:0.85; animation:floatY 8s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-8%; right:94%; font-size:22px; opacity:0.75; animation:floatY 6.5s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-3%; right:91%; font-size:16px; opacity:0.9; animation:floatY 7.5s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-6%; right:93%; font-size:18px; opacity:0.8; animation:floatY 7.2s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-2%; right:90%; font-size:15px; opacity:0.85; animation:floatY 8.3s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-9%; right:92%; font-size:19px; opacity:0.8; animation:floatY 6.8s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-4%; right:94%; font-size:17px; opacity:0.88; animation:floatY 7.1s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-7%; right:91%; font-size:16px; opacity:0.9; animation:floatY 8.0s linear infinite; z-index:0;">👻</div>
+<div style="position:fixed; top:-3%; right:95%; font-size:15px; opacity:0.85; animation:floatY 7.7s linear infinite; z-index:0;">👻</div>
 """, unsafe_allow_html=True)
 
 # -----------------------------
@@ -244,150 +242,3 @@ try:
 except Exception as e:
     st.sidebar.error(f"Error al leer una o varias hojas: {e}")
     st.stop()
-
-# -----------------------------
-# NORMALIZACIÓN
-# -----------------------------
-def normalizar_texto(texto):
-    texto = str(texto).lower()
-    texto = re.sub(r"[.,;:%]", "", texto)
-    texto = re.sub(r"\s+", " ", texto)
-    return texto.strip()
-
-def quitar_tildes(texto):
-    return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
-
-for df_name, df in [("Avance", df_avance), ("Responsables", df_responsables),
-                    ("Restricciones", df_restricciones), ("Sostenibilidad", df_sostenibilidad)]:
-    if "Proyecto" not in df.columns:
-        st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'.")
-        st.stop()
-
-for df in [df_avance, df_responsables, df_restricciones, df_sostenibilidad]:
-    df["Proyecto_norm"] = df["Proyecto"].astype(str).apply(lambda x: quitar_tildes(normalizar_texto(x)))
-
-all_projects = pd.concat([
-    df_avance["Proyecto"].astype(str),
-    df_responsables["Proyecto"].astype(str),
-    df_restricciones["Proyecto"].astype(str),
-    df_sostenibilidad["Proyecto"].astype(str)
-]).dropna().unique()
-
-projects_map = {quitar_tildes(normalizar_texto(p)): p for p in all_projects}
-
-def extraer_proyecto(texto):
-    texto_norm = quitar_tildes(normalizar_texto(texto))
-    for norm in sorted(projects_map.keys(), key=len, reverse=True):
-        pattern = rf'(^|\W){re.escape(norm)}($|\W)'
-        if re.search(pattern, texto_norm, flags=re.UNICODE):
-            return projects_map[norm], norm
-    for norm in sorted(projects_map.keys(), key=len, reverse=True):
-        if norm in texto_norm:
-            return projects_map[norm], norm
-    return None, None
-
-# -----------------------------
-# LISTA DE CARGOS
-# -----------------------------
-CARGOS_VALIDOS = [
-    "Analista de compras", "Analista de Programación", "Arquitecto",
-    "Contralor de proyectos", "Coordinador Administrativo de Proyectos", "Coordinador BIM",
-    "Coordinador Eléctrico", "Coordinador Logístico", "Coordinador SIG", "Coordinadora de pilotaje",
-    "Director de compras", "Director de obra", "Director Nacional Lean y BIM", "Director Técnico",
-    "Diseñador estructural", "Diseñador externo", "Equipo MARVAL", "Gerente de proyectos",
-    "Ingeniera Eléctrica", "Ingeniero Ambiental", "Ingeniero de Contratación", "Ingeniero electromecánico",
-    "Ingeniero FCA", "Ingeniero FCA #2", "Ingeniero Lean", "Ingeniero Lean 3", "Profesional SYST",
-    "Programador de obra", "Programador de obra #2", "Practicante de Interventoría #1",
-    "Practicante Lean", "Residente", "Residente #2", "Residente Administrativo de Equipos",
-    "Residente auxiliar", "Residente Auxiliar #2", "Residente Auxiliar #3", "Residente Auxiliar #4",
-    "Residente de acabados", "Residente de acabados #2", "Residente de control e interventoría",
-    "Residente de Equipos", "Residente de supervisión técnica", "Residente logístico", "Técnico de almacén"
-]
-CARGOS_VALIDOS_NORM = {quitar_tildes(normalizar_texto(c)): c for c in CARGOS_VALIDOS}
-
-# -----------------------------
-# FUNCION DE RESPUESTA
-# -----------------------------
-def generar_respuesta(pregunta):
-    pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
-    proyecto, proyecto_norm = extraer_proyecto(pregunta)
-
-    estado_diseno_keywords = ["estado diseño", "estado diseno", "inventario diseño", "inventario diseno"]
-    diseño_keywords = ["avance en diseno", "avance en diseño", "avance diseno", "avance diseño",
-                       "avance de diseno", "avance de diseño", "diseno", "diseño"]
-    obra_keywords = ["avance de obra", "avance obra", "avance en obra"]
-
-    if any(k in pregunta_norm for k in estado_diseno_keywords):
-        if df_inventario_diseno.empty:
-            return "❌ No hay registros en la hoja InventarioDiseño.", None
-        return "📐 Estado de Diseño (InventarioDiseño):", df_inventario_diseno
-
-    if any(k in pregunta_norm for k in diseño_keywords):
-        if ("avance" in pregunta_norm) or (pregunta_norm.strip() in ["diseno", "diseño"]):
-            if df_avance_diseno.empty:
-                return "❌ No hay registros en la hoja AvanceDiseño.", None
-            return "📐 Avance de Diseño (tabla completa):", df_avance_diseno
-
-    if any(k in pregunta_norm for k in obra_keywords):
-        df = df_avance.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        if df.empty:
-            return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
-        return f"📊 Avance de obra en {proyecto or 'todos'}:", df
-
-    if "avance" in pregunta_norm:
-        df = df_avance.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        if df.empty:
-            return f"❌ No hay registros de avance en {proyecto or 'todos'}", None
-        return f"📊 Avances en {proyecto or 'todos'}:", df
-
-    if "responsable" in pregunta_norm or "quien" in pregunta_norm or "quién" in pregunta_norm:
-        df = df_responsables.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        cargo_encontrado = None
-        for cargo_norm, cargo_real in CARGOS_VALIDOS_NORM.items():
-            if cargo_norm in pregunta_norm:
-                cargo_encontrado = cargo_real
-                df = df[df["Cargo"] == cargo_real]
-                break
-        if df.empty:
-            return f"❌ No se encontró responsable para {proyecto or 'todos'} {cargo_encontrado or ''}", None
-        return f"👤 Responsables en {proyecto or 'todos'}:", df
-
-    if "restricciones" in pregunta_norm or "limitaciones" in pregunta_norm:
-        df = df_restricciones.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        if df.empty:
-            return f"❌ No hay restricciones registradas en {proyecto or 'todos'}", None
-        return f"⚠️ Restricciones en {proyecto or 'todos'}:", df
-
-    if "sostenibilidad" in pregunta_norm:
-        df = df_sostenibilidad.copy()
-        if proyecto_norm:
-            df = df[df["Proyecto_norm"] == proyecto_norm]
-        if df.empty:
-            return f"❌ No hay datos de sostenibilidad en {proyecto or 'todos'}", None
-        return f"🌱 Sostenibilidad en {proyecto or 'todos'}:", df
-
-    return "❓ No entendí tu pregunta, intenta con términos como avance, diseño, responsable, restricciones o sostenibilidad.", None
-
-# -----------------------------
-# INTERFAZ USUARIO
-# -----------------------------
-col1, col2 = st.columns([6,1])
-with col1:
-    pregunta = st.text_input("Escribe tu pregunta aquí...")
-with col2:
-    st.write("")  # separador
-    if st.button("Enviar"):
-        if pregunta:
-            mensaje, df_resp = generar_respuesta(pregunta)
-            st.markdown(f"**{mensaje}**")
-            if df_resp is not None:
-                st.dataframe(df_resp, use_container_width=True)
-st.markdown("---")
