@@ -436,7 +436,7 @@ else:
         st.stop()
  
 # -----------------------------
-# NORMALIZACIÓN (Corregido el error de KeyError)
+# NORMALIZACIÓN 
 # -----------------------------
 if excel_file:
     def normalizar_texto(texto):
@@ -527,7 +527,7 @@ if excel_file:
  
     #
     # -----------------------------
-    # FUNCION DE RESPUESTA (Corregida para "a cargo de")
+    # FUNCION DE RESPUESTA 
     # -----------------------------
     def generar_respuesta(pregunta):
         # La función devuelve: titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado
@@ -841,6 +841,11 @@ answer_container = st.empty()
 # Inicializar el historial de chat si no existe
 if "messages" not in st.session_state:
     st.session_state.messages = []
+else:
+    # 🎯 SOLUCIÓN DE SEGURIDAD: Limpiamos si encontramos un mensaje sin la clave 'type'.
+    # Esto evita el KeyError si el historial de sesión persiste un formato antiguo.
+    if any("type" not in m for m in st.session_state.messages):
+         st.session_state.messages = []
  
 # Mostrar mensajes anteriores
 for message in st.session_state.messages:
@@ -867,12 +872,11 @@ for message in st.session_state.messages:
                 preselected_type = message.get("preselected_type", "Todas las restricciones")
                 
                 with col_type:
-                    # Usamos un key único (basado en el índice) para el selectbox
+                    # Usamos un contador en la clave para forzar la actualización del widget por mensaje
                     selected_type = st.selectbox(
                         "Filtrar por Tipo de Restricción:",
                         options=tipos_disponibles,
                         index=tipos_disponibles.index(preselected_type) if preselected_type in tipos_disponibles else 0,
-                        # Usamos un contador en la clave para forzar la actualización del widget por mensaje
                         key=f'rest_filter_{len(st.session_state.messages)}_{st.session_state.get("chat_index", 0)}' 
                     )
                     st.session_state["chat_index"] = st.session_state.get("chat_index", 0) + 1
