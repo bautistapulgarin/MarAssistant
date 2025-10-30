@@ -357,7 +357,7 @@ def switch_to_chat():
 with col_header_button:
     st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
     if MODELO_NN:
-        if st.button("📈 Pronóstico", key="btn_prediccion", type="secondary", use_container_width=True):
+        if st.button("Pronóstico", key="btn_prediccion", type="secondary", use_container_width=True):
             switch_to_predictor()
     else:
         st.warning("MLP no disponible.")
@@ -997,6 +997,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+
 
 
 
