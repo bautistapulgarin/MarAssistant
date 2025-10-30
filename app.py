@@ -239,7 +239,7 @@ st.markdown(f"""
  
  
  
-# -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
+# -------------------- Decoración Navideña (copos y calabazas) --------------------
 st.markdown("""
 <style>
 @keyframes floatDown {
@@ -527,7 +527,7 @@ if excel_file:
  
     #
     # -----------------------------
-    # FUNCION DE RESPUESTA (¡CORREGIDA PARA "a cargo de"!)
+    # FUNCION DE RESPUESTA (Corregida para "a cargo de")
     # -----------------------------
     def generar_respuesta(pregunta):
         # La función devuelve: titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado
@@ -615,7 +615,7 @@ if excel_file:
             return f"👤 Responsables ({cargo_encontrado or 'todos'}) en {proyecto or 'todos'}:", df, None, 'general', None
 
 
-        # 🎯 Bloque de Restricciones (¡AQUÍ ESTÁ LA LÓGICA DE "a cargo de"!)
+        # 🎯 Bloque de Restricciones (Lógica de "a cargo de")
         if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
             df = df_restricciones.copy()
             responsable_filtro = None
@@ -845,7 +845,8 @@ if "messages" not in st.session_state:
 # Mostrar mensajes anteriores
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        if message["type"] == "df":
+        # La corrección es que ahora todos los mensajes tienen 'type'
+        if message["type"] == "df": 
             # Si es un DataFrame, mostrar la tabla y opcionalmente el gráfico
             st.markdown(f'<p style="font-size: 18px; font-weight: 600; color:{PALETTE["primary"]}; margin-bottom: 10px;">{message["title"]}</p>', unsafe_allow_html=True)
             if message["graph"]:
@@ -871,7 +872,8 @@ for message in st.session_state.messages:
                         "Filtrar por Tipo de Restricción:",
                         options=tipos_disponibles,
                         index=tipos_disponibles.index(preselected_type) if preselected_type in tipos_disponibles else 0,
-                        key=f'rest_filter_{len(st.session_state.messages)}_{st.session_state.get("chat_index", 0)}' # Clave única
+                        # Usamos un contador en la clave para forzar la actualización del widget por mensaje
+                        key=f'rest_filter_{len(st.session_state.messages)}_{st.session_state.get("chat_index", 0)}' 
                     )
                     st.session_state["chat_index"] = st.session_state.get("chat_index", 0) + 1
                     
@@ -895,7 +897,7 @@ for message in st.session_state.messages:
                 st.dataframe(message["df"], use_container_width=True)
                 
         else:
-            # Si es un mensaje de texto simple (ej. "No entendí la pregunta")
+            # Si es un mensaje de texto simple (incluye ahora el mensaje del usuario)
             st.markdown(message["content"])
  
 # -----------------------------
@@ -924,7 +926,8 @@ with col_btn_voice:
 if buscar_btn or prompt:
     if prompt:
         # Añadir la pregunta del usuario al historial
-        st.session_state.messages.append({"role": "user", "content": prompt})
+        # 🎯 CORRECCIÓN CLAVE: Agregamos "type": "text" al mensaje del usuario para evitar KeyError
+        st.session_state.messages.append({"role": "user", "content": prompt, "type": "text"})
         
         # Generar respuesta
         title, df_result, grafico, result_type, tipo_restriccion_preseleccionado = generar_respuesta(prompt)
@@ -949,7 +952,6 @@ if buscar_btn or prompt:
                 "content": title
             })
             
-        # Limpiar el input y recargar (esto se hace automáticamente con st.text_input cuando se presiona Enter o se recarga)
         # Forzar el re-ejecución para limpiar el input y mostrar la nueva respuesta
         st.rerun()
 
