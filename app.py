@@ -689,7 +689,7 @@ def mostrar_predictor_mlp():
     col_pred_title, col_pred_back = st.columns([6, 1.5])
     
     with col_pred_title:
-        st.markdown(f'<div class="mar-card" style="margin-bottom: 0px;"><p style="color:{PALETTE["primary"]}; font-size: 22px; font-weight:700; margin:0 0 8px 0;">🔮 Predictor de Cumplimiento de Contratos</p>'
+        st.markdown(f'<div class="mar-card" style="margin-bottom: 0px;"><p style="color:{PALETTE["primary"]}; font-size: 22px; font-weight:700; margin:0 0 8px 0;">🔮 Previsión de Cumplimiento de Contratos</p>'
                     '<p style="margin:0 0 0 0;">Ingresa los parámetros del contrato para predecir la probabilidad de cumplimiento a tiempo.</p></div>',
                     unsafe_allow_html=True)
     
@@ -997,6 +997,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+
 
 
 
