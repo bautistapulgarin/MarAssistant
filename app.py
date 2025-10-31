@@ -68,34 +68,6 @@ st.markdown(f"""
     --shadow-hover: 0 6px 16px rgba(21,72,114,0.10);
 }}
 
-/* Estilo para el botón flotante (Fixed position) */
-.fixed-float-button {{
-    position: fixed;
-    bottom: 30px; /* Distancia desde abajo */
-    right: 30px; /* Distancia desde la derecha */
-    z-index: 1000; /* Asegura que esté por encima de todo */
-    cursor: pointer;
-    background-color: var(--mar-primary);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 50px; /* Hace que se vea como una pastilla */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    font-weight: 600;
-}}
-
-
-.fixed-float-button:hover {{
-    background-color: var(--mar-muted);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-}}
-
-
-
-
-
-
-
 /* Aplicación Principal y Fuente */
 .stApp {{
     background-color: var(--mar-bg);
@@ -263,87 +235,6 @@ st.markdown(f"""
 
 </style>
 """, unsafe_allow_html=True)
-
-
-
-# =================================================================
-# LÓGICA DEL BOTÓN FLOTANTE Y EL POPOVER
-# =================================================================
-
-# 1. Definir el Botón Flotante
-# Usamos un truco con st.empty() y un popover que se "activa" donde definimos el contenedor.
-
-# Creamos un contenedor vacío donde "anclaremos" la lógica del popover
-popover_placeholder = st.empty()
-
-# Usamos HTML/CSS para dibujar el botón flotante real
-# Este botón no hace nada directamente en Streamlit, solo es visual.
-# Necesitamos un botón de Streamlit "invisible" para activar la lógica.
-st.markdown(
-    f"""
-    <div class="fixed-float-button" onclick="document.getElementById('hidden_float_button').click();">
-        Registrar Restricción
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# 2. Definir un botón Streamlit oculto para capturar el click
-# Este botón es el que realmente manejará la interacción con Streamlit.
-if 'float_button_clicked' not in st.session_state:
-    st.session_state.float_button_clicked = False
-
-# Función para cambiar el estado de la sesión al hacer click
-def click_float_button():
-    st.session_state.float_button_clicked = True
-
-# Botón oculto que es activado por el JS/HTML de arriba
-st.button(
-    "Registrar Restricción (Oculto)", 
-    key="hidden_float_button", 
-    on_click=click_float_button,
-    # Ocultar el botón real con CSS, si es necesario, pero solo el truco HTML basta
-    # Aunque podemos dejarlo para debugging.
-)
-
-# 3. Lógica del Popover (El "Pop-up" de registro)
-if st.session_state.float_button_clicked:
-    # Mostramos el popover al final del código, pero "anclado" a la posición del placeholder
-    with popover_placeholder.popover("📝 Registrar Nueva Restricción"):
-        with st.form("restriccion_form", clear_on_submit=True):
-            st.markdown(f"**Completa los campos para guardar la nueva restricción**")
-            
-            proyecto = st.text_input("Proyecto Relacionado:", key="reg_proyecto")
-            descripcion = st.text_area("Descripción Detallada de la Restricción:", key="reg_descripcion")
-            fecha_detectada = st.date_input("Fecha de Detección:", key="reg_fecha")
-            responsable = st.selectbox("Responsable Asignado:", ["Equipo A", "Equipo B", "Equipo C"], key="reg_responsable")
-
-            # Botón de envío del formulario
-            submit_button = st.form_submit_button("Guardar Restricción")
-            
-            if submit_button:
-                # Aquí iría tu lógica para guardar los datos (ej. a una base de datos o un archivo)
-                # Por ahora, solo confirmamos la acción:
-                st.success(f"Restricción guardada: Proyecto **{proyecto}** ({descripcion[:30]}...)")
-                
-                # Opcional: Desactivar el popover después de guardar para que se cierre
-                st.session_state.float_button_clicked = False
-                st.rerun() # Para limpiar la pantalla y volver al estado inicial
-            
-        # Botón para cerrar el popover sin guardar (dentro del popover)
-        if st.button("Cerrar sin guardar", key="close_popover_button"):
-            st.session_state.float_button_clicked = False
-            st.rerun() # Para cerrar el popover
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1106,7 +997,6 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
-
 
 
 
