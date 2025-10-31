@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import joblib
-import os.path as ospath
+import os.path as ospath # Importación corregida: 'os.path' como 'ospath'
 import io
 import base64
 import re
 import unicodedata
-from time import sleep # Uso directo de 'sleep'
+from time import sleep 
+from PIL import Image
 
 # -----------------------------
 # 0. CONFIGURACIÓN INICIAL Y ESTILOS
@@ -16,7 +17,7 @@ st.set_page_config(layout="wide")
 
 # Paleta de colores
 PALETTE = {"primary": "#007BFF", "secondary": "#FF5733"} 
-NN_AVAILABLE = True # Asumimos que los modelos están disponibles inicialmente
+NN_AVAILABLE = True 
 
 # Estilos CSS y Animaciones
 st.markdown(
@@ -32,7 +33,7 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# Animaciones HTML (copos de nieve y calabazas de ejemplo)
+# Animaciones HTML
 ANIMATION_HTML = ""
 ANIMATION_HTML += ''.join([f'<div style="position:fixed; top:{t}%; right:{r}%; font-size:{s}px; opacity:0.1; animation:floatDown {a}s linear infinite; z-index:9999;">❄️</div>' for t, r, s, a in [(0, 5, 30, 15), (10, 7, 28, 18), (20, 6, 25, 16)]])
 ANIMATION_HTML += ''.join([f'<div style="position:fixed; bottom:{b}%; left:{l}%; font-size:{s}px; opacity:1; animation:floatY {a}s ease-in-out infinite; z-index:9999;">🎃</div>' for b, l, s, a in [(5, 8, 22, 3), (8, 10, 20, 2.8)]])
@@ -44,7 +45,7 @@ st.markdown(ANIMATION_HTML, unsafe_allow_html=True)
 MODELO_NN, SCALER_NN, FEATURES_NN = None, None, None
 MODEL_PATHS = {
     "model": ospath.join("assets", "mlp_contratos.joblib"),
-    "scaler": ospathath.join("assets", "scaler_contratos.joblib"),
+    "scaler": ospath.join("assets", "scaler_contratos.joblib"), # Corregido: antes 'ospathath'
     "features": ospath.join("assets", "mlp_features.joblib"),
 }
 
@@ -52,7 +53,6 @@ try:
     if all(ospath.exists(p) for p in MODEL_PATHS.values()):
         @st.cache_resource
         def load_mlp_artifacts():
-            from PIL import Image # Importar aquí para evitar errores si no se usa PIL
             return (joblib.load(MODEL_PATHS[k]) for k in ["model", "scaler", "features"])
 
         MODELO_NN, SCALER_NN, FEATURES_NN = load_mlp_artifacts()
@@ -68,7 +68,7 @@ for key, default in [('current_view', 'chat'), ('prediction_result', None)]:
     if key not in st.session_state:
         st.session_state[key] = default
 
-# LÓGICA DE VISTAS (Funciones de manejo de estado de sesión)
+# LÓGICA DE VISTAS
 def set_view(view_name, reset_prediction=True, clear_filters=False):
     st.session_state.current_view = view_name
     if reset_prediction: st.session_state.pop('prediction_result', None)
@@ -88,7 +88,6 @@ col_header_title, col_header_button = st.columns([7, 1.5])
 
 with col_header_title:
     try:
-        from PIL import Image
         logo_img = Image.open(logo_path)
         buffered = io.BytesIO(); logo_img.save(buffered, format="PNG")
         img_b64 = base64.b64encode(buffered.getvalue()).decode()
@@ -121,7 +120,6 @@ st.sidebar.markdown("---")
 placeholder = st.empty()
 if img_file:
     try:
-        from PIL import Image
         img_file.seek(0); img_b64 = base64.b64encode(img_file.read()).decode()
         splash_html = f"""
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: white; display: flex; justify-content: center; align-items: center; z-index: 9999;">
@@ -137,7 +135,7 @@ if img_file:
         placeholder.empty()
 
 # -----------------------------
-# 3. LECTURA, NORMALIZACIÓN Y LÓGICA DE CONSULTA (Core del Chatbot)
+# 3. LECTURA, NORMALIZACIÓN Y LÓGICA DE CONSULTA
 # -----------------------------
 HOJAS_REQUERIDAS = ["Avance", "Responsables", "Restricciones", "Sostenibilidad", "AvanceDiseño", "InventarioDiseño"]
 dfs = {} 
@@ -190,7 +188,7 @@ else:
 
     # Mapeo de Restricciones y Cargos
     MAPEO_RESTRICCION = {"material": "Materiales", "diseno": "Diseño", "contrato": "Contratos", "permisos": "Permisos y Licencias", "financiero": "Financiera"}
-    CARGOS_VALIDOS = ["Analista de compras", "Analista de Programación", "Arquitecto", "Contralor de proyectos", "Director de obra", "Gerente de proyectos"] # Lista resumida
+    CARGOS_VALIDOS = ["Analista de compras", "Analista de Programación", "Arquitecto", "Contralor de proyectos", "Director de obra", "Gerente de proyectos"] 
 
     # Función principal de lógica de negocio (genera la respuesta del chat)
     def generar_respuesta(pregunta):
@@ -344,7 +342,7 @@ elif st.session_state.current_view == 'chat':
         else:
             st.session_state.pop('tipo_restriccion_preseleccionado', None) 
         
-        st.session_state.pop('filtro_restriccion', None) # Fuerza el selectbox a la nueva selección
+        st.session_state.pop('filtro_restriccion', None) 
         st.rerun()
 
     # MOSTRAR RESULTADOS
@@ -363,7 +361,7 @@ elif st.session_state.current_view == 'chat':
             if filtro_restriccion != 'Todas las restricciones' and "tipoRestriccion" in df_filtrado.columns:
                 df_filtrado = df_filtrado[df_filtrado["tipoRestriccion"] == filtro_restriccion]
 
-            # CÁLCULO DE MÉTRICAS (Resumido)
+            # CÁLCULO DE MÉTRICAS 
             if all(col in df_filtrado.columns for col in ["FechaCompromisoActual", "FechaCompromisoInicial"]):
                 df_valido = df_filtrado.assign(
                     FechaCompromisoActual=pd.to_datetime(df_filtrado['FechaCompromisoActual'], errors='coerce'),
@@ -395,8 +393,10 @@ elif st.session_state.current_view == 'chat':
                 st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-top:15px; margin-bottom:10px;">Detalle de Restricciones ({len(df_filtrado)} encontradas)</p>', unsafe_allow_html=True)
                 
                 df_display = df_filtrado.drop(columns=["Proyecto_norm"], errors='ignore')
+                
+                # Intentar añadir 'Diferencia (Días)' si se pudo calcular
                 if 'DiasDiferencia' in locals().get('df_valido', {}).columns:
-                    df_display['Diferencia (Días)'] = df_valido['DiasDiferencia'] # Añade la columna calculada
+                    df_display['Diferencia (Días)'] = df_valido['DiasDiferencia']
 
                 columns_to_show_and_rename = {'Actividad': 'Actividad', 'Restriccion': 'Restricción', 'numeroReprogramacionesCompromiso': 'Núm. Reprog.', 'Descripción': 'Descripción', 
                                               'tipoRestriccion': 'Tipo Restricción', 'FechaCompromisoInicial': 'F. Inicial', 'FechaCompromisoActual': 'F. Actual', 
