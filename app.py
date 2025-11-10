@@ -176,8 +176,25 @@ st.markdown(f"""
     border: 1px solid #e69524 !important;
 }}
 
-/* Estilo para el botón de Devolver (en la vista de Predicción) */
-.stButton>button[key="btn_devolver"] {{
+/* NUEVO: Estilo para el botón de RESTRICCIONES (Al lado de Predicción) */
+.stButton>button[key="btn_restricciones"] {{
+    background-color: #e3342f !important; /* Rojo para destacar problemas */
+    color: white !important;
+    border: 1px solid #e3342f !important;
+    border-radius: 8px !important;
+    padding: 0 20px !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-top: 0px; 
+}}
+.stButton>button[key="btn_restricciones"]:hover {{
+    background-color: #cc1f1a !important;
+    border: 1px solid #cc1f1a !important;
+}}
+
+/* Estilo para el botón de Devolver (en la vista de Predicción y Restricciones) */
+.stButton>button[key="btn_devolver_pred"] {{
     background-color: #f0f2f6 !important; /* Gris claro */
     color: #34495e !important;
     border: 1px solid #dcdfe6 !important;
@@ -188,7 +205,21 @@ st.markdown(f"""
     transition: background-color 0.2s ease, color 0.2s ease;
     margin-top: 0px; 
 }}
-.stButton>button[key="btn_devolver"]:hover {{
+.stButton>button[key="btn_devolver_pred"]:hover {{
+    background-color: #e9ecef !important;
+}}
+.stButton>button[key="btn_devolver_rest"] {{
+    background-color: #f0f2f6 !important; /* Gris claro */
+    color: #34495e !important;
+    border: 1px solid #dcdfe6 !important;
+    border-radius: 8px !important;
+    padding: 0 15px !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-top: 0px; 
+}}
+.stButton>button[key="btn_devolver_rest"]:hover {{
     background-color: #e9ecef !important;
 }}
 
@@ -212,7 +243,6 @@ st.markdown(f"""
     margin-top: 5px;
 }}
 
-
 /* Sidebar */
 [data-testid="stSidebar"] {{
     background-color: white;
@@ -228,14 +258,14 @@ st.markdown(f"""
     font-size: 15px;
 }}
 /* Estilo para Selectbox - Opcional */
-[data-testid="stForm"] label, [data-testid="stForm"] p {{
+[data-testid="stForm"] label,
+[data-testid="stForm"] p {{
     font-weight: 500;
     color: #34495e;
 }}
 
 </style>
 """, unsafe_allow_html=True)
-
 
 
 # -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
@@ -262,14 +292,10 @@ st.markdown("""
 <div style="position:fixed; top:25%; right:9%; font-size:20px; opacity:0.1; animation:floatDown 11s linear infinite; z-index:9999;">❄️</div>
 
 
-
-
 <div style="position:fixed; bottom:5%; left:8%; font-size:22px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🎃</div>
 <div style="position:fixed; bottom:8%; left:10%; font-size:20px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🎃</div>
 <div style="position:fixed; bottom:6%; left:12%; font-size:18px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🎃</div>
 """, unsafe_allow_html=True)
-
-
 
 
 # -----------------------------
@@ -301,12 +327,13 @@ if NN_AVAILABLE:
 
 
 # -----------------------------
-# HEADER: logo + títulos + BOTÓN DE PREDICCIÓN
+# HEADER: logo + títulos + BOTONES
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
-# Contenedor para alinear logo/títulos con el botón
-col_header_title, col_header_button = st.columns([7, 1.5])
+# MODIFICACIÓN: Creamos 3 columnas para el título, botón de Restricciones y botón de Pronóstico.
+# col_header_title: 7 (título) | col_header_rest: 1.2 (Restricciones) | col_header_pred: 1.2 (Pronóstico)
+col_header_title, col_header_rest, col_header_pred = st.columns([7, 1.2, 1.2])
 
 with col_header_title:
     if os.path.exists(logo_path):
@@ -335,12 +362,19 @@ with col_header_title:
         st.markdown(f'<p class="title">Sistema Integrado de Información de Proyectos</p>', unsafe_allow_html=True)
 
 
-# LÓGICA DEL BOTÓN DE PREDICCIÓN
+# LÓGICA DE BOTONES Y CAMBIOS DE VISTA
 def switch_to_predictor():
     """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
     st.session_state.current_view = 'predictor'
-    # Reseteamos el resultado de predicción al cambiar la vista para que inicie limpio
     st.session_state.prediction_result = None
+    st.rerun()
+
+# NUEVA FUNCIÓN para el botón Restricciones
+def switch_to_restricciones():
+    """Cambia el estado de sesión para mostrar la vista de restricciones."""
+    st.session_state.current_view = 'restricciones'
+    st.session_state.prediction_result = None # Limpiamos el resultado de predicción
+    st.rerun()
 
 # Función para volver al chat
 def switch_to_chat():
@@ -354,13 +388,22 @@ def switch_to_chat():
         del st.session_state['tipo_restriccion_preseleccionado']
     st.rerun()
 
-with col_header_button:
+# COLUMNA DEL BOTÓN DE RESTRICCIONES (NUEVA)
+with col_header_rest:
+    st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
+    # Botón de Restricciones
+    if st.button("Restricciones", key="btn_restricciones", type="secondary", use_container_width=True):
+        switch_to_restricciones()
+
+# COLUMNA DEL BOTÓN DE PREDICCIÓN (Existente)
+with col_header_pred:
     st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
     if MODELO_NN:
         if st.button("Pronóstico", key="btn_prediccion", type="secondary", use_container_width=True):
             switch_to_predictor()
     else:
-        st.warning("MLP no disponible.")
+        # Se muestra un mensaje de advertencia si el modelo no está disponible
+        st.warning("MLP no disponible.", icon="⚠️")
         
 # Inicializar el estado de sesión para la vista
 if 'current_view' not in st.session_state:
@@ -409,12 +452,12 @@ if img_file:
 # -----------------------------
 # LECTURA DE EXCEL (Se mantiene)
 # -----------------------------
-if not excel_file:
+if not excel_file and st.session_state.current_view != 'predictor': # Permitimos el predictor si no hay Excel
     st.info("Sube el archivo Excel en la barra lateral para cargar las hojas y empezar a consultar.")
-    # Permite continuar para el predictor si ya está cargado y no depende del Excel
     if st.session_state.current_view == 'chat':
         st.stop()
-else:
+    
+if excel_file:
     # Intento de lectura (mantenido del original)
     try:
         excel_file.seek(0)
@@ -435,7 +478,7 @@ else:
         st.stop()
 
 # -----------------------------
-# NORMALIZACIÓN (Corregido el error de KeyError)
+# NORMALIZACIÓN Y PRE-PROCESAMIENTO (Se mantiene)
 # -----------------------------
 if excel_file:
     def normalizar_texto(texto):
@@ -462,7 +505,7 @@ if excel_file:
             st.sidebar.error(f"La hoja '{df_name}' no contiene la columna 'Proyecto'. Esto puede afectar la búsqueda por proyecto.")
             # Detenemos solo si son las 4 hojas principales (consideradas críticas)
             if df_name in ["Avance", "Responsables", "Restricciones", "Sostenibilidad"]:
-                 st.stop() 
+                st.stop() 
 
     # Crear 'Proyecto_norm' y construir la lista de proyectos
     proyectos_list = []
@@ -532,7 +575,7 @@ if excel_file:
         pregunta_norm = quitar_tildes(normalizar_texto(pregunta))
         proyecto, proyecto_norm = extraer_proyecto(pregunta)
         
-        # 🎯 Bloque de Avance de Obra (CORREGIDO EL FILTRADO)
+        # 🎯 Bloque de Avance de Obra
         if "avance de obra" in pregunta_norm or "avance obra" in pregunta_norm:
             df = df_avance.copy()
             
@@ -613,7 +656,7 @@ if excel_file:
             return f"👤 Responsables ({cargo_encontrado or 'todos'}) en {proyecto or 'todos'}:", df, None, 'general', None
 
 
-        # 🎯 Bloque de Restricciones (Se mantiene corregido)
+        # 🎯 Bloque de Restricciones
         if "restriccion" in pregunta_norm or "restricción" in pregunta_norm or "problema" in pregunta_norm:
             df = df_restricciones.copy()
             
@@ -676,15 +719,14 @@ if excel_file:
                 "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None, None, 'general', None
 
 # -----------------------------
-# FUNCIÓN DE PREDICCIÓN (MLP) - (Se mantiene igual)
+# FUNCIÓN DE PREDICCIÓN (MLP) - (Se mantiene)
 # -----------------------------
 def mostrar_predictor_mlp():
-    # ... (Lógica del predictor - se mantiene igual) ...
     """Muestra la interfaz de entrada y hace la predicción del MLP."""
     if not MODELO_NN:
         st.error("No se pudo cargar el modelo de predicción de contratos (MLP). Verifica los archivos `.joblib` en la carpeta `assets`.")
         return
-
+    
     # Creamos un contenedor para el título y el botón de volver
     col_pred_title, col_pred_back = st.columns([6, 1.5])
     
@@ -696,7 +738,7 @@ def mostrar_predictor_mlp():
     with col_pred_back:
         st.markdown("<div style='height:42px;'></div>", unsafe_allow_html=True) # Espacio para alinear
         # Botón de devolver en la vista principal de Predicción
-        if st.button("⬅️ Devolver", key="btn_devolver", type="secondary", use_container_width=True):
+        if st.button("⬅️ Devolver", key="btn_devolver_pred", type="secondary", use_container_width=True):
             switch_to_chat()
             
     # Separador visual después del título/botón
@@ -722,7 +764,7 @@ def mostrar_predictor_mlp():
 
         # Usamos on_click para limpiar el resultado ANTES de la nueva predicción.
         predict_button = st.form_submit_button("🚀 Predecir", type="primary", 
-                                               on_click=lambda: setattr(st.session_state, 'prediction_result', None))
+                                                on_click=lambda: setattr(st.session_state, 'prediction_result', None))
 
     if predict_button:
         try:
@@ -757,245 +799,196 @@ def mostrar_predictor_mlp():
                 'prediccion': prediccion,
                 'prob_cumplimiento': prob_cumplimiento
             }
-            # st.rerun() # Descomentar si la visualización del resultado no es inmediata
-
         except Exception as e:
-            st.error(f"Error al procesar la predicción: {e}")
-            st.info("Revisa si el formato de los datos es compatible con el modelo MLP cargado.")
-            st.session_state.prediction_result = None # Limpiar el resultado si hay error
+            st.error(f"Error al realizar la predicción: {e}")
+            st.session_state.prediction_result = None
 
-    # Mostrar el resultado fuera del if predict_button, controlado por el estado
+    # Mostrar resultado de la predicción (si existe)
     if st.session_state.prediction_result is not None:
         prediccion = st.session_state.prediction_result['prediccion']
         prob_cumplimiento = st.session_state.prediction_result['prob_cumplimiento']
 
-        # Mostrar resultado en un bloque de tarjeta
-        st.markdown("<div class='mar-card' style='margin-top:20px;'>", unsafe_allow_html=True)
         if prediccion == 1:
-            st.success(f"### Predicción: ✅ Cumplido a tiempo")
-            st.markdown(f"La probabilidad de **cumplimiento** es del **`{prob_cumplimiento*100:.2f}%`**. ¡Parece que este contrato va bien!")
+            color = "#198754" # Verde
+            emoji = "✅"
+            mensaje_pred = "La predicción es **Cumplimiento a Tiempo**."
         else:
-            st.warning(f"### Predicción: ⚠️ Probable reprogramación")
-            st.markdown(f"La probabilidad de **incumplimiento/reprogramación** es alta (Cumplimiento: `{prob_cumplimiento*100:.2f}%`). Se requiere seguimiento.")
-        st.markdown("</div>", unsafe_allow_html=True)
+            color = "#dc3545" # Rojo
+            emoji = "❌"
+            mensaje_pred = "La predicción es **Incumplimiento / Retraso**."
 
-
+        st.markdown(f"""
+            <div class="mar-card" style="border-left: 5px solid {color}; margin-top: 25px;">
+                <p style="font-size: 18px; font-weight: 700; color: {color}; margin: 0 0 10px 0;">{emoji} Resultado de la Previsión</p>
+                <p style="font-size: 16px; margin: 0 0 5px 0;">{mensaje_pred}</p>
+                <p style="font-size: 24px; font-weight: 900; color: {PALETTE['primary']}; margin: 0;">
+                    Probabilidad de Cumplimiento: <span style="color: {color};">{prob_cumplimiento * 100:.1f}%</span>
+                </p>
+                <p style="font-size: 13px; color: #6b7280; margin-top: 15px;">
+                    *Esta predicción se basa en un modelo de Red Neuronal (MLP) y es una estimación.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("---")
 # -----------------------------
-# LÓGICA DE VISTAS PRINCIPALES
+# NUEVA FUNCIÓN DE DASHBOARD DE RESTRICCIONES
 # -----------------------------
-if st.session_state.current_view == 'predictor':
-    mostrar_predictor_mlp()
-    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+def mostrar_dashboard_restricciones():
+    """Muestra un dashboard/vista enfocada en la información de Restricciones."""
+    
+    if not excel_file:
+        st.warning("Por favor, sube el archivo Excel para ver el dashboard de Restricciones.")
+        return
 
-elif st.session_state.current_view == 'chat':
-    # -----------------------------
-    # INTERFAZ: input + botón al lado + voz 
-    # -----------------------------
-    # Tarjeta informativa (más limpia)
-    st.markdown(
-        f'<div class="mar-card"><p style="color:{PALETTE["primary"]}; font-size: 18px; font-weight:700; margin:0 0 8px 0;">Consulta Rápida</p>'
-        '<p style="margin:0 0 0 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos. Ej: "restricciones de materiales en Burdeos"</p></div>',
-        unsafe_allow_html=True
-    )
+    # Creamos un contenedor para el título y el botón de volver
+    col_rest_title, col_rest_back = st.columns([6, 1.5])
+    
+    with col_rest_title:
+        st.markdown(f'<div class="mar-card" style="margin-bottom: 0px;"><p style="color:{PALETTE["primary"]}; font-size: 22px; font-weight:700; margin:0 0 8px 0;">🚨 Dashboard de Restricciones</p>'
+                    '<p style="margin:0 0 0 0;">Analiza y filtra las restricciones de los proyectos en detalle.</p></div>',
+                    unsafe_allow_html=True)
+    
+    with col_rest_back:
+        st.markdown("<div style='height:42px;'></div>", unsafe_allow_html=True) # Espacio para alinear
+        # Botón de devolver en la vista principal de Restricciones
+        if st.button("⬅️ Devolver", key="btn_devolver_rest", type="secondary", use_container_width=True):
+            switch_to_chat()
+            
+    st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+    st.markdown("---")
 
-    # Formulario de Chat
-    with st.form("query_form", clear_on_submit=False):
-        col_input, col_enviar, col_voz = st.columns([6, 1.2, 1])
+    df_rest = df_restricciones.copy()
+    
+    # Contadores
+    total_rest = len(df_rest)
+    if "Estado" in df_rest.columns:
+        rest_abiertas = len(df_rest[df_rest["Estado"].astype(str).str.lower() == 'abierta'])
+        rest_cerradas = total_rest - rest_abiertas
+    else:
+        rest_abiertas = "N/A"
+        rest_cerradas = "N/A"
+
+    col_total, col_abiertas, col_cerradas = st.columns(3)
+    
+    with col_total:
+        st.markdown(f"""<div class="metric-card"><p class="metric-value">{total_rest}</p><p class="metric-label">Total de Restricciones</p></div>""", unsafe_allow_html=True)
+    with col_abiertas:
+        st.markdown(f"""<div class="metric-card"><p class="metric-value">{rest_abiertas}</p><p class="metric-label">Restricciones Abiertas</p></div>""", unsafe_allow_html=True)
+    with col_cerradas:
+        st.markdown(f"""<div class="metric-card"><p class="metric-value">{rest_cerradas}</p><p class="metric-label">Restricciones Cerradas</p></div>""", unsafe_allow_html=True)
+    
+    st.markdown("---")
+
+    st.subheader("Filtros de Restricciones")
+
+    # Filtros por proyecto y tipo
+    col_filter_proj, col_filter_type = st.columns(2)
+    
+    if "Proyecto" in df_rest.columns:
+        project_options = ["Todos los Proyectos"] + df_rest["Proyecto"].astype(str).unique().tolist()
+        project_filter = col_filter_proj.selectbox("Filtrar por Proyecto", options=project_options)
         
+        if project_filter != "Todos los Proyectos":
+            project_filter_norm = quitar_tildes(normalizar_texto(project_filter))
+            df_rest = df_rest[df_rest["Proyecto_norm"] == project_filter_norm]
+    else:
+        project_filter = "Todos los Proyectos"
+
+    if "tipoRestriccion" in df_rest.columns:
+        type_options = ["Todos los Tipos"] + df_rest["tipoRestriccion"].astype(str).unique().tolist()
+        type_filter = col_filter_type.selectbox("Filtrar por Tipo de Restricción", options=type_options)
+        
+        if type_filter != "Todos los Tipos":
+            df_rest = df_rest[df_rest["tipoRestriccion"] == type_filter]
+    else:
+        type_filter = "Todos los Tipos"
+
+    # Mostrar tabla de resultados filtrados
+    st.subheader(f"Tabla de Restricciones ({project_filter} / {type_filter})")
+    
+    if df_rest.empty:
+        st.info("No se encontraron restricciones con los filtros seleccionados.")
+    else:
+        st.dataframe(df_rest, use_container_width=True)
+
+
+# -----------------------------
+# LÓGICA DE VISTAS
+# -----------------------------
+if st.session_state.current_view == 'chat':
+    # La interfaz de chat y búsqueda (el código original que maneja la búsqueda)
+    if excel_file:
+        # Columna de entrada
+        col_input, col_button, col_voice = st.columns([6, 1.5, 0.5])
+
         with col_input:
-            # Usamos la misma clave para que el texto persista si se presiona el botón de voz
-            pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed", key='chat_query')
-        
-        with col_enviar:
-            # Le decimos a Streamlit que, si se presiona "Buscar", debe ejecutar el callback
-            enviar = st.form_submit_button("Buscar", key="btn_buscar", type="secondary", use_container_width=True) 
-        
-        with col_voz:
-            voz = st.form_submit_button("🎤 Voz", key="voz", help="Activar entrada por voz", type="secondary", use_container_width=True)
-
-    # Lógica de procesamiento de la pregunta
-    if enviar and pregunta:
-        if not excel_file:
-            st.error("No se puede consultar. ¡Sube el archivo Excel en la barra lateral primero!")
-        else:
-            # Generar respuesta: ahora devuelve 5 valores
-            st.session_state['last_query_text'] = pregunta
-            
-            # Intentamos obtener el resultado (esperamos 5 valores)
-            titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado = generar_respuesta(pregunta)
-            
-            if tipo_resultado == 'restricciones':
-                # Si es una restricción y tiene preselección, la guardamos
-                st.session_state['tipo_restriccion_preseleccionado'] = tipo_restriccion_preseleccionado
-                # Guardamos los 4 principales
-                st.session_state['last_query_result'] = (titulo, df_resultado, grafico, tipo_resultado) 
-            else:
-                # Si no es restricción o no hay preselección válida, limpiamos y guardamos
-                if 'tipo_restriccion_preseleccionado' in st.session_state:
-                    del st.session_state['tipo_restriccion_preseleccionado']
-                # Guardamos los 4 principales
-                st.session_state['last_query_result'] = (titulo, df_resultado, grafico, tipo_resultado)
-
-
-            # Aseguramos que el filtro interactivo se inicie con el valor del texto (si aplica) o con 'Todas'
-            if 'filtro_restriccion' in st.session_state:
-                # Eliminamos la clave del filtro interactivo para que se inicialice con el nuevo default/preselección
-                del st.session_state['filtro_restriccion']
-            
-            st.rerun() # Dispara el re-render para mostrar los resultados
-
-    # -----------------------------
-    # MOSTRAR RESULTADOS (Ajustado para el recalculo en el filtro y la nueva columna)
-    # -----------------------------
-    if 'last_query_result' in st.session_state:
-        # Recuperamos los 4 elementos
-        titulo, df_resultado, grafico, tipo_resultado = st.session_state['last_query_result'] 
-        
-        st.markdown(f'<div class="mar-card" style="margin-top:20px;"><p style="color:{PALETTE["primary"]}; font-size: 20px; font-weight:700; margin:0 0 8px 0;">{titulo}</p></div>', unsafe_allow_html=True)
-
-        if tipo_resultado == 'restricciones':
-            
-            # Lista de tipos de restricción para el selectbox
-            if "tipoRestriccion" in df_resultado.columns:
-                tipos_restriccion = ['Todas las restricciones'] + df_resultado["tipoRestriccion"].astype(str).unique().tolist()
-            else:
-                tipos_restriccion = ['Todas las restricciones']
-                
-            # Inicializamos el filtro interactivo con la preselección si existe
-            default_index = 0
-            if 'tipo_restriccion_preseleccionado' in st.session_state and st.session_state['tipo_restriccion_preseleccionado'] in tipos_restriccion:
-                default_index = tipos_restriccion.index(st.session_state['tipo_restriccion_preseleccionado'])
-                
-            # --- Se coloca el filtro ANTES de la tarjeta resumen para que afecte la variable df_filtrado ---
-            filtro_restriccion = st.selectbox(
-                "Filtro por Tipo de Restricción:",
-                options=tipos_restriccion,
-                index=default_index,
-                key='filtro_restriccion',
-                label_visibility="visible"
+            user_input = st.text_input(
+                "¿Qué deseas consultar?", 
+                placeholder="Ej: Avance de obra en Torre 10 o Restricciones de materiales",
+                key="chat_input"
             )
 
-            # Aplicar filtro
-            df_filtrado = df_resultado.copy()
-            if filtro_restriccion != 'Todas las restricciones' and "tipoRestriccion" in df_filtrado.columns:
-                df_filtrado = df_filtrado[df_filtrado["tipoRestriccion"] == filtro_restriccion]
-
-            # Dividimos la sección de resultados en dos columnas (después de aplicar el filtro)
-            col_dias, col_filtro = st.columns([1, 2])
-            
-            # Cálculo de DiasDiferencia en el df_filtrado para mostrarlo en la tabla
-            if all(col in df_filtrado.columns for col in ["FechaCompromisoActual", "FechaCompromisoInicial"]):
-                # Convertir a datetime (manejando errores)
-                df_filtrado['FechaCompromisoActual'] = pd.to_datetime(df_filtrado['FechaCompromisoActual'], errors='coerce')
-                df_filtrado['FechaCompromisoInicial'] = pd.to_datetime(df_filtrado['FechaCompromisoInicial'], errors='coerce')
-                
-                # Calcular la diferencia en días
-                df_filtrado['DiasDiferencia'] = (df_filtrado['FechaCompromisoActual'] - df_filtrado['FechaCompromisoInicial']).dt.days
-            else:
-                 df_filtrado['DiasDiferencia'] = pd.NA # Si faltan columnas, agregamos NA
-
-            
-            # Recalcular la tarjeta de resumen
-            with col_dias:
-                dias_diferencia_df = None
-                
-                # Solo consideramos filas con valores válidos para el cálculo de métricas
-                df_valido = df_filtrado.dropna(subset=['DiasDiferencia']).copy()
-
-                if not df_valido.empty:
-                    # Filtramos solo las que tienen retraso (diferencia > 0)
-                    restricciones_reprogramadas = df_valido[df_valido['DiasDiferencia'] > 0]
-                    total_restricciones = len(df_valido)
-                    total_restricciones_reprogramadas = len(restricciones_reprogramadas)
-                    promedio_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].mean()
-                    
-                    # Creamos la tabla de resumen (CON LOS CAMPOS CORREGIDOS)
-                    data = {
-                        'Métrica': [
-                            'Total Restricciones (con Fechas)',
-                            'Restricciones Reprogramadas (Días > 0)', 
-                            'Promedio Días de Retraso (Por Reprogramada)'
-                        ],
-                        'Valor': [
-                            total_restricciones,
-                            total_restricciones_reprogramadas, 
-                            f"{promedio_dias_retraso:,.2f}" if not pd.isna(promedio_dias_retraso) else "0.00"
-                        ]
+        with col_button:
+            if st.button("🔍 Buscar", key="btn_buscar", type="primary", use_container_width=True):
+                if user_input:
+                    # Se llama a la función de respuesta
+                    titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado = generar_respuesta(user_input)
+                    st.session_state.last_response = {
+                        'titulo': titulo, 
+                        'df': df_resultado, 
+                        'grafico': grafico, 
+                        'tipo': tipo_resultado,
+                        'tipo_restriccion': tipo_restriccion_preseleccionado
                     }
-                    dias_diferencia_df = pd.DataFrame(data)
 
-                if dias_diferencia_df is not None:
-                    st.markdown('<div class="mar-card" style="background-color:#fff3e0; padding: 15px;">', unsafe_allow_html=True)
-                    st.markdown('📅 **Resumen de Demoras por Reprogramación**', unsafe_allow_html=True)
-                    st.dataframe(
-                        dias_diferencia_df, 
-                        hide_index=True, 
-                        use_container_width=True,
-                        column_config={
-                            "Métrica": st.column_config.Column("Métrica de Demora", width="medium"),
-                            "Valor": st.column_config.TextColumn("Resultado", width="small")
-                        }
-                    )
-                    st.markdown('<p style="font-size:12px; margin:0; color:#8d6e63;">*Datos filtrados por el tipo de restricción actual.</p>', unsafe_allow_html=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                else:
-                    st.info("No hay datos de fechas válidos para calcular la diferencia de días.")
+        # Sección de Resultados del Chat
+        if 'last_response' in st.session_state and st.session_state.last_response['df'] is not None:
+            res = st.session_state.last_response
+            st.markdown("---")
+            st.subheader(res['titulo'])
+            
+            if res['grafico'] is not None:
+                st.plotly_chart(res['grafico'], use_container_width=True)
 
-            # Columna principal con la tabla de detalle
-            with col_filtro:
-                st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-top:15px; margin-bottom:10px;">Detalle de Restricciones ({len(df_filtrado)} encontradas)</p>', unsafe_allow_html=True)
+            if res['tipo'] == 'restricciones' and "tipoRestriccion" in res['df'].columns:
                 
-                # 🎯 LISTA DE COLUMNAS ACTUALIZADA
-                columns_to_show = [
-                    'Actividad', 
-                    'Restriccion', 
-                    'numeroReprogramacionesCompromiso', 
-                    'Descripción', 
-                    'tipoRestriccion', 
-                    'FechaCompromisoInicial', 
-                    'FechaCompromisoActual', 
-                    'DiasDiferencia', 
-                    'Responsable', 
-                    'Comentarios'
-                ]
+                # Dropdown para filtrar por tipo de restricción
+                unique_types = ["Todas las restricciones"] + res['df']["tipoRestriccion"].astype(str).unique().tolist()
                 
-                # Seleccionamos las columnas que existen y mostramos el DataFrame
-                # Usamos filter(items=...) para seleccionar solo las columnas que realmente existen
-                df_display = df_filtrado.filter(items=columns_to_show)
+                # Si hay un tipo preseleccionado de la pregunta, lo usamos
+                initial_index = 0
+                if res['tipo_restriccion'] and res['tipo_restriccion'] in unique_types:
+                    initial_index = unique_types.index(res['tipo_restriccion'])
                 
-                # Renombramos las columnas calculadas/nuevas para la visualización (si existen)
-                rename_map = {}
-                if 'DiasDiferencia' in df_display.columns:
-                     rename_map['DiasDiferencia'] = 'Diferencia (Días)'
-                if 'numeroReprogramacionesCompromiso' in df_display.columns:
-                     rename_map['numeroReprogramacionesCompromiso'] = 'Núm. Reprog.'
-                     
-                df_display = df_display.rename(columns=rename_map)
+                filtro_restriccion = st.selectbox(
+                    "Filtrar el detalle por Tipo de Restricción:",
+                    options=unique_types,
+                    index=initial_index,
+                    key='filtro_restriccion'
+                )
+                
+                df_filtrado = res['df'].copy()
+                if filtro_restriccion != "Todas las restricciones":
+                    df_filtrado = df_filtrado[df_filtrado["tipoRestriccion"] == filtro_restriccion]
+                    
+                st.dataframe(df_filtrado, use_container_width=True)
 
-                st.dataframe(df_display, use_container_width=True)
-                
-            # Gráfico de Restricciones (si aplica, en la parte inferior para no competir con el DF de días)
-            if grafico:
-                st.markdown('<div class="mar-card" style="margin-top: 25px;">', unsafe_allow_html=True)
-                st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-bottom:5px;">Conteo por Tipo de Restricción (Todos los Proyectos/Tipo)</p>', unsafe_allow_html=True)
-                st.plotly_chart(grafico, use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-        # --- Lógica para otros resultados (Avance, Responsables, etc.) ---
-        else:
-            # Caso general: muestra solo el dataframe o mensaje
-            if df_resultado is not None:
-                st.markdown(f'<div class="mar-card" style="margin-top:0px;">', unsafe_allow_html=True)
-                if grafico:
-                    # Si hay gráfico (Avance de Obra), lo mostramos primero
-                    st.plotly_chart(grafico, use_container_width=True)
-                
-                # Mostramos el detalle del DataFrame
-                st.dataframe(df_resultado.drop(columns=["Proyecto_norm"], errors='ignore'), use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
             else:
-                st.error(titulo) # Muestra el mensaje de error o "No entendí"
-    
-    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+                # Mostrar el DataFrame de resultados (general)
+                st.dataframe(res['df'], use_container_width=True)
+            
+            # Botón para limpiar resultados
+            st.markdown("<div style='height:20px;'></div>", unsafe_allow_html=True)
+            if st.button("Limpiar Resultados", key="btn_clear", type="secondary"):
+                del st.session_state['last_response']
+                st.rerun()
 
+elif st.session_state.current_view == 'predictor':
+    mostrar_predictor_mlp()
 
+# NUEVO BLOQUE DE VISTA
+elif st.session_state.current_view == 'restricciones':
+    if excel_file:
+        mostrar_dashboard_restricciones()
+    else:
+        st.warning("Por favor, sube el archivo Excel para acceder al Dashboard de Restricciones.")
