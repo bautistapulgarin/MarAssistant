@@ -305,11 +305,8 @@ if NN_AVAILABLE:
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
-# Contenedor para alinear logo/títulos con el botón - MODIFICADO: agregamos una columna más
-col_header_title, col_header_button, col_header_button2 = st.columns([6, 1.5, 1.5])
-
-
-
+# Contenedor para alinear logo/títulos con el botón
+col_header_title, col_header_button = st.columns([7, 1.5])
 
 with col_header_title:
     if os.path.exists(logo_path):
@@ -336,35 +333,6 @@ with col_header_title:
     else:
         st.warning("Logo no encontrado en assets/logoMar.png")
         st.markdown(f'<p class="title">Sistema Integrado de Información de Proyectos</p>', unsafe_allow_html=True)
-
-
-
-
-
-
-# LÓGICA DEL BOTÓN DE PREDICCIÓN (sin cambios)
-def switch_to_predictor():
-    """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
-    st.session_state.current_view = 'predictor'
-    st.session_state.prediction_result = None
-
-# Función para volver al chat (sin cambios)
-def switch_to_chat():
-    """Cambia el estado de sesión para mostrar la vista del chat."""
-    st.session_state.current_view = 'chat'
-    st.session_state.prediction_result = None
-    if 'filtro_restriccion' in st.session_state:
-        del st.session_state['filtro_restriccion'] 
-    if 'tipo_restriccion_preseleccionado' in st.session_state:
-        del st.session_state['tipo_restriccion_preseleccionado']
-    st.rerun()
-
-
-
-
-
-
-
 
 
 # LÓGICA DEL BOTÓN DE PREDICCIÓN
@@ -1029,9 +997,5 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
-
-
-
-
 
 
