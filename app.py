@@ -824,27 +824,103 @@ elif st.session_state.current_view == 'chat':
             # Intentamos obtener el resultado (esperamos 5 valores)
             titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado = generar_respuesta(pregunta)
             
-          if tipo_resultado == 'restricciones':
-            # -----------------------------
-            # BOTÓN Y MODAL PARA REGISTRAR RESTRICCIÓN
-            # -----------------------------
-            col_btn, _ = st.columns([1, 6])
-            with col_btn:
-                if st.button("Registrar Restricción", key="btn_registrar"):
-                    st.session_state.show_popup = True
 
-            if st.session_state.get('show_popup', False):
-                with st.modal("Registro de Restricciones", key="modal_restricciones"):
-                    st.markdown("📋 **Formulario de Nueva Restricción**")
-                    campo_actividad = st.text_input("Nombre de la Actividad")
-                    campo_tipo = st.selectbox("Tipo de Restricción", options=list(MAPEO_RESTRICCION.values()))
-                    campo_descripcion = st.text_area("Descripción")
+
+
+
+if 'last_query_result' in st.session_state:
+    # Recuperamos los 4 elementos
+    titulo, df_resultado, grafico, tipo_resultado = st.session_state['last_query_result']
+
+    st.markdown(f'<div class="mar-card" style="margin-top:20px;"><p style="color:{PALETTE["primary"]}; font-size: 20px; font-weight:700; margin:0 0 8px 0;">{titulo}</p></div>', unsafe_allow_html=True)
+
+    if tipo_resultado == 'restricciones':
+
+        # Lista de tipos de restricción para el selectbox
+        if "tipoRestriccion" in df_resultado.columns:
+            tipos_restriccion = ['Todas las restricciones'] + df_resultado["tipoRestriccion"].astype(str).unique().tolist()
+        else:
+            tipos_restriccion = ['Todas las restricciones']
+
+        # Inicializamos el filtro interactivo con la preselección si existe
+        default_index = 0
+        if 'tipo_restriccion_preseleccionado' in st.session_state and st.session_state['tipo_restriccion_preseleccionado'] in tipos_restriccion:
+            default_index = tipos_restriccion.index(st.session_state['tipo_restriccion_preseleccionado'])
+
+        # Filtro interactivo
+        filtro_restriccion = st.selectbox(
+            "Filtro por Tipo de Restricción:",
+            options=tipos_restriccion,
+            index=default_index,
+            key='filtro_restriccion',
+            label_visibility="visible"
+        )
+
+        # Aplicar filtro
+        df_filtrado = df_resultado.copy()
+        if filtro_restriccion != 'Todas las restricciones' and "tipoRestriccion" in df_filtrado.columns:
+            df_filtrado = df_filtrado[df_filtrado["tipoRestriccion"] == filtro_restriccion]
+
+        # Cálculo de diferencia de días
+        if all(col in df_filtrado.columns for col in ["FechaCompromisoActual", "FechaCompromisoInicial"]):
+            df_filtrado['FechaCompromisoActual'] = pd.to_datetime(df_filtrado['FechaCompromisoActual'], errors='coerce')
+            df_filtrado['FechaCompromisoInicial'] = pd.to_datetime(df_filtrado['FechaCompromisoInicial'], errors='coerce')
+            df_filtrado['DiasDiferencia'] = (df_filtrado['FechaCompromisoActual'] - df_filtrado['FechaCompromisoInicial']).dt.days
+        else:
+            df_filtrado['DiasDiferencia'] = pd.NA
+
+        # Tarjeta de resumen
+        df_valido = df_filtrado.dropna(subset=['DiasDiferencia']).copy()
+        if not df_valido.empty:
+            restricciones_reprogramadas = df_valido[df_valido['DiasDiferencia'] > 0]
+            total_restricciones = len(df_valido)
+            total_restricciones_reprogramadas = len(restricciones_reprogramadas)
+            promedio_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].mean()
+
+            data = {
+                'Métrica': [
+                    'Total Restricciones (con Fechas)',
+                    'Restricciones Reprogramadas (Días > 0)',
+                    'Promedio Días de Retraso (Por Reprogramada)'
+                ],
+                'Valor': [
+                    total_restricciones,
+                    total_restricciones_reprogramadas,
+                    f"{promedio_dias_retraso:,.2f}" if not pd.isna(promedio_dias_retraso) else "0.00"
+                ]
+            }
+            dias_diferencia_df = pd.DataFrame(data)
+
+            st.markdown('<div class="mar-card" style="background-color:#fff3e0; padding: 15px;">', unsafe_allow_html=True)
+            st.markdown('📅 **Resumen de Demoras por Reprogramación**', unsafe_allow_html=True)
+            st.dataframe(dias_diferencia_df, hide_index=True, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("No hay datos de fechas válidos para calcular la diferencia de días.")
+
+        # Tabla principal
+        columns_to_show = [
+            'Actividad',
+            'Restriccion',
+            'numeroReprogramacionesCompromiso',
+            'Descripción',
+            'tipoRestriccion',
+            'FechaCompromisoInicial',
+            'FechaCompromisoActual',
+            'DiasDiferencia',
+            'Responsable',
+            'Comentarios'
+        ]
+        df_display = df_filtrado.filter(items=columns_to_show)
+        rename_map = {}
+        if 'DiasDiferencia' in df_display.columns:
+            rename_map['DiasDiferencia'] = 'Diferencia (Días)'
+        if 'numeroReprogramacionesCompromiso' in df_display.columns:
+            rename_map['numeroReprogramacionesCompromiso'] = 'Núm. Reprog.'
+        df_display = df_display.rename(columns=rename_map)
+        st.dataframe(df_display, use_container_width=True)
+
             
-                    if st.button("Guardar", key="btn_guardar_restriccion"):
-                    # Aquí puedes agregar lógica para guardar en df_restricciones o Excel
-                        st.success("Formulario listo (aún sin persistencia).")
-                        st.session_state.show_popup = False
-
 
 
 
@@ -1037,6 +1113,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+
 
 
 
