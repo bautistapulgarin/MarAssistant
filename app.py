@@ -362,9 +362,6 @@ def switch_to_chat():
 
 
 
-
-
-
 # NUEVA FUNCIÓN para el botón adicional
 def handle_new_button():
     """Función para manejar el nuevo botón"""
@@ -381,13 +378,6 @@ with col_header_button:
 
 
 
-
-# NUEVO BOTÓN agregado al lado del botón de Pronóstico
-# NUEVO BOTÓN agregado al lado del botón de Pronóstico
-with col_header_button2:
-    st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
-    if st.button("Nuevo Botón", key="btn_nuevo_main", type="secondary", use_container_width=True):
-        handle_new_button()
 
 
 
@@ -1053,6 +1043,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+
 
 
 
