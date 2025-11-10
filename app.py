@@ -824,27 +824,26 @@ elif st.session_state.current_view == 'chat':
             # Intentamos obtener el resultado (esperamos 5 valores)
             titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado = generar_respuesta(pregunta)
             
-            if tipo_resultado == 'restricciones':
+           if tipo_resultado == 'restricciones':
+    # -----------------------------
+    # BOTÓN Y MODAL PARA REGISTRAR RESTRICCIÓN
+    # -----------------------------
+    col_btn, _ = st.columns([1, 6])
+    with col_btn:
+        if st.button("Registrar Restricción", key="btn_registrar"):
+            st.session_state.show_popup = True
 
-                # -----------------------------
-# BOTÓN Y MODAL PARA REGISTRAR RESTRICCIÓN
-# -----------------------------
-col_btn, _ = st.columns([1, 6])
-with col_btn:
-    if st.button("Registrar Restricción", key="btn_registrar"):
-        st.session_state.show_popup = True
-
-if st.session_state.get('show_popup', False):
-    with st.modal("Registro de Restricciones", key="modal_restricciones"):
-        st.markdown("📋 **Formulario de Nueva Restricción**")
-        campo_actividad = st.text_input("Nombre de la Actividad")
-        campo_tipo = st.selectbox("Tipo de Restricción", options=list(MAPEO_RESTRICCION.values()))
-        campo_descripcion = st.text_area("Descripción")
-        
-        if st.button("Guardar", key="btn_guardar_restriccion"):
-            # Aquí puedes agregar lógica para guardar en df_restricciones o Excel
-            st.success("Formulario listo (aún sin persistencia).")
-            st.session_state.show_popup = False
+    if st.session_state.get('show_popup', False):
+        with st.modal("Registro de Restricciones", key="modal_restricciones"):
+            st.markdown("📋 **Formulario de Nueva Restricción**")
+            campo_actividad = st.text_input("Nombre de la Actividad")
+            campo_tipo = st.selectbox("Tipo de Restricción", options=list(MAPEO_RESTRICCION.values()))
+            campo_descripcion = st.text_area("Descripción")
+            
+            if st.button("Guardar", key="btn_guardar_restriccion"):
+                # Aquí puedes agregar lógica para guardar en df_restricciones o Excel
+                st.success("Formulario listo (aún sin persistencia).")
+                st.session_state.show_popup = False
 
 
 
@@ -1037,6 +1036,7 @@ if st.session_state.get('show_popup', False):
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+
 
 
 
