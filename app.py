@@ -362,20 +362,6 @@ def switch_to_chat():
 
 
 
-# NUEVA FUNCIÓN para el botón adicional
-def handle_new_button():
-    """Función para manejar el nuevo botón"""
-    st.info("¡Nuevo botón presionado! Agrega aquí la funcionalidad que necesites.")
-
-with col_header_button:
-    st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
-    if MODELO_NN:
-        # Usamos un form submit button para evitar el problema de clave duplicada
-        if st.button("Pronóstico", key="btn_prediccion_main", type="secondary", use_container_width=True):
-            switch_to_predictor()
-    else:
-        st.warning("MLP no disponible.")
-
 
 
 
@@ -1043,6 +1029,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+
 
 
 
