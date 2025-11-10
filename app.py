@@ -308,6 +308,9 @@ logo_path = os.path.join("assets", "logoMar.png")
 # Contenedor para alinear logo/títulos con el botón - MODIFICADO: agregamos una columna más
 col_header_title, col_header_button, col_header_button2 = st.columns([6, 1.5, 1.5])
 
+
+
+
 with col_header_title:
     if os.path.exists(logo_path):
         try:
@@ -334,6 +337,11 @@ with col_header_title:
         st.warning("Logo no encontrado en assets/logoMar.png")
         st.markdown(f'<p class="title">Sistema Integrado de Información de Proyectos</p>', unsafe_allow_html=True)
 
+
+
+
+
+
 # LÓGICA DEL BOTÓN DE PREDICCIÓN (sin cambios)
 def switch_to_predictor():
     """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
@@ -351,6 +359,12 @@ def switch_to_chat():
         del st.session_state['tipo_restriccion_preseleccionado']
     st.rerun()
 
+
+
+
+
+
+
 # NUEVA FUNCIÓN para el botón adicional
 def handle_new_button():
     """Función para manejar el nuevo botón"""
@@ -359,15 +373,20 @@ def handle_new_button():
 with col_header_button:
     st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
     if MODELO_NN:
-        if st.button("Pronóstico", key="btn_prediccion", type="secondary", use_container_width=True):
+        # Usamos un form submit button para evitar el problema de clave duplicada
+        if st.button("Pronóstico", key="btn_prediccion_main", type="secondary", use_container_width=True):
             switch_to_predictor()
     else:
         st.warning("MLP no disponible.")
 
+
+
+
+# NUEVO BOTÓN agregado al lado del botón de Pronóstico
 # NUEVO BOTÓN agregado al lado del botón de Pronóstico
 with col_header_button2:
     st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True) # Espacio para alinear
-    if st.button("Nuevo Botón", key="btn_nuevo", type="secondary", use_container_width=True):
+    if st.button("Nuevo Botón", key="btn_nuevo_main", type="secondary", use_container_width=True):
         handle_new_button()
 
 
@@ -1034,6 +1053,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+
 
 
 
