@@ -10,3 +10,8 @@ joblib
 scikit-learn
 gspread
 google-auth
+streamlit
+pandas
+plotly
+gspread
+google-auth
