@@ -40,6 +40,39 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+
+# -----------------------------
+# CONEXIÓN A GOOGLE SHEETS
+# -----------------------------
+import gspread
+from google.oauth2.service_account import Credentials
+
+# Intenta conectar al inicio de la app
+try:
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    client = gspread.authorize(creds)
+
+    # ⚠️ Reemplaza este ID por el de tu hoja real
+    SHEET_ID = "1QcCMSLuOF8N4mVj7tCH41myLtVTnt2sgIk8Ey2UBxPo"
+    sheet = client.open_by_key(SHEET_ID).sheet1
+
+    st.session_state["sheet_connected"] = True
+except Exception as e:
+    st.session_state["sheet_connected"] = False
+    st.error(f"Error conectando con Google Sheets: {e}")
+
+
+
+
+
+
+
+
+
+
 # -----------------------------
 # PALETA DE COLORES (UX / BI)
 # -----------------------------
@@ -997,6 +1030,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo) # Muestra el mensaje de error o "No entendí"
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True) # Espacio inferior
+
 
 
 
