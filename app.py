@@ -296,7 +296,7 @@ if NN_AVAILABLE:
 # CONFIGURACIÓN DEL ARCHIVO EXCEL DESDE GITHUB
 # -----------------------------
 # Reemplaza con la URL raw de tu archivo Excel en GitHub
-GITHUB_EXCEL_URL = "https://raw.githubusercontent.com/tu_usuario/tu_repositorio/main/data/tu_archivo.xlsx"
+GITHUB_EXCEL_URL = "https://github.com/bautistapulgarin/MarAssistant/blob/main/data/control_obra.xlsx"
 
 @st.cache_data(ttl=3600)  # Cache por 1 hora
 def load_excel_from_github():
@@ -924,3 +924,4 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo)
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+
