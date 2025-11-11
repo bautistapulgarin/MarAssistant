@@ -924,4 +924,3 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo)
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
-
