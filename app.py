@@ -52,7 +52,7 @@ PALETTE = {
 }
 
 # -----------------------------
-# CSS GLOBAL - ¡Agregando el estilo para el botón de 'Predicción'!
+# CSS GLOBAL - ¡Agregando el estilo para el botón de 'Predicción' y Modal!
 # -----------------------------
 st.markdown(f"""
 <style>
@@ -193,6 +193,23 @@ st.markdown(f"""
     background-color: #e9ecef !important;
 }}
 
+/* NUEVO: Estilo para el botón de VENTANA EMERGENTE */
+.stButton>button[key="btn_modal"] {{
+    background-color: #28a745 !important; /* Verde */
+    color: white !important;
+    border: 1px solid #28a745 !important;
+    border-radius: 8px !important;
+    padding: 0 20px !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-top: 0px; 
+}}
+.stButton>button[key="btn_modal"]:hover {{
+    background-color: #218838 !important;
+    border: 1px solid #218838 !important;
+}}
+
 /* Estilo para la ficha de conteo */
 .metric-card {{
     background-color: #f0f2f6; /* Gris claro */
@@ -213,7 +230,6 @@ st.markdown(f"""
     margin-top: 5px;
 }}
 
-
 /* Sidebar */
 [data-testid="stSidebar"] {{
     background-color: white;
@@ -228,10 +244,112 @@ st.markdown(f"""
     padding: 12px 15px;
     font-size: 15px;
 }}
-/* Estilo para Selectbox - Opcional */
-[data-testid="stForm"] label, [data-testid="stForm"] p {{
-    font-weight: 500;
-    color: #34495e;
+
+/* NUEVO: Estilos para la ventana modal */
+.modal {{
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}}
+
+.modal-content {{
+    background-color: white;
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    width: 80%;
+    max-width: 600px;
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out;
+}}
+
+@keyframes modalSlideIn {{
+    from {{
+        opacity: 0;
+        transform: translateY(-50px);
+    }}
+    to {{
+        opacity: 1;
+        transform: translateY(0);
+    }}
+}}
+
+.close {{
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    right: 20px;
+    top: 15px;
+}}
+
+.close:hover {{
+    color: #333;
+}}
+
+.modal-header {{
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}}
+
+.modal-title {{
+    color: var(--mar-primary);
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}}
+
+.modal-body {{
+    padding: 10px 0;
+}}
+
+.modal-footer {{
+    border-top: 1px solid #e9ecef;
+    padding-top: 20px;
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}}
+
+/* Estilo para botones dentro del modal */
+.stButton>button[key="btn_guardar"] {{
+    background-color: #28a745 !important;
+    color: white !important;
+    border: 1px solid #28a745 !important;
+    border-radius: 8px !important;
+    padding: 0 20px !important;
+    font-weight: 600 !important;
+    height: 40px !important;
+}}
+
+.stButton>button[key="btn_guardar"]:hover {{
+    background-color: #218838 !important;
+    border: 1px solid #218838 !important;
+}}
+
+.stButton>button[key="btn_cerrar_modal"] {{
+    background-color: #6c757d !important;
+    color: white !important;
+    border: 1px solid #6c757d !important;
+    border-radius: 8px !important;
+    padding: 0 20px !important;
+    font-weight: 600 !important;
+    height: 40px !important;
+}}
+
+.stButton>button[key="btn_cerrar_modal"]:hover {{
+    background-color: #5a6268 !important;
+    border: 1px solid #5a6268 !important;
 }}
 
 </style>
@@ -334,12 +452,35 @@ def load_excel_from_github():
         return {'success': False, 'error': str(e)}
 
 # -----------------------------
-# HEADER: logo + títulos + BOTÓN DE PREDICCIÓN
+# FUNCIONES PARA LA VENTANA MODAL
+# -----------------------------
+def abrir_modal():
+    """Abre la ventana modal"""
+    st.session_state.modal_abierto = True
+
+def cerrar_modal():
+    """Cierra la ventana modal"""
+    st.session_state.modal_abierto = False
+
+def guardar_formulario():
+    """Guarda los datos del formulario"""
+    # Aquí puedes procesar los datos del formulario
+    st.session_state.datos_guardados = {
+        'nombre': st.session_state.get('modal_nombre', ''),
+        'email': st.session_state.get('modal_email', ''),
+        'proyecto': st.session_state.get('modal_proyecto', ''),
+        'comentario': st.session_state.get('modal_comentario', '')
+    }
+    st.success("✅ Datos guardados correctamente!")
+    cerrar_modal()
+
+# -----------------------------
+# HEADER: logo + títulos + BOTÓN DE PREDICCIÓN + BOTÓN MODAL
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
 
-# Contenedor para alinear logo/títulos con el botón
-col_header_title, col_header_button = st.columns([7, 1.5])
+# Contenedor para alinear logo/títulos con los botones
+col_header_title, col_header_buttons = st.columns([7, 2])
 
 with col_header_title:
     if os.path.exists(logo_path):
@@ -367,6 +508,22 @@ with col_header_title:
         st.warning("Logo no encontrado en assets/logoMar.png")
         st.markdown(f'<p class="title">Sistema Integrado de Información de Proyectos</p>', unsafe_allow_html=True)
 
+with col_header_buttons:
+    st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True)
+    col_pred, col_modal = st.columns(2)
+    
+    with col_pred:
+        if MODELO_NN:
+            if st.button("Pronóstico", key="btn_prediccion", type="secondary", use_container_width=True):
+                switch_to_predictor()
+        else:
+            st.warning("MLP no disponible.")
+    
+    with col_modal:
+        # Botón para abrir la ventana modal
+        if st.button("📝 Nuevo Registro", key="btn_modal", type="secondary", use_container_width=True):
+            abrir_modal()
+
 # LÓGICA DEL BOTÓN DE PREDICCIÓN
 def switch_to_predictor():
     """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
@@ -383,14 +540,6 @@ def switch_to_chat():
         del st.session_state['tipo_restriccion_preseleccionado']
     st.rerun()
 
-with col_header_button:
-    st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True)
-    if MODELO_NN:
-        if st.button("Pronóstico", key="btn_prediccion", type="secondary", use_container_width=True):
-            switch_to_predictor()
-    else:
-        st.warning("MLP no disponible.")
-        
 # Inicializar el estado de sesión para la vista
 if 'current_view' not in st.session_state:
     st.session_state.current_view = 'chat'
@@ -398,6 +547,10 @@ if 'current_view' not in st.session_state:
 # Inicializar el estado de la predicción
 if 'prediction_result' not in st.session_state:
     st.session_state.prediction_result = None
+
+# Inicializar estado del modal
+if 'modal_abierto' not in st.session_state:
+    st.session_state.modal_abierto = False
 
 # -----------------------------
 # CARGA DEL ARCHIVO EXCEL DESDE GITHUB
@@ -430,6 +583,108 @@ else:
 img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
 st.sidebar.markdown("---")
 st.sidebar.markdown("💡 **Consejo:** Los datos se cargan automáticamente desde el repositorio de GitHub.")
+
+# -----------------------------
+# VENTANA MODAL
+# -----------------------------
+if st.session_state.modal_abierto:
+    # JavaScript para mostrar el modal
+    st.markdown("""
+    <script>
+    function showModal() {
+        document.getElementById('myModal').style.display = 'block';
+    }
+    window.onload = showModal;
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # HTML del modal
+    st.markdown("""
+    <div id="myModal" class="modal" style="display: block;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <h3 class="modal-title">📝 Nuevo Registro</h3>
+            </div>
+            <div class="modal-body">
+                <p>Complete el formulario para agregar un nuevo registro:</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    function closeModal() {
+        document.getElementById('myModal').style.display = 'none';
+        // Enviar comando a Streamlit para cerrar el modal
+        window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'cerrar_modal'}, '*');
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    window.onclick = function(event) {
+        var modal = document.getElementById('myModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Contenido del modal en Streamlit
+    with st.container():
+        st.markdown("### Formulario de Registro")
+        
+        # Campos del formulario
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            nombre = st.text_input(
+                "Nombre completo *",
+                key="modal_nombre",
+                placeholder="Ingrese su nombre completo"
+            )
+            
+            email = st.text_input(
+                "Correo electrónico *",
+                key="modal_email",
+                placeholder="ejemplo@correo.com"
+            )
+        
+        with col2:
+            proyecto = st.selectbox(
+                "Proyecto *",
+                options=["Proyecto A", "Proyecto B", "Proyecto C", "Otro"],
+                key="modal_proyecto"
+            )
+            
+            fecha = st.date_input(
+                "Fecha del registro",
+                key="modal_fecha"
+            )
+        
+        comentario = st.text_area(
+            "Comentarios o observaciones",
+            key="modal_comentario",
+            placeholder="Describa el propósito de este registro...",
+            height=100
+        )
+        
+        # Botones de acción en el modal
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
+        
+        with col_btn1:
+            if st.button("💾 Guardar", key="btn_guardar", use_container_width=True):
+                # Validar campos obligatorios
+                if not nombre or not email or not proyecto:
+                    st.error("Por favor complete todos los campos obligatorios (*)")
+                else:
+                    guardar_formulario()
+        
+        with col_btn2:
+            if st.button("❌ Cerrar", key="btn_cerrar_modal", use_container_width=True):
+                cerrar_modal()
+        
+        with col_btn3:
+            st.markdown("<small>* Campos obligatorios</small>", unsafe_allow_html=True)
 
 # -----------------------------
 # SPLASH (opcional)
