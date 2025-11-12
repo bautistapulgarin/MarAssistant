@@ -413,6 +413,24 @@ st.markdown(f"""
     font-size: 16px;
 }}
 
+/* Estilo para la ficha de información */
+.info-card {{
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--mar-primary);
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 15px;
+}}
+.info-title {{
+    font-weight: 600;
+    color: var(--mar-primary);
+    margin-bottom: 8px;
+}}
+.info-item {{
+    margin-bottom: 4px;
+    font-size: 14px;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -513,6 +531,96 @@ def load_excel_from_github():
         return {'success': False, 'error': str(e)}
 
 # -----------------------------
+# OPCIONES PARA LOS CAMPOS DEL FORMULARIO
+# -----------------------------
+OPCIONES_PROYECTO = [
+    "Seleccione un proyecto",
+    "El Castell Iberia Reservado", 
+    "Peñon de Alicante", 
+    "Lorca"
+]
+
+OPCIONES_COMPONENTES = [
+    "Seleccione un componente",
+    "Torre 1", 
+    "Torre 2", 
+    "Torre 3", 
+    "Torre 4"
+]
+
+OPCIONES_ACUERDO_SERVICIO = [
+    "Seleccione un acuerdo de servicio",
+    "Provisional electrico", 
+    "Topografia", 
+    "Tala de arboles", 
+    "Movimiento de tierras",
+    "Pilotaje", 
+    "Caisson", 
+    "Cimentacion Superficial -Estructura", 
+    "Instalaciones electricas"
+]
+
+# Datos de la ficha de acuerdo de servicio
+DATOS_ACUERDO_SERVICIO = {
+    "Provisional electrico": {
+        "tiempo_proceso": 39,
+        "tiempo_proveedor": 15,
+        "fecha_inicio_contrato": "12/11/2025",
+        "fecha_legalizacion": "21/01/2026",
+        "fecha_actividad": "01/02/2026"
+    },
+    "Topografia": {
+        "tiempo_proceso": 25,
+        "tiempo_proveedor": 10,
+        "fecha_inicio_contrato": "15/11/2025",
+        "fecha_legalizacion": "15/12/2025",
+        "fecha_actividad": "20/12/2025"
+    },
+    "Tala de arboles": {
+        "tiempo_proceso": 20,
+        "tiempo_proveedor": 8,
+        "fecha_inicio_contrato": "10/11/2025",
+        "fecha_legalizacion": "05/12/2025",
+        "fecha_actividad": "10/12/2025"
+    },
+    "Movimiento de tierras": {
+        "tiempo_proceso": 45,
+        "tiempo_proveedor": 20,
+        "fecha_inicio_contrato": "20/11/2025",
+        "fecha_legalizacion": "10/01/2026",
+        "fecha_actividad": "15/01/2026"
+    },
+    "Pilotaje": {
+        "tiempo_proceso": 35,
+        "tiempo_proveedor": 18,
+        "fecha_inicio_contrato": "25/11/2025",
+        "fecha_legalizacion": "05/01/2026",
+        "fecha_actividad": "10/01/2026"
+    },
+    "Caisson": {
+        "tiempo_proceso": 50,
+        "tiempo_proveedor": 25,
+        "fecha_inicio_contrato": "30/11/2025",
+        "fecha_legalizacion": "25/01/2026",
+        "fecha_actividad": "01/02/2026"
+    },
+    "Cimentacion Superficial -Estructura": {
+        "tiempo_proceso": 60,
+        "tiempo_proveedor": 30,
+        "fecha_inicio_contrato": "05/12/2025",
+        "fecha_legalizacion": "10/02/2026",
+        "fecha_actividad": "15/02/2026"
+    },
+    "Instalaciones electricas": {
+        "tiempo_proceso": 40,
+        "tiempo_proveedor": 22,
+        "fecha_inicio_contrato": "15/12/2025",
+        "fecha_legalizacion": "01/02/2026",
+        "fecha_actividad": "10/02/2026"
+    }
+}
+
+# -----------------------------
 # FUNCIONES PARA LA VENTANA MODAL
 # -----------------------------
 def abrir_modal():
@@ -523,16 +631,13 @@ def cerrar_modal():
     """Cierra la ventana modal y limpia los campos"""
     st.session_state.modal_abierto = False
     # Limpiar campos del formulario
-    if 'modal_nombre' in st.session_state:
-        del st.session_state.modal_nombre
-    if 'modal_email' in st.session_state:
-        del st.session_state.modal_email
-    if 'modal_proyecto' in st.session_state:
-        del st.session_state.modal_proyecto
-    if 'modal_fecha' in st.session_state:
-        del st.session_state.modal_fecha
-    if 'modal_comentario' in st.session_state:
-        del st.session_state.modal_comentario
+    campos_a_limpiar = [
+        'modal_proyecto', 'modal_componente', 'modal_acuerdo_servicio',
+        'modal_buscar_acuerdo', 'modal_detalle_opcional'
+    ]
+    for campo in campos_a_limpiar:
+        if campo in st.session_state:
+            del st.session_state[campo]
 
 def volver_al_chat():
     """Cierra el modal y vuelve a la vista del chat"""
@@ -543,22 +648,46 @@ def volver_al_chat():
 def guardar_formulario():
     """Guarda los datos del formulario"""
     # Validar campos obligatorios
-    if not st.session_state.get('modal_nombre') or not st.session_state.get('modal_email') or not st.session_state.get('modal_proyecto'):
+    if not st.session_state.get('modal_proyecto') or not st.session_state.get('modal_componente') or not st.session_state.get('modal_acuerdo_servicio'):
         st.error("Por favor complete todos los campos obligatorios (*)")
         return
     
     # Aquí puedes procesar los datos del formulario
     st.session_state.datos_guardados = {
-        'nombre': st.session_state.get('modal_nombre', ''),
-        'email': st.session_state.get('modal_email', ''),
         'proyecto': st.session_state.get('modal_proyecto', ''),
-        'fecha': st.session_state.get('modal_fecha', ''),
-        'comentario': st.session_state.get('modal_comentario', '')
+        'componente': st.session_state.get('modal_componente', ''),
+        'acuerdo_servicio': st.session_state.get('modal_acuerdo_servicio', ''),
+        'detalle_opcional': st.session_state.get('modal_detalle_opcional', '')
     }
     
     st.success("✅ Datos guardados correctamente!")
     time.sleep(1)  # Pequeña pausa para mostrar el mensaje
     cerrar_modal()
+
+def filtrar_acuerdos_servicio(busqueda):
+    """Filtra las opciones de acuerdo de servicio basado en la búsqueda"""
+    if not busqueda:
+        return OPCIONES_ACUERDO_SERVICIO
+    
+    busqueda_lower = busqueda.lower()
+    return [opcion for opcion in OPCIONES_ACUERDO_SERVICIO 
+            if busqueda_lower in opcion.lower()]
+
+def mostrar_ficha_acuerdo_servicio(acuerdo_seleccionado):
+    """Muestra la ficha de información del acuerdo de servicio seleccionado"""
+    if acuerdo_seleccionado and acuerdo_seleccionado in DATOS_ACUERDO_SERVICIO:
+        datos = DATOS_ACUERDO_SERVICIO[acuerdo_seleccionado]
+        st.markdown(f"""
+        <div class="info-card">
+            <div class="info-title">📋 Información del Acuerdo de Servicio</div>
+            <div class="info-item"><strong>Días de acuerdo de servicio:</strong></div>
+            <div class="info-item">• Tiempo del proceso: {datos['tiempo_proceso']} días</div>
+            <div class="info-item">• Tiempo del Proveedor: {datos['tiempo_proveedor']} días</div>
+            <div class="info-item">• Fecha de inicio Contrato: {datos['fecha_inicio_contrato']}</div>
+            <div class="info-item">• Fecha de Legalización: {datos['fecha_legalizacion']}</div>
+            <div class="info-item">• Fecha de Actividad: {datos['fecha_actividad']}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # -----------------------------
 # HEADER: logo + títulos + BOTÓN DE PREDICCIÓN + BOTÓN MODAL
@@ -669,7 +798,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("💡 **Consejo:** Los datos se cargan automáticamente desde el repositorio de GitHub.")
 
 # -----------------------------
-# VENTANA MODAL - TODOS LOS CAMPOS DENTRO
+# VENTANA MODAL - FORMULARIO MODIFICADO
 # -----------------------------
 if st.session_state.modal_abierto:
     # JavaScript para mostrar el modal y manejar el cierre
@@ -719,46 +848,56 @@ if st.session_state.modal_abierto:
     # CONTENIDO DEL FORMULARIO DENTRO DEL MODAL
     st.markdown("### Complete la información del nuevo registro")
     
-    # Campos del formulario en dos columnas
-    col1, col2 = st.columns(2)
+    # Campo 1: Proyecto (lista desplegable)
+    proyecto = st.selectbox(
+        "Proyecto *",
+        options=OPCIONES_PROYECTO,
+        key="modal_proyecto",
+        help="Seleccione el proyecto al que pertenece el registro"
+    )
     
-    with col1:
-        nombre = st.text_input(
-            "Nombre completo *",
-            key="modal_nombre",
-            placeholder="Ingrese su nombre completo",
-            help="Nombre completo del responsable"
-        )
-        
-        email = st.text_input(
-            "Correo electrónico *",
-            key="modal_email",
-            placeholder="ejemplo@constructora.com",
-            help="Correo electrónico de contacto"
-        )
+    # Campo 2: Componentes (lista desplegable)
+    componente = st.selectbox(
+        "Componentes *",
+        options=OPCIONES_COMPONENTES,
+        key="modal_componente",
+        help="Seleccione el componente del proyecto"
+    )
     
-    with col2:
-        proyecto = st.selectbox(
-            "Proyecto asignado *",
-            options=["Seleccione un proyecto", "Proyecto Residencial A", "Proyecto Comercial B", 
-                    "Proyecto Industrial C", "Proyecto Infraestructura D", "Otro proyecto"],
-            key="modal_proyecto",
-            help="Seleccione el proyecto al que pertenece el registro"
-        )
-        
-        fecha = st.date_input(
-            "Fecha del registro *",
-            key="modal_fecha",
-            help="Fecha en que se realiza el registro"
-        )
+    # Campo 3: Acuerdo de servicio con búsqueda
+    st.markdown("**Acuerdo de servicio ***")
     
-    # Campo de comentarios ancho completo
-    comentario = st.text_area(
-        "Descripción del registro *",
-        key="modal_comentario",
-        placeholder="Describa detalladamente el propósito, actividades o observaciones de este registro...",
-        height=120,
-        help="Información detallada sobre el registro"
+    # Campo de búsqueda para filtrar acuerdos de servicio
+    busqueda_acuerdo = st.text_input(
+        "Buscar acuerdo de servicio",
+        key="modal_buscar_acuerdo",
+        placeholder="Escriba para filtrar las opciones...",
+        help="Escriba para buscar entre las opciones de acuerdo de servicio"
+    )
+    
+    # Filtrar opciones basado en la búsqueda
+    opciones_filtradas = filtrar_acuerdos_servicio(busqueda_acuerdo)
+    
+    # Lista desplegable con opciones filtradas
+    acuerdo_servicio = st.selectbox(
+        "Seleccione el acuerdo de servicio:",
+        options=opciones_filtradas,
+        key="modal_acuerdo_servicio",
+        help="Seleccione el acuerdo de servicio deseado",
+        label_visibility="collapsed"
+    )
+    
+    # Mostrar ficha de información cuando se selecciona un acuerdo
+    if acuerdo_servicio and acuerdo_servicio != "Seleccione un acuerdo de servicio":
+        mostrar_ficha_acuerdo_servicio(acuerdo_servicio)
+    
+    # Campo 4: Detalle opcional (campo abierto)
+    detalle_opcional = st.text_area(
+        "Detalle opcional",
+        key="modal_detalle_opcional",
+        placeholder="Ingrese cualquier detalle adicional o comentario opcional...",
+        height=100,
+        help="Información adicional opcional sobre el registro"
     )
     
     # Información de campos obligatorios
@@ -770,7 +909,7 @@ if st.session_state.modal_abierto:
             <div class="modal-footer">
     """, unsafe_allow_html=True)
     
-    # BOTONES DENTRO DEL MODAL - AHORA CON BOTÓN "VOLVER AL CHAT"
+    # BOTONES DENTRO DEL MODAL
     col_btn1, col_btn2, col_btn3, col_btn4 = st.columns([1, 1, 1, 1])
     
     with col_btn1:
@@ -782,7 +921,7 @@ if st.session_state.modal_abierto:
             cerrar_modal()
     
     with col_btn3:
-        # NUEVO BOTÓN: VOLVER AL CHAT
+        # BOTÓN: VOLVER AL CHAT
         if st.button("💬 Volver al Chat", key="btn_volver_chat", use_container_width=True):
             volver_al_chat()
     
