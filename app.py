@@ -280,7 +280,7 @@ st.markdown(f"""
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     width: 90%;
-    max-width: 800px;
+    max-width: 700px;
     max-height: 85vh;
     overflow-y: auto;
     position: relative;
@@ -413,41 +413,6 @@ st.markdown(f"""
     font-size: 16px;
 }}
 
-/* Estilo para la ficha informativa */
-.info-card {{
-    background-color: #e8f4fd;
-    border: 1px solid #b8daff;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 15px 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}}
-
-.info-card h4 {{
-    color: #004085;
-    margin: 0 0 15px 0;
-    font-size: 18px;
-    border-bottom: 2px solid #b8daff;
-    padding-bottom: 8px;
-}}
-
-.info-item {{
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    padding: 5px 0;
-}}
-
-.info-label {{
-    font-weight: 600;
-    color: #004085;
-}}
-
-.info-value {{
-    color: #155724;
-    font-weight: 500;
-}}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -548,82 +513,6 @@ def load_excel_from_github():
         return {'success': False, 'error': str(e)}
 
 # -----------------------------
-# DATOS PARA EL FORMULARIO
-# -----------------------------
-PROYECTOS = ["Seleccione un proyecto", "El Castell Iberia Reservado", "Peñon de Alicante", "Lorca"]
-COMPONENTES = ["Seleccione un componente", "Torre 1", "Torre 2", "Torre 3", "Torre 4"]
-ACUERDOS_SERVICIO = [
-    "Provisional electrico", 
-    "Topografia", 
-    "Tala de arboles", 
-    "Movimiento de tierras",
-    "Pilotaje", 
-    "Caisson", 
-    "Cimentacion Superficial - Estructura", 
-    "Instalaciones electricas"
-]
-
-# Datos para la ficha informativa (simulados)
-DATOS_ACUERDOS = {
-    "Provisional electrico": {
-        "tiempo_proceso": 25,
-        "tiempo_proveedor": 10,
-        "fecha_inicio": "15/01/2025",
-        "fecha_legalizacion": "09/02/2025",
-        "fecha_actividad": "24/02/2025"
-    },
-    "Topografia": {
-        "tiempo_proceso": 15,
-        "tiempo_proveedor": 5,
-        "fecha_inicio": "20/01/2025",
-        "fecha_legalizacion": "10/02/2025",
-        "fecha_actividad": "15/02/2025"
-    },
-    "Tala de arboles": {
-        "tiempo_proceso": 20,
-        "tiempo_proveedor": 8,
-        "fecha_inicio": "10/01/2025",
-        "fecha_legalizacion": "05/02/2025",
-        "fecha_actividad": "13/02/2025"
-    },
-    "Movimiento de tierras": {
-        "tiempo_proceso": 39,
-        "tiempo_proveedor": 15,
-        "fecha_inicio": "12/11/2025",
-        "fecha_legalizacion": "21/01/2026",
-        "fecha_actividad": "01/02/2026"
-    },
-    "Pilotaje": {
-        "tiempo_proceso": 45,
-        "tiempo_proveedor": 20,
-        "fecha_inicio": "01/12/2025",
-        "fecha_legalizacion": "15/02/2026",
-        "fecha_actividad": "01/03/2026"
-    },
-    "Caisson": {
-        "tiempo_proceso": 35,
-        "tiempo_proveedor": 12,
-        "fecha_inicio": "15/12/2025",
-        "fecha_legalizacion": "25/01/2026",
-        "fecha_actividad": "10/02/2026"
-    },
-    "Cimentacion Superficial - Estructura": {
-        "tiempo_proceso": 50,
-        "tiempo_proveedor": 25,
-        "fecha_inicio": "01/01/2026",
-        "fecha_legalizacion": "01/03/2026",
-        "fecha_actividad": "15/03/2026"
-    },
-    "Instalaciones electricas": {
-        "tiempo_proceso": 30,
-        "tiempo_proveedor": 18,
-        "fecha_inicio": "20/01/2026",
-        "fecha_legalizacion": "15/03/2026",
-        "fecha_actividad": "01/04/2026"
-    }
-}
-
-# -----------------------------
 # FUNCIONES PARA LA VENTANA MODAL
 # -----------------------------
 def abrir_modal():
@@ -634,16 +523,16 @@ def cerrar_modal():
     """Cierra la ventana modal y limpia los campos"""
     st.session_state.modal_abierto = False
     # Limpiar campos del formulario
+    if 'modal_nombre' in st.session_state:
+        del st.session_state.modal_nombre
+    if 'modal_email' in st.session_state:
+        del st.session_state.modal_email
     if 'modal_proyecto' in st.session_state:
         del st.session_state.modal_proyecto
-    if 'modal_componente' in st.session_state:
-        del st.session_state.modal_componente
-    if 'modal_acuerdo_buscar' in st.session_state:
-        del st.session_state.modal_acuerdo_buscar
-    if 'modal_acuerdo_seleccionado' in st.session_state:
-        del st.session_state.modal_acuerdo_seleccionado
-    if 'modal_detalle' in st.session_state:
-        del st.session_state.modal_detalle
+    if 'modal_fecha' in st.session_state:
+        del st.session_state.modal_fecha
+    if 'modal_comentario' in st.session_state:
+        del st.session_state.modal_comentario
 
 def volver_al_chat():
     """Cierra el modal y vuelve a la vista del chat"""
@@ -654,317 +543,22 @@ def volver_al_chat():
 def guardar_formulario():
     """Guarda los datos del formulario"""
     # Validar campos obligatorios
-    if (not st.session_state.get('modal_proyecto') or 
-        st.session_state.get('modal_proyecto') == "Seleccione un proyecto" or
-        not st.session_state.get('modal_componente') or
-        st.session_state.get('modal_componente') == "Seleccione un componente" or
-        not st.session_state.get('modal_acuerdo_seleccionado')):
+    if not st.session_state.get('modal_nombre') or not st.session_state.get('modal_email') or not st.session_state.get('modal_proyecto'):
         st.error("Por favor complete todos los campos obligatorios (*)")
         return
     
     # Aquí puedes procesar los datos del formulario
     st.session_state.datos_guardados = {
+        'nombre': st.session_state.get('modal_nombre', ''),
+        'email': st.session_state.get('modal_email', ''),
         'proyecto': st.session_state.get('modal_proyecto', ''),
-        'componente': st.session_state.get('modal_componente', ''),
-        'acuerdo_servicio': st.session_state.get('modal_acuerdo_seleccionado', ''),
-        'detalle': st.session_state.get('modal_detalle', '')
+        'fecha': st.session_state.get('modal_fecha', ''),
+        'comentario': st.session_state.get('modal_comentario', '')
     }
     
     st.success("✅ Datos guardados correctamente!")
     time.sleep(1)  # Pequeña pausa para mostrar el mensaje
     cerrar_modal()
-
-def actualizar_ficha():
-    """Actualiza la ficha informativa cuando se selecciona un acuerdo de servicio"""
-    acuerdo_seleccionado = st.session_state.get('modal_acuerdo_seleccionado')
-    if acuerdo_seleccionado and acuerdo_seleccionado in DATOS_ACUERDOS:
-        return DATOS_ACUERDOS[acuerdo_seleccionado]
-    return None
-
-# -----------------------------
-# HEADER: logo + títulos + BOTÓN DE PREDICCIÓN + BOTÓN MODAL
-# -----------------------------
-logo_path = os.path.join("assets", "logoMar.png")
-
-# Contenedor para alinear logo/títulos con los botones
-col_header_title, col_header_buttons = st.columns([7, 2])
-
-with col_header_title:
-    if os.path.exists(logo_path):
-        try:
-            logo_img = Image.open(logo_path)
-            buffered = io.BytesIO()
-            logo_img.save(buffered, format="PNG")
-            img_b64 = base64.b64encode(buffered.getvalue()).decode()
-            
-            st.markdown(
-                f"""
-                <div style="display:flex; align-items:center; gap:25px; margin-bottom:30px; padding-top:10px;">
-                    <img src="data:image/png;base64,{img_b64}" style="height:120px; width:auto;"/>
-                    <div>
-                        <p class="title">Sistema Integrado de Información de Proyectos</p>
-                        <p class="subtitle">Asistente para el Seguimiento y Control — Constructora Marval</p>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-        except Exception:
-            st.markdown(f'<p class="title">Sistema Integrado de Información de Proyectos</p>', unsafe_allow_html=True)
-    else:
-        st.markdown(f'<p class="title">Sistema Integrado de Información de Proyectos</p>', unsafe_allow_html=True)
-
-with col_header_buttons:
-    st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True)
-    col_pred, col_modal = st.columns(2)
-    
-    with col_pred:
-        if MODELO_NN:
-            if st.button("Pronóstico", key="btn_prediccion", type="secondary", use_container_width=True):
-                switch_to_predictor()
-        else:
-            st.warning("MLP no disponible.")
-    
-    with col_modal:
-        # Botón para abrir la ventana modal
-        if st.button("📝 Nuevo Registro", key="btn_modal", type="secondary", use_container_width=True):
-            abrir_modal()
-
-# LÓGICA DEL BOTÓN DE PREDICCIÓN
-def switch_to_predictor():
-    """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
-    st.session_state.current_view = 'predictor'
-    st.session_state.prediction_result = None
-
-def switch_to_chat():
-    """Cambia el estado de sesión para mostrar la vista del chat."""
-    st.session_state.current_view = 'chat'
-    st.session_state.prediction_result = None
-    if 'filtro_restriccion' in st.session_state:
-        del st.session_state['filtro_restriccion'] 
-    if 'tipo_restriccion_preseleccionado' in st.session_state:
-        del st.session_state['tipo_restriccion_preseleccionado']
-    st.rerun()
-
-# Inicializar el estado de sesión para la vista
-if 'current_view' not in st.session_state:
-    st.session_state.current_view = 'chat'
-
-# Inicializar el estado de la predicción
-if 'prediction_result' not in st.session_state:
-    st.session_state.prediction_result = None
-
-# Inicializar estado del modal
-if 'modal_abierto' not in st.session_state:
-    st.session_state.modal_abierto = False
-
-# -----------------------------
-# CARGA DEL ARCHIVO EXCEL DESDE GITHUB
-# -----------------------------
-st.sidebar.markdown(f'<p style="color:{PALETTE["primary"]}; font-size: 24px; font-weight: 700; margin-bottom: 0px;">Herramientas</p>', unsafe_allow_html=True)
-st.sidebar.subheader("Fuente de Datos")
-
-# Cargar datos desde GitHub
-excel_data = load_excel_from_github()
-
-if excel_data['success']:
-    st.sidebar.success("✅ Datos cargados correctamente desde GitHub")
-    
-    # Asignar los DataFrames a variables globales
-    df_avance = excel_data['avance']
-    df_responsables = excel_data['responsables']
-    df_restricciones = excel_data['restricciones']
-    df_sostenibilidad = excel_data['sostenibilidad']
-    df_avance_diseno = excel_data['avance_diseno']
-    df_inventario_diseno = excel_data['inventario_diseno']
-    
-    # Variable para indicar que el Excel está cargado
-    excel_loaded = True
-else:
-    st.sidebar.error(f"❌ Error al cargar datos: {excel_data.get('error', 'Error desconocido')}")
-    excel_loaded = False
-    st.stop()
-
-# Upload opcional de imagen
-img_file = st.sidebar.file_uploader("Sube imagen splash (opcional)", type=["png", "jpg", "jpeg"])
-st.sidebar.markdown("---")
-st.sidebar.markdown("💡 **Consejo:** Los datos se cargan automáticamente desde el repositorio de GitHub.")
-
-# -----------------------------
-# VENTANA MODAL - CON NUEVOS CAMPOS
-# -----------------------------
-if st.session_state.modal_abierto:
-    # JavaScript para mostrar el modal y manejar el cierre
-    st.markdown("""
-    <script>
-    // Mostrar el modal inmediatamente
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('myModal').style.display = 'block';
-        document.body.classList.add('modal-open');
-    });
-    
-    function closeModal() {
-        document.getElementById('myModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-        // Enviar comando a Streamlit para cerrar el modal
-        window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'cerrar_modal'}, '*');
-    }
-    
-    // Cerrar modal al hacer clic fuera
-    window.onclick = function(event) {
-        var modal = document.getElementById('myModal');
-        if (event.target == modal) {
-            closeModal();
-        }
-    }
-    
-    // Manejar la tecla ESC
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeModal();
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
-    
-    # HTML del modal con TODOS los campos dentro
-    st.markdown("""
-    <div id="myModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <div class="modal-header">
-                <h3 class="modal-title">📝 Nuevo Registro de Proyecto</h3>
-            </div>
-            <div class="modal-body">
-    """, unsafe_allow_html=True)
-    
-    # CONTENIDO DEL FORMULARIO DENTRO DEL MODAL
-    st.markdown("### Complete la información del nuevo registro")
-    
-    # Campos del formulario en dos columnas
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # 1. Lista desplegable de Proyecto
-        proyecto = st.selectbox(
-            "Proyecto *",
-            options=PROYECTOS,
-            key="modal_proyecto",
-            help="Seleccione el proyecto al que pertenece el registro"
-        )
-        
-        # 2. Lista desplegable de Componentes
-        componente = st.selectbox(
-            "Componentes *",
-            options=COMPONENTES,
-            key="modal_componente",
-            help="Seleccione el componente del proyecto"
-        )
-    
-    with col2:
-        # 3. Campo de búsqueda para Acuerdo de Servicio
-        st.markdown("**Acuerdo de servicio ***")
-        
-        # Campo de búsqueda
-        busqueda_acuerdo = st.text_input(
-            "Buscar acuerdo de servicio...",
-            key="modal_acuerdo_buscar",
-            placeholder="Escriba para filtrar...",
-            help="Escriba para buscar en la lista de acuerdos de servicio"
-        )
-        
-        # Filtrar opciones basadas en la búsqueda
-        opciones_filtradas = ACUERDOS_SERVICIO
-        if busqueda_acuerdo:
-            opciones_filtradas = [op for op in ACUERDOS_SERVICIO if busqueda_acuerdo.lower() in op.lower()]
-        
-        # Lista desplegable con opciones filtradas
-        acuerdo_seleccionado = st.selectbox(
-            "Seleccione acuerdo de servicio:",
-            options=[""] + opciones_filtradas,
-            key="modal_acuerdo_seleccionado",
-            help="Seleccione un acuerdo de servicio de la lista filtrada",
-            label_visibility="collapsed"
-        )
-    
-    # Mostrar ficha informativa cuando se selecciona un acuerdo
-    if st.session_state.get('modal_acuerdo_seleccionado'):
-        datos_acuerdo = actualizar_ficha()
-        if datos_acuerdo:
-            st.markdown("""
-            <div class="info-card">
-                <h4>📋 Información del Acuerdo de Servicio</h4>
-                <div class="info-item">
-                    <span class="info-label">Tiempo del proceso:</span>
-                    <span class="info-value">{} días</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Tiempo del Proveedor:</span>
-                    <span class="info-value">{} días</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de inicio Contrato:</span>
-                    <span class="info-value">{}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de Legalización:</span>
-                    <span class="info-value">{}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de Actividad:</span>
-                    <span class="info-value">{}</span>
-                </div>
-            </div>
-            """.format(
-                datos_acuerdo["tiempo_proceso"],
-                datos_acuerdo["tiempo_proveedor"],
-                datos_acuerdo["fecha_inicio"],
-                datos_acuerdo["fecha_legalizacion"],
-                datos_acuerdo["fecha_actividad"]
-            ), unsafe_allow_html=True)
-    
-    # 4. Campo abierto para Detalle opcional
-    detalle = st.text_area(
-        "Detalle opcional",
-        key="modal_detalle",
-        placeholder="Ingrese cualquier detalle adicional sobre el registro...",
-        height=80,
-        help="Información adicional opcional sobre el registro"
-    )
-    
-    # Información de campos obligatorios
-    st.markdown("<small>* Campos obligatorios</small>", unsafe_allow_html=True)
-    
-    # Cerrar el div del modal-body
-    st.markdown("""
-            </div>
-            <div class="modal-footer">
-    """, unsafe_allow_html=True)
-    
-    # BOTONES DENTRO DEL MODAL - AHORA CON BOTÓN "VOLVER AL CHAT"
-    col_btn1, col_btn2, col_btn3, col_btn4 = st.columns([1, 1, 1, 1])
-    
-    with col_btn1:
-        if st.button("💾 Guardar", key="btn_guardar", use_container_width=True):
-            guardar_formulario()
-    
-    with col_btn2:
-        if st.button("❌ Cancelar", key="btn_cerrar_modal", use_container_width=True):
-            cerrar_modal()
-    
-    with col_btn3:
-        # NUEVO BOTÓN: VOLVER AL CHAT
-        if st.button("💬 Volver al Chat", key="btn_volver_chat", use_container_width=True):
-            volver_al_chat()
-    
-    with col_btn4:
-        st.markdown("")  # Espacio vacío para alineación
-    
-    # Cerrar los divs del modal-footer y modal-content
-    st.markdown("""
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
 # -----------------------------
 # HEADER: logo + títulos + BOTÓN DE PREDICCIÓN + BOTÓN MODAL
@@ -1700,4 +1294,3 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo)
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
-
