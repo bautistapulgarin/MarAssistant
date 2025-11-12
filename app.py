@@ -465,6 +465,32 @@ st.markdown(f"""
     border: 1px solid #dc3545 !important;
 }}
 
+/* Estilo para botón de cámara */
+.stButton>button[key="btn_camara"] {{
+    background-color: #6f42c1 !important;
+    color: white !important;
+    border: 1px solid #6f42c1 !important;
+    border-radius: 8px !important;
+    padding: 0 20px !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-top: 0px; 
+}}
+.stButton>button[key="btn_camara"]:hover {{
+    background-color: #5a2d91 !important;
+    border: 1px solid #5a2d91 !important;
+}}
+
+/* Estilo para vista previa de imagen */
+.image-preview {{
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 2px dashed #ddd;
+    margin-top: 10px;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -689,7 +715,7 @@ def cerrar_modal():
     else:  # novedad
         campos_a_limpiar = [
             'modal_novedad_proyecto', 'modal_tipo_observacion', 
-            'modal_urgencia', 'modal_descripcion_novedad'
+            'modal_urgencia', 'modal_descripcion_novedad', 'foto_capturada'
         ]
     
     for campo in campos_a_limpiar:
@@ -733,17 +759,36 @@ def guardar_novedad():
         st.error("Por favor complete todos los campos obligatorios (*)")
         return
     
+    # Procesar la foto si existe
+    foto_data = None
+    if 'foto_capturada' in st.session_state and st.session_state.foto_capturada:
+        foto_data = st.session_state.foto_capturada
+    
     # Aquí puedes procesar los datos del formulario
     st.session_state.novedad_guardada = {
         'proyecto': st.session_state.get('modal_novedad_proyecto', ''),
         'tipo_observacion': st.session_state.get('modal_tipo_observacion', ''),
         'urgencia': st.session_state.get('modal_urgencia', ''),
-        'descripcion': st.session_state.get('modal_descripcion_novedad', '')
+        'descripcion': st.session_state.get('modal_descripcion_novedad', ''),
+        'foto_adjunta': 'Sí' if foto_data else 'No'
     }
     
     st.success("✅ Novedad registrada correctamente!")
+    if foto_data:
+        st.success("📸 Foto adjuntada correctamente")
     time.sleep(1)  # Pequeña pausa para mostrar el mensaje
     cerrar_modal()
+
+def tomar_foto():
+    """Activa la cámara para tomar una foto"""
+    st.session_state.mostrar_camara = True
+
+def eliminar_foto():
+    """Elimina la foto capturada"""
+    if 'foto_capturada' in st.session_state:
+        del st.session_state.foto_capturada
+    if 'mostrar_camara' in st.session_state:
+        st.session_state.mostrar_camara = False
 
 def filtrar_acuerdos_servicio(busqueda):
     """Filtra las opciones de acuerdo de servicio basado en la búsqueda"""
@@ -856,6 +901,10 @@ if 'modal_abierto' not in st.session_state:
 # Inicializar tipo de modal
 if 'modal_tipo' not in st.session_state:
     st.session_state.modal_tipo = "registro"
+
+# Inicializar estado de la cámara
+if 'mostrar_camara' not in st.session_state:
+    st.session_state.mostrar_camara = False
 
 # -----------------------------
 # CARGA DEL ARCHIVO EXCEL DESDE GITHUB
@@ -1028,7 +1077,7 @@ if st.session_state.modal_abierto and st.session_state.modal_tipo == "registro":
     """, unsafe_allow_html=True)
 
 # -----------------------------
-# VENTANA MODAL - FORMULARIO DE NOVEDAD
+# VENTANA MODAL - FORMULARIO DE NOVEDAD CON CÁMARA
 # -----------------------------
 elif st.session_state.modal_abierto and st.session_state.modal_tipo == "novedad":
     # JavaScript para mostrar el modal y manejar el cierre
@@ -1134,6 +1183,39 @@ elif st.session_state.modal_abierto and st.session_state.modal_tipo == "novedad"
         height=120,
         help="Información detallada sobre la novedad"
     )
+    
+    # NUEVO: Campo para adjuntar foto con cámara
+    st.markdown("**Adjuntar foto (opcional)**")
+    
+    # Botones para la cámara en dos columnas
+    col_camara1, col_camara2 = st.columns(2)
+    
+    with col_camara1:
+        # Botón para abrir la cámara
+        if st.button("📸 Tomar Foto", key="btn_camara", use_container_width=True):
+            tomar_foto()
+    
+    with col_camara2:
+        # Botón para eliminar foto si existe
+        if 'foto_capturada' in st.session_state and st.session_state.foto_capturada:
+            if st.button("🗑️ Eliminar Foto", key="btn_eliminar_foto", use_container_width=True):
+                eliminar_foto()
+    
+    # Mostrar la cámara si está activada
+    if st.session_state.get('mostrar_camara', False):
+        st.info("📱 Usa la cámara de tu dispositivo para tomar una foto")
+        foto_capturada = st.camera_input("Toma una foto de la novedad", key="camera_input_novedad")
+        
+        if foto_capturada:
+            # Guardar la foto en el estado de sesión
+            st.session_state.foto_capturada = foto_capturada
+            st.session_state.mostrar_camara = False
+            st.rerun()
+    
+    # Mostrar vista previa de la foto si existe
+    if 'foto_capturada' in st.session_state and st.session_state.foto_capturada:
+        st.success("✅ Foto capturada - Vista previa:")
+        st.image(st.session_state.foto_capturada, caption="Foto adjuntada", use_column_width=True)
     
     # Información de campos obligatorios
     st.markdown("<small>* Campos obligatorios</small>", unsafe_allow_html=True)
