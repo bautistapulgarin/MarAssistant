@@ -690,6 +690,24 @@ def mostrar_ficha_acuerdo_servicio(acuerdo_seleccionado):
         """, unsafe_allow_html=True)
 
 # -----------------------------
+# FUNCIONES PARA CAMBIAR ENTRE VISTAS
+# -----------------------------
+def switch_to_predictor():
+    """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
+    st.session_state.current_view = 'predictor'
+    st.session_state.prediction_result = None
+
+def switch_to_chat():
+    """Cambia el estado de sesión para mostrar la vista del chat."""
+    st.session_state.current_view = 'chat'
+    st.session_state.prediction_result = None
+    if 'filtro_restriccion' in st.session_state:
+        del st.session_state['filtro_restriccion'] 
+    if 'tipo_restriccion_preseleccionado' in st.session_state:
+        del st.session_state['tipo_restriccion_preseleccionado']
+    st.rerun()
+
+# -----------------------------
 # HEADER: logo + títulos + BOTÓN DE PREDICCIÓN + BOTÓN MODAL
 # -----------------------------
 logo_path = os.path.join("assets", "logoMar.png")
@@ -736,22 +754,6 @@ with col_header_buttons:
         # Botón para abrir la ventana modal
         if st.button("📝 Nuevo Registro", key="btn_modal", type="secondary", use_container_width=True):
             abrir_modal()
-
-# LÓGICA DEL BOTÓN DE PREDICCIÓN
-def switch_to_predictor():
-    """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
-    st.session_state.current_view = 'predictor'
-    st.session_state.prediction_result = None
-
-def switch_to_chat():
-    """Cambia el estado de sesión para mostrar la vista del chat."""
-    st.session_state.current_view = 'chat'
-    st.session_state.prediction_result = None
-    if 'filtro_restriccion' in st.session_state:
-        del st.session_state['filtro_restriccion'] 
-    if 'tipo_restriccion_preseleccionado' in st.session_state:
-        del st.session_state['tipo_restriccion_preseleccionado']
-    st.rerun()
 
 # Inicializar el estado de sesión para la vista
 if 'current_view' not in st.session_state:
