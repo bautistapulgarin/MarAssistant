@@ -208,6 +208,23 @@ st.markdown(f"""
     border: 1px solid #218838 !important;
 }}
 
+/* NUEVO: Estilo para el botón de VOLVER AL CHAT */
+.stButton>button[key="btn_volver_chat"] {{
+    background-color: #17a2b8 !important;
+    color: white !important;
+    border: 1px solid #17a2b8 !important;
+    border-radius: 8px !important;
+    padding: 0 20px !important;
+    font-weight: 600 !important;
+    height: 45px !important;
+    font-size: 16px !important;
+}}
+
+.stButton>button[key="btn_volver_chat"]:hover {{
+    background-color: #138496 !important;
+    border: 1px solid #138496 !important;
+}}
+
 /* Estilo para la ficha de conteo */
 .metric-card {{
     background-color: #f0f2f6;
@@ -517,6 +534,12 @@ def cerrar_modal():
     if 'modal_comentario' in st.session_state:
         del st.session_state.modal_comentario
 
+def volver_al_chat():
+    """Cierra el modal y vuelve a la vista del chat"""
+    cerrar_modal()
+    st.session_state.current_view = 'chat'
+    st.rerun()
+
 def guardar_formulario():
     """Guarda los datos del formulario"""
     # Validar campos obligatorios
@@ -747,8 +770,8 @@ if st.session_state.modal_abierto:
             <div class="modal-footer">
     """, unsafe_allow_html=True)
     
-    # BOTONES DENTRO DEL MODAL
-    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
+    # BOTONES DENTRO DEL MODAL - AHORA CON BOTÓN "VOLVER AL CHAT"
+    col_btn1, col_btn2, col_btn3, col_btn4 = st.columns([1, 1, 1, 1])
     
     with col_btn1:
         if st.button("💾 Guardar", key="btn_guardar", use_container_width=True):
@@ -759,6 +782,11 @@ if st.session_state.modal_abierto:
             cerrar_modal()
     
     with col_btn3:
+        # NUEVO BOTÓN: VOLVER AL CHAT
+        if st.button("💬 Volver al Chat", key="btn_volver_chat", use_container_width=True):
+            volver_al_chat()
+    
+    with col_btn4:
         st.markdown("")  # Espacio vacío para alineación
     
     # Cerrar los divs del modal-footer y modal-content
@@ -1007,5 +1035,262 @@ if excel_loaded:
         return ("❓ No entendí la pregunta. Intenta con 'avance de obra', 'avance en diseño', "
                 "'estado diseño', 'responsable', 'restricciones' o 'sostenibilidad'."), None, None, 'general', None
 
-# EL RESTO DEL CÓDIGO PERMANECE IGAL (funciones de predicción y lógica de vistas)
-# ... [El resto del código se mantiene igual que antes] ...
+# -----------------------------
+# FUNCIÓN DE PREDICCIÓN (MLP)
+# -----------------------------
+def mostrar_predictor_mlp():
+    if not MODELO_NN:
+        st.error("No se pudo cargar el modelo de predicción de contratos (MLP). Verifica los archivos `.joblib` en la carpeta `assets`.")
+        return
+
+    col_pred_title, col_pred_back = st.columns([6, 1.5])
+    
+    with col_pred_title:
+        st.markdown(f'<div class="mar-card" style="margin-bottom: 0px;"><p style="color:{PALETTE["primary"]}; font-size: 22px; font-weight:700; margin:0 0 8px 0;">🔮 Previsión de Cumplimiento de Contratos</p>'
+                    '<p style="margin:0 0 0 0;">Ingresa los parámetros del contrato para predecir la probabilidad de cumplimiento a tiempo.</p></div>',
+                    unsafe_allow_html=True)
+    
+    with col_pred_back:
+        st.markdown("<div style='height:42px;'></div>", unsafe_allow_html=True)
+        if st.button("⬅️ Devolver", key="btn_devolver", type="secondary", use_container_width=True):
+            switch_to_chat()
+            
+    st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+
+    with st.form("mlp_predictor_form_body", clear_on_submit=False):
+        st.subheader("Datos de Entrada del Contrato")
+        col_dias, col_reprog = st.columns(2)
+        with col_dias:
+            dias_input = st.number_input("Días de legalización esperados", min_value=1, value=15, step=1, key='dias_input_nn')
+        with col_reprog:
+            reprog_input = st.number_input("Número de reprogramaciones", min_value=0, value=0, step=1, key='reprog_input_nn')
+
+        col_prior, col_tipo, col_cnc = st.columns(3)
+        with col_prior:
+            prioridad_input = st.selectbox("Prioridad", options=['Alta', 'Media', 'Baja'], key='prioridad_input_nn')
+        with col_tipo:
+            contrato_input = st.selectbox("Tipo de contrato", options=['Obra', 'Suministro', 'Servicios', 'Subcontrato'], key='contrato_input_nn')
+        with col_cnc:
+            cnc_input = st.selectbox("Causa de retraso (CNCCompromiso)", options=['Aprobación interna', 'Proveedor', 'Legalización interna', 'Financiera'], key='cnc_input_nn')
+
+        predict_button = st.form_submit_button("🚀 Predecir", type="primary", 
+                                               on_click=lambda: setattr(st.session_state, 'prediction_result', None))
+
+    if predict_button:
+        try:
+            nuevo_df = pd.DataFrame({
+                'dias_legalizacion_esperados': [dias_input],
+                'numero_reprogramaciones': [reprog_input],
+                'prioridad': [prioridad_input],
+                'tipo_contrato': [contrato_input],
+                'CNCCompromiso': [cnc_input]
+            })
+
+            nuevo_df = pd.get_dummies(nuevo_df)
+            
+            for col in FEATURES_NN:
+                if col not in nuevo_df.columns:
+                    nuevo_df[col] = 0
+            nuevo_df = nuevo_df[FEATURES_NN]
+
+            cols_to_scale = ['dias_legalizacion_esperados', 'numero_reprogramaciones']
+            nuevo_df[cols_to_scale] = SCALER_NN.transform(nuevo_df[cols_to_scale])
+
+            prob_cumplimiento = MODELO_NN.predict_proba(nuevo_df)[0][1]
+            prediccion = MODELO_NN.predict(nuevo_df)[0]
+            
+            st.session_state.prediction_result = {
+                'prediccion': prediccion,
+                'prob_cumplimiento': prob_cumplimiento
+            }
+
+        except Exception as e:
+            st.error(f"Error al procesar la predicción: {e}")
+            st.info("Revisa si el formato de los datos es compatible con el modelo MLP cargado.")
+            st.session_state.prediction_result = None
+
+    if st.session_state.prediction_result is not None:
+        prediccion = st.session_state.prediction_result['prediccion']
+        prob_cumplimiento = st.session_state.prediction_result['prob_cumplimiento']
+
+        st.markdown("<div class='mar-card' style='margin-top:20px;'>", unsafe_allow_html=True)
+        if prediccion == 1:
+            st.success(f"### Predicción: ✅ Cumplido a tiempo")
+            st.markdown(f"La probabilidad de **cumplimiento** es del **`{prob_cumplimiento*100:.2f}%`**. ¡Parece que este contrato va bien!")
+        else:
+            st.warning(f"### Predicción: ⚠️ Probable reprogramación")
+            st.markdown(f"La probabilidad de **incumplimiento/reprogramación** es alta (Cumplimiento: `{prob_cumplimiento*100:.2f}%`). Se requiere seguimiento.")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+# -----------------------------
+# LÓGICA DE VISTAS PRINCIPALES - INTERFAZ DE CHAT (PREGUNTAS)
+# -----------------------------
+if st.session_state.current_view == 'predictor':
+    mostrar_predictor_mlp()
+    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+
+elif st.session_state.current_view == 'chat':
+    # INTERFAZ CHAT - AHORA SE MUESTRA CORRECTAMENTE
+    st.markdown(
+        f'<div class="mar-card"><p style="color:{PALETTE["primary"]}; font-size: 18px; font-weight:700; margin:0 0 8px 0;">Consulta Rápida</p>'
+        '<p style="margin:0 0 0 0;">Escribe tu consulta relacionada con el estado u contexto de los proyectos. Ej: "restricciones de materiales en Burdeos"</p></div>',
+        unsafe_allow_html=True
+    )
+
+    with st.form("query_form", clear_on_submit=False):
+        col_input, col_enviar, col_voz = st.columns([6, 1.2, 1])
+        
+        with col_input:
+            pregunta = st.text_input(label="", placeholder="Ej: 'Avance de obra en proyecto Altos del Mar' o 'Responsable de diseño'", label_visibility="collapsed", key='chat_query')
+        
+        with col_enviar:
+            enviar = st.form_submit_button("Buscar", key="btn_buscar", type="secondary", use_container_width=True)
+        
+        with col_voz:
+            voz = st.form_submit_button("🎤 Voz", key="voz", help="Activar entrada por voz", type="secondary", use_container_width=True)
+
+    # Lógica de procesamiento de la pregunta - AHORA USA excel_loaded
+    if enviar and pregunta:
+        if not excel_loaded:
+            st.error("No se puede consultar. ¡Los datos no se cargaron correctamente desde GitHub!")
+        else:
+            st.session_state['last_query_text'] = pregunta
+            titulo, df_resultado, grafico, tipo_resultado, tipo_restriccion_preseleccionado = generar_respuesta(pregunta)
+            
+            if tipo_resultado == 'restricciones':
+                st.session_state['tipo_restriccion_preseleccionado'] = tipo_restriccion_preseleccionado
+                st.session_state['last_query_result'] = (titulo, df_resultado, grafico, tipo_resultado)
+            else:
+                if 'tipo_restriccion_preseleccionado' in st.session_state:
+                    del st.session_state['tipo_restriccion_preseleccionado']
+                st.session_state['last_query_result'] = (titulo, df_resultado, grafico, tipo_resultado)
+
+            if 'filtro_restriccion' in st.session_state:
+                del st.session_state['filtro_restriccion']
+            
+            st.rerun()
+
+    # MOSTRAR RESULTADOS
+    if 'last_query_result' in st.session_state:
+        titulo, df_resultado, grafico, tipo_resultado = st.session_state['last_query_result']
+        
+        st.markdown(f'<div class="mar-card" style="margin-top:20px;"><p style="color:{PALETTE["primary"]}; font-size: 20px; font-weight:700; margin:0 0 8px 0;">{titulo}</p></div>', unsafe_allow_html=True)
+
+        if tipo_resultado == 'restricciones':
+            if "tipoRestriccion" in df_resultado.columns:
+                tipos_restriccion = ['Todas las restricciones'] + df_resultado["tipoRestriccion"].astype(str).unique().tolist()
+            else:
+                tipos_restriccion = ['Todas las restricciones']
+                
+            default_index = 0
+            if 'tipo_restriccion_preseleccionado' in st.session_state and st.session_state['tipo_restriccion_preseleccionado'] in tipos_restriccion:
+                default_index = tipos_restriccion.index(st.session_state['tipo_restriccion_preseleccionado'])
+                
+            filtro_restriccion = st.selectbox(
+                "Filtro por Tipo de Restricción:",
+                options=tipos_restriccion,
+                index=default_index,
+                key='filtro_restriccion',
+                label_visibility="visible"
+            )
+
+            df_filtrado = df_resultado.copy()
+            if filtro_restriccion != 'Todas las restricciones' and "tipoRestriccion" in df_filtrado.columns:
+                df_filtrado = df_filtrado[df_filtrado["tipoRestriccion"] == filtro_restriccion]
+
+            col_dias, col_filtro = st.columns([1, 2])
+            
+            if all(col in df_filtrado.columns for col in ["FechaCompromisoActual", "FechaCompromisoInicial"]):
+                df_filtrado['FechaCompromisoActual'] = pd.to_datetime(df_filtrado['FechaCompromisoActual'], errors='coerce')
+                df_filtrado['FechaCompromisoInicial'] = pd.to_datetime(df_filtrado['FechaCompromisoInicial'], errors='coerce')
+                df_filtrado['DiasDiferencia'] = (df_filtrado['FechaCompromisoActual'] - df_filtrado['FechaCompromisoInicial']).dt.days
+            else:
+                 df_filtrado['DiasDiferencia'] = pd.NA
+
+            with col_dias:
+                dias_diferencia_df = None
+                df_valido = df_filtrado.dropna(subset=['DiasDiferencia']).copy()
+
+                if not df_valido.empty:
+                    restricciones_reprogramadas = df_valido[df_valido['DiasDiferencia'] > 0]
+                    total_restricciones = len(df_valido)
+                    total_restricciones_reprogramadas = len(restricciones_reprogramadas)
+                    promedio_dias_retraso = restricciones_reprogramadas['DiasDiferencia'].mean()
+                    
+                    data = {
+                        'Métrica': [
+                            'Total Restricciones (con Fechas)',
+                            'Restricciones Reprogramadas (Días > 0)', 
+                            'Promedio Días de Retraso (Por Reprogramada)'
+                        ],
+                        'Valor': [
+                            total_restricciones,
+                            total_restricciones_reprogramadas, 
+                            f"{promedio_dias_retraso:,.2f}" if not pd.isna(promedio_dias_retraso) else "0.00"
+                        ]
+                    }
+                    dias_diferencia_df = pd.DataFrame(data)
+
+                if dias_diferencia_df is not None:
+                    st.markdown('<div class="mar-card" style="background-color:#fff3e0; padding: 15px;">', unsafe_allow_html=True)
+                    st.markdown('📅 **Resumen de Demoras por Reprogramación**', unsafe_allow_html=True)
+                    st.dataframe(
+                        dias_diferencia_df, 
+                        hide_index=True, 
+                        use_container_width=True,
+                        column_config={
+                            "Métrica": st.column_config.Column("Métrica de Demora", width="medium"),
+                            "Valor": st.column_config.TextColumn("Resultado", width="small")
+                        }
+                    )
+                    st.markdown('<p style="font-size:12px; margin:0; color:#8d6e63;">*Datos filtrados por el tipo de restricción actual.</p>', unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.info("No hay datos de fechas válidos para calcular la diferencia de días.")
+
+            with col_filtro:
+                st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-top:15px; margin-bottom:10px;">Detalle de Restricciones ({len(df_filtrado)} encontradas)</p>', unsafe_allow_html=True)
+                
+                columns_to_show = [
+                    'Actividad', 
+                    'Restriccion', 
+                    'numeroReprogramacionesCompromiso', 
+                    'Descripción', 
+                    'tipoRestriccion', 
+                    'FechaCompromisoInicial', 
+                    'FechaCompromisoActual', 
+                    'DiasDiferencia', 
+                    'Responsable', 
+                    'Comentarios'
+                ]
+                
+                df_display = df_filtrado.filter(items=columns_to_show)
+                
+                rename_map = {}
+                if 'DiasDiferencia' in df_display.columns:
+                     rename_map['DiasDiferencia'] = 'Diferencia (Días)'
+                if 'numeroReprogramacionesCompromiso' in df_display.columns:
+                     rename_map['numeroReprogramacionesCompromiso'] = 'Núm. Reprog.'
+                     
+                df_display = df_display.rename(columns=rename_map)
+
+                st.dataframe(df_display, use_container_width=True)
+                
+            if grafico:
+                st.markdown('<div class="mar-card" style="margin-top: 25px;">', unsafe_allow_html=True)
+                st.markdown(f'<p style="font-weight:600; color:{PALETTE["primary"]}; margin-bottom:5px;">Conteo por Tipo de Restricción (Todos los Proyectos/Tipo)</p>', unsafe_allow_html=True)
+                st.plotly_chart(grafico, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+        else:
+            if df_resultado is not None:
+                st.markdown(f'<div class="mar-card" style="margin-top:0px;">', unsafe_allow_html=True)
+                if grafico:
+                    st.plotly_chart(grafico, use_container_width=True)
+                
+                st.dataframe(df_resultado.drop(columns=["Proyecto_norm"], errors='ignore'), use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.error(titulo)
+    
+    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
