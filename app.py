@@ -208,6 +208,23 @@ st.markdown(f"""
     border: 1px solid #218838 !important;
 }}
 
+/* NUEVO: Estilo para el botón de NUEVA NOVEDAD */
+.stButton>button[key="btn_nueva_novedad"] {{
+    background-color: #17a2b8 !important;
+    color: white !important;
+    border: 1px solid #17a2b8 !important;
+    border-radius: 8px !important;
+    padding: 0 20px !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-top: 0px; 
+}}
+.stButton>button[key="btn_nueva_novedad"]:hover {{
+    background-color: #138496 !important;
+    border: 1px solid #138496 !important;
+}}
+
 /* NUEVO: Estilo para el botón de VOLVER AL CHAT */
 .stButton>button[key="btn_volver_chat"] {{
     background-color: #17a2b8 !important;
@@ -431,6 +448,23 @@ st.markdown(f"""
     font-size: 14px;
 }}
 
+/* Estilo para botones de urgencia */
+.urgencia-baja {{
+    background-color: #28a745 !important;
+    color: white !important;
+    border: 1px solid #28a745 !important;
+}}
+.urgencia-media {{
+    background-color: #ffc107 !important;
+    color: black !important;
+    border: 1px solid #ffc107 !important;
+}}
+.urgencia-alta {{
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: 1px solid #dc3545 !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -560,6 +594,16 @@ OPCIONES_ACUERDO_SERVICIO = [
     "Instalaciones electricas"
 ]
 
+# Opciones para el formulario de novedades
+OPCIONES_TIPO_OBSERVACION = [
+    "Seleccione tipo de observación",
+    "Incidencia", 
+    "Novedad", 
+    "Tarea"
+]
+
+OPCIONES_URGENCIA = ["Baja", "Media", "Alta"]
+
 # Datos de la ficha de acuerdo de servicio
 DATOS_ACUERDO_SERVICIO = {
     "Provisional electrico": {
@@ -624,20 +668,36 @@ DATOS_ACUERDO_SERVICIO = {
 # FUNCIONES PARA LA VENTANA MODAL
 # -----------------------------
 def abrir_modal():
-    """Abre la ventana modal"""
+    """Abre la ventana modal de registro"""
     st.session_state.modal_abierto = True
+    st.session_state.modal_tipo = "registro"
+
+def abrir_modal_novedad():
+    """Abre la ventana modal de novedad"""
+    st.session_state.modal_abierto = True
+    st.session_state.modal_tipo = "novedad"
 
 def cerrar_modal():
     """Cierra la ventana modal y limpia los campos"""
     st.session_state.modal_abierto = False
-    # Limpiar campos del formulario
-    campos_a_limpiar = [
-        'modal_proyecto', 'modal_componente', 'modal_acuerdo_servicio',
-        'modal_buscar_acuerdo', 'modal_detalle_opcional'
-    ]
+    # Limpiar campos del formulario según el tipo
+    if st.session_state.get('modal_tipo') == "registro":
+        campos_a_limpiar = [
+            'modal_proyecto', 'modal_componente', 'modal_acuerdo_servicio',
+            'modal_buscar_acuerdo', 'modal_detalle_opcional'
+        ]
+    else:  # novedad
+        campos_a_limpiar = [
+            'modal_novedad_proyecto', 'modal_tipo_observacion', 
+            'modal_urgencia', 'modal_descripcion_novedad'
+        ]
+    
     for campo in campos_a_limpiar:
         if campo in st.session_state:
             del st.session_state[campo]
+    
+    if 'modal_tipo' in st.session_state:
+        del st.session_state.modal_tipo
 
 def volver_al_chat():
     """Cierra el modal y vuelve a la vista del chat"""
@@ -646,7 +706,7 @@ def volver_al_chat():
     st.rerun()
 
 def guardar_formulario():
-    """Guarda los datos del formulario"""
+    """Guarda los datos del formulario de registro"""
     # Validar campos obligatorios
     if not st.session_state.get('modal_proyecto') or not st.session_state.get('modal_componente') or not st.session_state.get('modal_acuerdo_servicio'):
         st.error("Por favor complete todos los campos obligatorios (*)")
@@ -661,6 +721,27 @@ def guardar_formulario():
     }
     
     st.success("✅ Datos guardados correctamente!")
+    time.sleep(1)  # Pequeña pausa para mostrar el mensaje
+    cerrar_modal()
+
+def guardar_novedad():
+    """Guarda los datos del formulario de novedad"""
+    # Validar campos obligatorios
+    if (not st.session_state.get('modal_novedad_proyecto') or 
+        not st.session_state.get('modal_tipo_observacion') or
+        not st.session_state.get('modal_urgencia')):
+        st.error("Por favor complete todos los campos obligatorios (*)")
+        return
+    
+    # Aquí puedes procesar los datos del formulario
+    st.session_state.novedad_guardada = {
+        'proyecto': st.session_state.get('modal_novedad_proyecto', ''),
+        'tipo_observacion': st.session_state.get('modal_tipo_observacion', ''),
+        'urgencia': st.session_state.get('modal_urgencia', ''),
+        'descripcion': st.session_state.get('modal_descripcion_novedad', '')
+    }
+    
+    st.success("✅ Novedad registrada correctamente!")
     time.sleep(1)  # Pequeña pausa para mostrar el mensaje
     cerrar_modal()
 
@@ -741,7 +822,7 @@ with col_header_title:
 
 with col_header_buttons:
     st.markdown("<div style='height:75px;'></div>", unsafe_allow_html=True)
-    col_pred, col_modal = st.columns(2)
+    col_pred, col_modal, col_novedad = st.columns([1, 1, 1])
     
     with col_pred:
         if MODELO_NN:
@@ -751,9 +832,14 @@ with col_header_buttons:
             st.warning("MLP no disponible.")
     
     with col_modal:
-        # Botón para abrir la ventana modal
+        # Botón para abrir la ventana modal de registro
         if st.button("📝 Nuevo Registro", key="btn_modal", type="secondary", use_container_width=True):
             abrir_modal()
+    
+    with col_novedad:
+        # NUEVO BOTÓN: Nueva Novedad
+        if st.button("📋 Nueva Novedad", key="btn_nueva_novedad", type="secondary", use_container_width=True):
+            abrir_modal_novedad()
 
 # Inicializar el estado de sesión para la vista
 if 'current_view' not in st.session_state:
@@ -766,6 +852,10 @@ if 'prediction_result' not in st.session_state:
 # Inicializar estado del modal
 if 'modal_abierto' not in st.session_state:
     st.session_state.modal_abierto = False
+
+# Inicializar tipo de modal
+if 'modal_tipo' not in st.session_state:
+    st.session_state.modal_tipo = "registro"
 
 # -----------------------------
 # CARGA DEL ARCHIVO EXCEL DESDE GITHUB
@@ -800,9 +890,9 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("💡 **Consejo:** Los datos se cargan automáticamente desde el repositorio de GitHub.")
 
 # -----------------------------
-# VENTANA MODAL - FORMULARIO MODIFICADO
+# VENTANA MODAL - FORMULARIO DE REGISTRO
 # -----------------------------
-if st.session_state.modal_abierto:
+if st.session_state.modal_abierto and st.session_state.modal_tipo == "registro":
     # JavaScript para mostrar el modal y manejar el cierre
     st.markdown("""
     <script>
@@ -925,6 +1015,149 @@ if st.session_state.modal_abierto:
     with col_btn3:
         # BOTÓN: VOLVER AL CHAT
         if st.button("💬 Volver al Chat", key="btn_volver_chat", use_container_width=True):
+            volver_al_chat()
+    
+    with col_btn4:
+        st.markdown("")  # Espacio vacío para alineación
+    
+    # Cerrar los divs del modal-footer y modal-content
+    st.markdown("""
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# -----------------------------
+# VENTANA MODAL - FORMULARIO DE NOVEDAD
+# -----------------------------
+elif st.session_state.modal_abierto and st.session_state.modal_tipo == "novedad":
+    # JavaScript para mostrar el modal y manejar el cierre
+    st.markdown("""
+    <script>
+    // Mostrar el modal inmediatamente
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('myModal').style.display = 'block';
+        document.body.classList.add('modal-open');
+    });
+    
+    function closeModal() {
+        document.getElementById('myModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+        // Enviar comando a Streamlit para cerrar el modal
+        window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'cerrar_modal'}, '*');
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    window.onclick = function(event) {
+        var modal = document.getElementById('myModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+    
+    // Manejar la tecla ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # HTML del modal con TODOS los campos dentro
+    st.markdown("""
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <h3 class="modal-title">📋 Nueva Novedad</h3>
+            </div>
+            <div class="modal-body">
+    """, unsafe_allow_html=True)
+    
+    # CONTENIDO DEL FORMULARIO DE NOVEDAD DENTRO DEL MODAL
+    st.markdown("### Registre una nueva novedad del proyecto")
+    
+    # Campo 1: Proyecto (lista desplegable)
+    proyecto = st.selectbox(
+        "Proyecto *",
+        options=OPCIONES_PROYECTO,
+        key="modal_novedad_proyecto",
+        help="Seleccione el proyecto al que pertenece la novedad"
+    )
+    
+    # Campo 2: Tipo de observación (lista desplegable)
+    tipo_observacion = st.selectbox(
+        "Tipo de observación *",
+        options=OPCIONES_TIPO_OBSERVACION,
+        key="modal_tipo_observacion",
+        help="Seleccione el tipo de observación"
+    )
+    
+    # Campo 3: Urgencia (botones)
+    st.markdown("**Urgencia ***")
+    
+    # Crear tres columnas para los botones de urgencia
+    col_baja, col_media, col_alta = st.columns(3)
+    
+    with col_baja:
+        # Inicializar el estado de urgencia si no existe
+        if 'modal_urgencia' not in st.session_state:
+            st.session_state.modal_urgencia = None
+            
+        # Botón de urgencia baja
+        if st.button("🟢 Baja", key="btn_urgencia_baja", use_container_width=True,
+                    type="primary" if st.session_state.get('modal_urgencia') == 'Baja' else "secondary"):
+            st.session_state.modal_urgencia = 'Baja'
+    
+    with col_media:
+        # Botón de urgencia media
+        if st.button("🟡 Media", key="btn_urgencia_media", use_container_width=True,
+                    type="primary" if st.session_state.get('modal_urgencia') == 'Media' else "secondary"):
+            st.session_state.modal_urgencia = 'Media'
+    
+    with col_alta:
+        # Botón de urgencia alta
+        if st.button("🔴 Alta", key="btn_urgencia_alta", use_container_width=True,
+                    type="primary" if st.session_state.get('modal_urgencia') == 'Alta' else "secondary"):
+            st.session_state.modal_urgencia = 'Alta'
+    
+    # Mostrar la urgencia seleccionada
+    if st.session_state.get('modal_urgencia'):
+        st.info(f"**Urgencia seleccionada:** {st.session_state.modal_urgencia}")
+    
+    # Campo 4: Descripción (campo abierto)
+    descripcion = st.text_area(
+        "Descripción de la novedad *",
+        key="modal_descripcion_novedad",
+        placeholder="Describa detalladamente la novedad, incidencia o tarea...",
+        height=120,
+        help="Información detallada sobre la novedad"
+    )
+    
+    # Información de campos obligatorios
+    st.markdown("<small>* Campos obligatorios</small>", unsafe_allow_html=True)
+    
+    # Cerrar el div del modal-body
+    st.markdown("""
+            </div>
+            <div class="modal-footer">
+    """, unsafe_allow_html=True)
+    
+    # BOTONES DENTRO DEL MODAL
+    col_btn1, col_btn2, col_btn3, col_btn4 = st.columns([1, 1, 1, 1])
+    
+    with col_btn1:
+        if st.button("💾 Guardar Novedad", key="btn_guardar_novedad", use_container_width=True):
+            guardar_novedad()
+    
+    with col_btn2:
+        if st.button("❌ Cancelar", key="btn_cerrar_modal_novedad", use_container_width=True):
+            cerrar_modal()
+    
+    with col_btn3:
+        # BOTÓN: VOLVER AL CHAT
+        if st.button("💬 Volver al Chat", key="btn_volver_chat_novedad", use_container_width=True):
             volver_al_chat()
     
     with col_btn4:
