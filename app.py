@@ -18,33 +18,56 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        'Get Help': None,  # Elimina el enlace de ayuda
-        'Report a bug': None,  # Elimina el reportar bug
-        'About': None  # Elimina la sección About
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
     }
 )
 
 # ==============================
-# CSS ADICIONAL PARA OCULTAR ELEMENTOS
+# CSS ADICIONAL PARA OCULTAR ELEMENTOS DE STREAMLIT
 # ==============================
 st.markdown("""
 <style>
-    /* Ocultar el menú de hamburguesa y elementos de share de Streamlit */
-    #MainMenu {visibility: hidden;}
-    .stAppDeployButton {display: none;}
+    /* Ocultar completamente el menú de hamburguesa */
+    #MainMenu {visibility: hidden !important;}
     
-    /* Ocultar específicamente el footer por defecto de Streamlit pero mantener el personalizado */
-    footer:not(.custom-footer) {visibility: hidden;}
+    /* Ocultar el botón de deploy/share de Streamlit */
+    .stAppDeployButton {display: none !important;}
     
-    /* Ocultar cualquier elemento de share que pueda aparecer */
+    /* Ocultar el footer por defecto de Streamlit */
+    footer {visibility: hidden !important;}
+    
+    /* Ocultar cualquier elemento de share o GitHub */
     .st-emotion-cache-1dj0hjr {display: none !important;}
+    [data-testid="baseButton-header"] {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+    .stApp [data-testid="stHeader"] {display: none !important;}
     
-    /* Mantener visible solo el header que necesitas */
-    header:first-child {visibility: visible !important;}
+    /* Ocultar el botón de menú hamburguesa */
+    [data-testid="collapsedControl"] {display: none !important;}
+    
+    /* Asegurar que no haya espacios vacíos por elementos ocultos */
+    .stApp header {display: none !important;}
+    
+    /* PIE DE PÁGATA FIJO PERSONALIZADO */
+    .custom-footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        background-color: #0D3A5F !important;
+        color: white !important;
+        text-align: center !important;
+        padding: 8px 0 !important;
+        font-size: 12px !important;
+        font-family: "Roboto", sans-serif !important;
+        z-index: 9999 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# El resto de tu código continúa aquí...
+# ==============================
 # IMPORTACIONES ADICIONALES PARA NN
 # ==============================
 NN_AVAILABLE = False
@@ -91,14 +114,6 @@ st.markdown(f"""
     --shadow-light: 0 4px 12px rgba(21,72,114,0.06);
     --shadow-hover: 0 6px 16px rgba(21,72,114,0.10);
 }}
-
-/* Ocultar elementos de Streamlit no deseados */
-#MainMenu {{visibility: hidden;}}
-.stAppDeployButton {{display: none;}}
-.st-emotion-cache-1dj0hjr {{display: none !important;}}
-
-/* Ocultar solo el footer por defecto de Streamlit, no el personalizado */
-footer:not(.custom-footer) {{visibility: hidden;}}
 
 /* Aplicación Principal y Fuente */
 .stApp {{
@@ -527,7 +542,6 @@ footer:not(.custom-footer) {{visibility: hidden;}}
 </style>
 """, unsafe_allow_html=True)
 
-
 # -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
 st.markdown("""
 <style>
@@ -555,9 +569,9 @@ st.markdown("""
 <div style="position:fixed; bottom:83%; left:13%; font-size:25px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🦌</div>
 <div style="position:fixed; bottom:83%; left:17%; font-size:27px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🦌</div>
 
-<div style="position:fixed; bottom:3%; left:48%; font-size:40px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎄</div>
-<div style="position:fixed; bottom:3.5%; left:50%; font-size:20px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
-<div style="position:fixed; bottom:3.5%; left:51%; font-size:15px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
+<div style="position:fixed; bottom:3%; left:50%; font-size:40px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎄</div>
+<div style="position:fixed; bottom:3.5%; left:52%; font-size:20px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
+<div style="position:fixed; bottom:3.5%; left:53%; font-size:15px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
 
 
 
@@ -863,6 +877,7 @@ def switch_to_predictor():
     """Cambia el estado de sesión para mostrar la vista del predictor y resetea la predicción."""
     st.session_state.current_view = 'predictor'
     st.session_state.prediction_result = None
+    st.rerun()
 
 def switch_to_chat():
     """Cambia el estado de sesión para mostrar la vista del chat."""
@@ -1618,13 +1633,20 @@ def mostrar_predictor_mlp():
             st.warning(f"### Predicción: ⚠️ Probable reprogramación")
             st.markdown(f"La probabilidad de **incumplimiento/reprogramación** es alta (Cumplimiento: `{prob_cumplimiento*100:.2f}%`). Se requiere seguimiento.")
         st.markdown("</div>", unsafe_allow_html=True)
+    
+    # PIE DE PÁGINA PARA LA VISTA DE PREDICCIÓN
+    st.markdown("""
+    <div class='custom-footer'>
+        Mar Agent, Version 1.0. Constructora Marval
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
 
 # -----------------------------
 # LÓGICA DE VISTAS PRINCIPALES - INTERFAZ DE CHAT (PREGUNTAS)
 # -----------------------------
 if st.session_state.current_view == 'predictor':
     mostrar_predictor_mlp()
-    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
 
 elif st.session_state.current_view == 'chat':
     # INTERFAZ CHAT - AHORA SE MUESTRA CORRECTAMENTE
@@ -1790,61 +1812,10 @@ elif st.session_state.current_view == 'chat':
             else:
                 st.error(titulo)
     
-    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
-
-
-    # -----------------------------
-    # PIE DE PAGINA PERSONALIZADO (MODIFICADO)
-    # -----------------------------
-    st.markdown(f"""
-    <div class='custom-footer' style='
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #0D3A5F;
-        color: white;
-        text-align: center;
-        padding: 8px 0;
-        font-size: 12px;
-        font-family: "Roboto", sans-serif;
-        z-index: 999;
-    '>
+    # PIE DE PÁGATA PARA LA VISTA DEL CHAT
+    st.markdown("""
+    <div class='custom-footer'>
         Mar Agent, Version 1.0. Constructora Marval
     </div>
     """, unsafe_allow_html=True)
-    
-    # Añadir margen inferior para que el contenido no quede detrás del footer
     st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
