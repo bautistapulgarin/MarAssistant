@@ -883,7 +883,7 @@ with col_header_buttons:
     
     with col_novedad:
         # NUEVO BOTÓN: Nueva Novedad
-        if st.button("📋 Nueva Novedad", key="btn_nueva_novedad", type="secondary", use_container_width=True):
+        if st.button("📋 Novedad", key="btn_nueva_novedad", type="secondary", use_container_width=True):
             abrir_modal_novedad()
 
 # Inicializar el estado de sesión para la vista
@@ -1750,6 +1750,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo)
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+
 
 
 
