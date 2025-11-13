@@ -1759,28 +1759,28 @@ elif st.session_state.current_view == 'chat':
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------
-# PIE DE PAGINA
-# -----------------------------
-st.markdown("""
-<footer style='
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: %s;
-    color: white;
-    text-align: center;
-    padding: 8px 0;
-    font-size: 12px;
-    font-family: "Roboto", sans-serif;
-    z-index: 999;
-'>
-    Mar Agent, Version 1.0. Constructora Marval
-</footer>
-""" % PALETTE['primary'], unsafe_allow_html=True)
-
-# Añadir margen inferior para que el contenido no quede detrás del footer
-st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
+    # PIE DE PAGINA
+    # -----------------------------
+    st.markdown(f"""
+    <footer style='
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: {PALETTE['primary']};
+        color: white;
+        text-align: center;
+        padding: 8px 0;
+        font-size: 12px;
+        font-family: "Roboto", sans-serif;
+        z-index: 999;
+    '>
+        Mar Agent, Version 1.0. Constructora Marval
+    </footer>
+    """, unsafe_allow_html=True)
+    
+    # Añadir margen inferior para que el contenido no quede detrás del footer
+    st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
 
 
 
