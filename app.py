@@ -10,6 +10,39 @@ import io
 import requests
 
 # ==============================
+# CONFIGURACIÓN INICIAL CON OPCIONES DESHABILITADAS
+# ==============================
+st.set_page_config(
+    page_title="Mar Assistant",
+    page_icon="🌊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,  # Elimina el enlace de ayuda
+        'Report a bug': None,  # Elimina el reportar bug
+        'About': None  # Elimina la sección About
+    }
+)
+
+# ==============================
+# CSS ADICIONAL PARA OCULTAR ELEMENTOS
+# ==============================
+st.markdown("""
+<style>
+    /* Ocultar el menú de hamburguesa y elementos de share */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Ocultar específicamente el botón de GitHub si existe */
+    .stAppDeployButton {display: none;}
+    
+    /* Ocultar cualquier elemento de share que pueda aparecer */
+    .st-emotion-cache-1dj0hjr {display: none !important;}
+</style>
+""", unsafe_allow_html=True)
+
+# El resto de tu código continúa aquí...
 # IMPORTACIONES ADICIONALES PARA NN
 # ==============================
 NN_AVAILABLE = False
@@ -28,16 +61,6 @@ try:
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
-
-# -----------------------------
-# CONFIGURACIÓN GENERAL
-# -----------------------------
-st.set_page_config(
-    page_title="Mar Assistant",
-    page_icon="🌊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # -----------------------------
 # PALETA DE COLORES (UX / BI)
@@ -67,6 +90,13 @@ st.markdown(f"""
     --shadow-hover: 0 6px 16px rgba(21,72,114,0.10);
 }}
 
+/* Ocultar elementos de Streamlit no deseados */
+#MainMenu {{visibility: hidden;}}
+footer {{visibility: hidden;}}
+header {{visibility: hidden;}}
+.stAppDeployButton {{display: none;}}
+.st-emotion-cache-1dj0hjr {{display: none !important;}}
+
 /* Aplicación Principal y Fuente */
 .stApp {{
     background-color: var(--mar-bg);
@@ -89,6 +119,11 @@ st.markdown(f"""
     margin: 6px 0 0 0;
     font-weight: 300;
 }}
+
+
+
+
+
 
 /* Contenedores y Tarjetas */
 .mar-card {{
@@ -1781,6 +1816,7 @@ elif st.session_state.current_view == 'chat':
     
     # Añadir margen inferior para que el contenido no quede detrás del footer
     st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
+
 
 
 
