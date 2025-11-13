@@ -521,9 +521,9 @@ st.markdown("""
 <div style="position:fixed; bottom:4%; left:6%; font-size:25px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🦌</div>
 <div style="position:fixed; bottom:3%; left:8%; font-size:27px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🦌</div>
 
-<div style="position:fixed; bottom:50%; left:50%; font-size:40px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎄</div>
-<div style="position:fixed; bottom:50%; left:50%; font-size:20px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
-<div style="position:fixed; bottom:50%; left:50%; font-size:15px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
+<div style="position:fixed; bottom:2%; left:50%; font-size:40px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎄</div>
+<div style="position:fixed; bottom:2%; left:52%; font-size:20px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
+<div style="position:fixed; bottom:2%; left:53%; font-size:15px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
 
 
 
@@ -1757,6 +1757,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo)
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+
 
 
 
