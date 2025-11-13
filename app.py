@@ -878,7 +878,7 @@ with col_header_buttons:
     
     with col_modal:
         # Botón para abrir la ventana modal de registro
-        if st.button("📝 Restricción ", key="btn_modal", type="secondary", use_container_width=True):
+        if st.button("📝 Restricción", key="btn_modal", type="secondary", use_container_width=True):
             abrir_modal()
     
     with col_novedad:
@@ -1750,6 +1750,7 @@ elif st.session_state.current_view == 'chat':
                 st.error(titulo)
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+
 
 
 
