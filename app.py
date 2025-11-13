@@ -565,9 +565,9 @@ st.markdown("""
 <div style="position:fixed; top:20%; right:7%; font-size:25px; opacity:0.8; animation:floatDown 15s linear infinite; z-index:9999;">❄️</div>
 <div style="position:fixed; top:25%; right:9%; font-size:20px; opacity:0.8; animation:floatDown 11s linear infinite; z-index:9999;">❄️</div>
 
-<div style="position:fixed; bottom:3.3%; left:7%; font-size:25px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🦌</div>
-<div style="position:fixed; bottom:3.3%; left:9%; font-size:25px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🦌</div>
-<div style="position:fixed; bottom:3.3%; left:11%; font-size:27px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🦌</div>
+<div style="position:fixed; bottom:3.7%; left:7%; font-size:25px; opacity:1; animation:floatY 3s ease-in-out infinite; z-index:9999;">🦌</div>
+<div style="position:fixed; bottom:3.7%; left:9%; font-size:25px; opacity:1; animation:floatY 2.8s ease-in-out infinite; z-index:9999;">🦌</div>
+<div style="position:fixed; bottom:3.7%; left:11%; font-size:27px; opacity:1; animation:floatY 3.2s ease-in-out infinite; z-index:9999;">🦌</div>
 
 <div style="position:fixed; bottom:3%; left:47.5%; font-size:40px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎄</div>
 <div style="position:fixed; bottom:3.5%; left:49.5%; font-size:20px; opacity:1; animation:floatY 0s ease-in-out infinite; z-index:9999;">🎁</div>
@@ -1951,4 +1951,5 @@ elif st.session_state.current_view == 'chat':
     </div>
     """, unsafe_allow_html=True)
     st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
+
 
