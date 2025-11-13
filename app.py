@@ -29,16 +29,18 @@ st.set_page_config(
 # ==============================
 st.markdown("""
 <style>
-    /* Ocultar el menú de hamburguesa y elementos de share */
+    /* Ocultar el menú de hamburguesa y elementos de share de Streamlit */
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Ocultar específicamente el botón de GitHub si existe */
     .stAppDeployButton {display: none;}
+    
+    /* Ocultar específicamente el footer por defecto de Streamlit pero mantener el personalizado */
+    footer:not(.custom-footer) {visibility: hidden;}
     
     /* Ocultar cualquier elemento de share que pueda aparecer */
     .st-emotion-cache-1dj0hjr {display: none !important;}
+    
+    /* Mantener visible solo el header que necesitas */
+    header:first-child {visibility: visible !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -92,10 +94,11 @@ st.markdown(f"""
 
 /* Ocultar elementos de Streamlit no deseados */
 #MainMenu {{visibility: hidden;}}
-footer {{visibility: hidden;}}
-header {{visibility: hidden;}}
 .stAppDeployButton {{display: none;}}
 .st-emotion-cache-1dj0hjr {{display: none !important;}}
+
+/* Ocultar solo el footer por defecto de Streamlit, no el personalizado */
+footer:not(.custom-footer) {{visibility: hidden;}}
 
 /* Aplicación Principal y Fuente */
 .stApp {{
@@ -119,11 +122,6 @@ header {{visibility: hidden;}}
     margin: 6px 0 0 0;
     font-weight: 300;
 }}
-
-
-
-
-
 
 /* Contenedores y Tarjetas */
 .mar-card {{
@@ -528,6 +526,7 @@ header {{visibility: hidden;}}
 
 </style>
 """, unsafe_allow_html=True)
+
 
 # -------------------- FANTASMAS HALLOWEEN (derecha → arriba/abajo) + CALABAZAS (izquierda con rebote) --------------------
 st.markdown("""
@@ -1793,11 +1792,12 @@ elif st.session_state.current_view == 'chat':
     
     st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
 
+
     # -----------------------------
-    # PIE DE PAGINA
+    # PIE DE PAGINA PERSONALIZADO (MODIFICADO)
     # -----------------------------
     st.markdown(f"""
-    <footer style='
+    <div class='custom-footer' style='
         position: fixed;
         bottom: 0;
         left: 0;
@@ -1811,12 +1811,12 @@ elif st.session_state.current_view == 'chat':
         z-index: 999;
     '>
         Mar Agent, Version 1.0. Constructora Marval
-    </footer>
+    </div>
     """, unsafe_allow_html=True)
     
     # Añadir margen inferior para que el contenido no quede detrás del footer
     st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
-
+    
 
 
 
